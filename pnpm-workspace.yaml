@@ -1,0 +1,9 @@
+packages:
+  - apps/*
+  - packages/*
+
+# pnpm 11 bloquea los scripts de instalación por defecto (seguridad).
+# Solo se permiten los que necesitan Vite/Wrangler para funcionar.
+allowBuilds:
+  esbuild: true
+  workerd: true

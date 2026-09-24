@@ -1,0 +1,15 @@
+{
+  // Configuración del Worker de la API.
+  // Docs: https://developers.cloudflare.com/workers/wrangler/configuration/
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "serviceagent-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-20",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  "dev": { "port": 8787 },
+  // IMPORTANTE: aquí NO van secretos. "vars" es solo para valores públicos.
+  // Los secretos se cargan con `wrangler secret put <NOMBRE>` (producción)
+  // y con `apps/api/.dev.vars` en local. Ver README.md.
+  "vars": {},
+}

@@ -1,0 +1,49 @@
+# CI: lint, tipos, tests y build.
+# - En cada Pull Request hacia main se ejecuta directamente.
+# - En cada push a main lo ejecuta deploy.yml (workflow_call) ANTES de desplegar,
+#   así el deploy solo ocurre si "verificar" pasó y no hay dos corridas en paralelo.
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  verificar:
+    # Este nombre es el "status check" requerido en la protección de main.
+    name: verificar
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      # Toma la versión de pnpm del campo "packageManager" del package.json raíz.
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Instalar dependencias
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint (ESLint + Prettier)
+        run: pnpm lint
+
+      - name: Tipos
+        run: pnpm typecheck
+
+      - name: Tests
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build

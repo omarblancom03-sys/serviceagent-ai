@@ -1,0 +1,110 @@
+# Despliegue automático al fusionar a main.
+#   1. verificar         → reutiliza ci.yml (lint, tipos, tests, build).
+#   2. revisar-secretos  → si faltan los secretos de Cloudflare, avisa y omite el deploy
+#                          (el workflow termina en verde, no en error).
+#   3. desplegar-api     → Worker "serviceagent-api" con wrangler.
+#   4. desplegar-pages   → "serviceagent-web" y "serviceagent-simuladores" en Cloudflare Pages.
+# Los pasos 3 y 4 SOLO corren si "verificar" pasó (needs).
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Nunca dos despliegues a la vez; si llega otro push, espera su turno.
+concurrency:
+  group: deploy-main
+  cancel-in-progress: false
+
+jobs:
+  verificar:
+    uses: ./.github/workflows/ci.yml
+
+  revisar-secretos:
+    name: revisar secretos de Cloudflare
+    runs-on: ubuntu-latest
+    outputs:
+      listos: ${{ steps.revisar.outputs.listos }}
+    steps:
+      - id: revisar
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            mensaje="Faltan los secretos CLOUDFLARE_API_TOKEN y/o CLOUDFLARE_ACCOUNT_ID. El despliegue se omitió. Agrégalos en Settings → Secrets and variables → Actions (ver README.md)."
+            echo "::warning title=Deploy omitido::$mensaje"
+            echo "### ⚠️ Deploy omitido" >> "$GITHUB_STEP_SUMMARY"
+            echo "$mensaje" >> "$GITHUB_STEP_SUMMARY"
+            echo "listos=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "listos=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  desplegar-api:
+    name: desplegar API (Workers)
+    needs: [verificar, revisar-secretos]
+    if: needs.revisar-secretos.outputs.listos == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: wrangler deploy
+        run: pnpm --filter @serviceagent/api run deploy
+
+  desplegar-pages:
+    name: desplegar ${{ matrix.app }} (Pages)
+    needs: [verificar, revisar-secretos]
+    if: needs.revisar-secretos.outputs.listos == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - app: web
+            proyecto: serviceagent-web
+          - app: simuladores
+            proyecto: serviceagent-simuladores
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    defaults:
+      run:
+        working-directory: apps/${{ matrix.app }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build
+        run: pnpm run build
+        env:
+          # URL pública de la API. Se define como *variable* (no secreto) del repo:
+          # Settings → Secrets and variables → Actions → Variables → VITE_API_URL.
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
+      - name: Crear proyecto de Pages si no existe
+        run: |
+          if pnpm exec wrangler pages project list | grep -qw "${{ matrix.proyecto }}"; then
+            echo "El proyecto ${{ matrix.proyecto }} ya existe."
+          else
+            pnpm exec wrangler pages project create "${{ matrix.proyecto }}" --production-branch=main
+          fi
+      - name: wrangler pages deploy
+        run: pnpm run deploy

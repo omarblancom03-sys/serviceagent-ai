@@ -1,0 +1,32 @@
+{
+  "name": "@serviceagent/simuladores",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Sistemas externos simulados: Banco y WhatsApp",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "deploy": "wrangler pages deploy dist --project-name=serviceagent-simuladores --branch=main",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@serviceagent/shared": "workspace:*",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "react-router": "^8.4.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "tailwindcss": "^4.3.3",
+    "typescript": "~6.0.3",
+    "vite": "^8.3.0",
+    "vitest": "^4.1.11",
+    "wrangler": "^4.130.0"
+  }
+}

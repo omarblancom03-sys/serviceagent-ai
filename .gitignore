@@ -1,0 +1,29 @@
+# Dependencias
+node_modules/
+
+# Builds
+dist/
+coverage/
+*.tsbuildinfo
+
+# Cloudflare / Wrangler
+.wrangler/
+
+# Secretos (nunca se suben)
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Sistema / editores
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
