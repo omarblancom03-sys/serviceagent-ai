@@ -28,6 +28,7 @@ Pendiente en `src/lib/`: firma de Retell en US-06, límites de uso en US-19, not
 - **Todo endpoint interno lleva `middleware: [requiereRol(...)]` y `security: [{ Bearer: [] }]`.** `admin` siempre pasa. Endpoints que cambian precios o recetas: solo `requiereRol('admin')`.
 - La ruta lee la sesión con `c.get('sesion')` (`sub`, `rol`, `exp`); nunca confía en datos del cuerpo para saber quién es el empleado.
 - Las filas de Supabase se validan con zod al leerlas (no hay tipos generados todavía).
+- Datos que varias peticiones cambian a la vez se actualizan con una función SQL vía `rpc()`, nunca con leer-calcular-guardar (D14). Ejemplo: `registrarIntentoFallido` en `repoEmpleados.ts`.
 - `vars` de `wrangler.jsonc` es solo para valores públicos; secretos en `.dev.vars` (local) o `wrangler secret put` (producción).
 
 ## Cómo probar
@@ -47,4 +48,4 @@ Los tests usan `crearApp({ ... })` con repos en memoria y `app.request(ruta, ini
 - [docs/negocio.md](../../docs/negocio.md): estados del pedido, pagos, inventario, tiempo estimado, auth y roles.
 - [docs/agente.md](../../docs/agente.md): endpoints de las custom functions y verificación de `X-Retell-Signature`.
 - [docs/despliegue.md](../../docs/despliegue.md): secretos del Worker (`JWT_SECRET`, `PIN_PEPPER`, `SUPABASE_*`) y despliegue.
-- [docs/decisiones.md](../../docs/decisiones.md): D2, D7, D8, D9, D12, D13.
+- [docs/decisiones.md](../../docs/decisiones.md): D2, D7, D8, D9, D12, D13, D14.

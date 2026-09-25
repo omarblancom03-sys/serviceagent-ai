@@ -6,7 +6,7 @@ Esquema y datos de la base de datos del proyecto (Supabase / PostgreSQL). Aquí 
 
 ## Cómo está organizado
 
-- `migrations/`: migraciones SQL versionadas. Hoy: `*_crear_empleados.sql` (US-04).
+- `migrations/`: migraciones SQL versionadas. Hoy: `*_crear_empleados.sql` (US-04): tabla `empleados` y función `registrar_intento_fallido` (contador atómico de PIN incorrectos, D14).
 - `seed/`: datos de desarrollo y demostración. Hoy: `empleados.sql` (un empleado por rol). El menú real se define en US-02-P2.
 - `config.toml`: configuración del CLI. Hoy solo declara el seed (`[db.seed] sql_paths`); el resto y `pnpm db:reset` se definen en US-02-P1.
 
@@ -29,6 +29,7 @@ Estos PIN son públicos: **nunca** se usa este seed en un ambiente real. Los has
   1. `revoke all on table public.<tabla> from anon, authenticated, service_role;`
   2. `grant` solo lo que la API necesita a `service_role` (el rol de la llave secreta), por columna si aplica. Ejemplo: `grant select on table public.empleados to service_role;`
   3. Ningún permiso para `anon` ni `authenticated`: los frontends nunca leen tablas directo, piden a la API (D12).
+- **Funciones:** `set search_path = ''` y nombres con esquema (`public.tabla`). Postgres deja ejecutar funciones a `PUBLIC` por defecto, así que cada una lleva `revoke execute ... from public, anon, authenticated;` y `grant execute ... to service_role;`.
 - **RLS activo en toda tabla nueva** (el proyecto también lo activa solo). Sin políticas: `service_role` tiene `BYPASSRLS` y los permisos por rol viven en la API.
 - El seed se puede correr varias veces (`on conflict ... do update`). Los datos simulados se marcan como tales.
 - El descuento y la reposición de inventario ocurren dentro de una transacción.
