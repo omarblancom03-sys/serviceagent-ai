@@ -12,11 +12,31 @@ export interface EmpleadoConPin extends EmpleadoPublico {
   bloqueadoHasta: Date | null;
 }
 
+export interface ReglaBloqueo {
+  maxIntentos: number;
+  minutosBloqueo: number;
+}
+
+export interface EstadoIntentos {
+  intentosFallidos: number;
+  bloqueadoHasta: Date | null;
+}
+
 /** Acceso a datos de empleados. En producción es Supabase; en los tests, memoria. */
 export interface EmpleadosRepo {
   listarActivos(): Promise<EmpleadoPublico[]>;
   buscarPorId(id: string): Promise<EmpleadoConPin | null>;
-  guardarIntentos(id: string, intentosFallidos: number, bloqueadoHasta: Date | null): Promise<void>;
+  /**
+   * Suma un intento fallido de forma ATÓMICA (sin leer y luego escribir) y bloquea al llegar a
+   * `regla.maxIntentos`. Si ya estaba bloqueado no cuenta nada. Devuelve el estado resultante,
+   * o `null` si el empleado no existe.
+   */
+  registrarIntentoFallido(
+    id: string,
+    regla: ReglaBloqueo,
+    ahora: Date,
+  ): Promise<EstadoIntentos | null>;
+  reiniciarIntentos(id: string): Promise<void>;
 }
 
 export type ResultadoLogin =
@@ -52,7 +72,7 @@ export async function iniciarSesion(
 
   if (await verificarPin(pin, empleado.pinHash, pepper)) {
     if (empleado.intentosFallidos > 0 || empleado.bloqueadoHasta) {
-      await repo.guardarIntentos(empleado.id, 0, null);
+      await repo.reiniciarIntentos(empleado.id);
     }
     return {
       tipo: 'ok',
@@ -60,15 +80,22 @@ export async function iniciarSesion(
     };
   }
 
-  const intentos = empleado.intentosFallidos + 1;
-  if (intentos >= MAX_INTENTOS_PIN) {
-    const hasta = new Date(ahora.getTime() + MINUTOS_BLOQUEO * 60_000);
-    await repo.guardarIntentos(empleado.id, 0, hasta);
-    return { tipo: 'bloqueado', minutosRestantes: MINUTOS_BLOQUEO };
+  // El contador lo suma la base (no aquí) para que peticiones simultáneas no se pisen.
+  const estado = await repo.registrarIntentoFallido(
+    empleado.id,
+    { maxIntentos: MAX_INTENTOS_PIN, minutosBloqueo: MINUTOS_BLOQUEO },
+    ahora,
+  );
+  if (!estado) {
+    return { tipo: 'pin_incorrecto', intentosRestantes: MAX_INTENTOS_PIN };
   }
-
-  await repo.guardarIntentos(empleado.id, intentos, null);
-  return { tipo: 'pin_incorrecto', intentosRestantes: MAX_INTENTOS_PIN - intentos };
+  if (estado.bloqueadoHasta && estado.bloqueadoHasta > ahora) {
+    return { tipo: 'bloqueado', minutosRestantes: minutosEntre(ahora, estado.bloqueadoHasta) };
+  }
+  return {
+    tipo: 'pin_incorrecto',
+    intentosRestantes: MAX_INTENTOS_PIN - estado.intentosFallidos,
+  };
 }
 
 function minutosEntre(desde: Date, hasta: Date): number {

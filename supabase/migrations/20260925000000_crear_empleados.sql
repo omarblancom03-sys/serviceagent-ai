@@ -26,3 +26,47 @@ grant update (intentos_fallidos, bloqueado_hasta) on table public.empleados to s
 -- RLS activo y sin políticas: segunda barrera si algún día alguien concede permisos a anon.
 -- service_role tiene BYPASSRLS; los permisos por rol de la app viven en la API (D12).
 alter table public.empleados enable row level security;
+
+-- Registra un PIN incorrecto en un solo UPDATE atómico. Si la API leyera el contador, le sumara 1
+-- y lo guardara, varias peticiones al mismo tiempo leerían el mismo valor y el bloqueo nunca
+-- llegaría. Al llegar a p_max_intentos bloquea p_minutos_bloqueo minutos y reinicia el contador.
+-- Si el empleado ya está bloqueado no cuenta nada y devuelve su estado actual.
+-- Las reglas (5 intentos, 15 min) viven en apps/api/src/services/sesion.ts y llegan como parámetros.
+-- Devuelve cero filas solo si el empleado no existe.
+create function public.registrar_intento_fallido(
+  p_empleado_id uuid,
+  p_max_intentos integer,
+  p_minutos_bloqueo integer,
+  p_ahora timestamptz default now()
+)
+returns table (intentos_fallidos integer, bloqueado_hasta timestamptz)
+language sql
+set search_path = ''
+as $$
+  with actualizado as (
+    update public.empleados e set
+      intentos_fallidos = case
+        when e.intentos_fallidos + 1 >= p_max_intentos then 0
+        else e.intentos_fallidos + 1
+      end,
+      bloqueado_hasta = case
+        when e.intentos_fallidos + 1 >= p_max_intentos
+          then p_ahora + make_interval(mins => p_minutos_bloqueo)
+        else null
+      end
+    where e.id = p_empleado_id
+      and (e.bloqueado_hasta is null or e.bloqueado_hasta <= p_ahora)
+    returning e.intentos_fallidos, e.bloqueado_hasta
+  )
+  select a.intentos_fallidos, a.bloqueado_hasta from actualizado a
+  union all
+  -- Ya estaba bloqueado: el UPDATE no tocó la fila y se devuelve tal como está.
+  select e.intentos_fallidos, e.bloqueado_hasta from public.empleados e
+  where e.id = p_empleado_id and not exists (select 1 from actualizado);
+$$;
+
+-- Postgres deja ejecutar funciones a PUBLIC por defecto: se quita y solo la API puede llamarla.
+revoke execute on function public.registrar_intento_fallido(uuid, integer, integer, timestamptz)
+  from public, anon, authenticated;
+grant execute on function public.registrar_intento_fallido(uuid, integer, integer, timestamptz)
+  to service_role;

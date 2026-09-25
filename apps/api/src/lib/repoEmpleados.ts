@@ -14,6 +14,12 @@ const FilaEmpleadoSchema = z.object({
   bloqueado_hasta: z.string().nullable(),
 });
 
+/** Fila que devuelve la función SQL `registrar_intento_fallido`. */
+const EstadoIntentosSchema = FilaEmpleadoSchema.pick({
+  intentos_fallidos: true,
+  bloqueado_hasta: true,
+});
+
 /** Implementación de `EmpleadosRepo` sobre Supabase. Valida con zod lo que devuelve la base. */
 export function crearRepoEmpleados(cliente: SupabaseClient): EmpleadosRepo {
   return {
@@ -48,15 +54,29 @@ export function crearRepoEmpleados(cliente: SupabaseClient): EmpleadosRepo {
       };
     },
 
-    async guardarIntentos(id, intentosFallidos, bloqueadoHasta) {
+    async registrarIntentoFallido(id, { maxIntentos, minutosBloqueo }, ahora) {
+      const { data, error } = await cliente.rpc('registrar_intento_fallido', {
+        p_empleado_id: id,
+        p_max_intentos: maxIntentos,
+        p_minutos_bloqueo: minutosBloqueo,
+        p_ahora: ahora.toISOString(),
+      });
+      if (error) throw new Error(`No se pudo registrar el intento: ${error.message}`);
+
+      const [fila] = z.array(EstadoIntentosSchema).parse(data);
+      if (!fila) return null;
+      return {
+        intentosFallidos: fila.intentos_fallidos,
+        bloqueadoHasta: fila.bloqueado_hasta ? new Date(fila.bloqueado_hasta) : null,
+      };
+    },
+
+    async reiniciarIntentos(id) {
       const { error } = await cliente
         .from('empleados')
-        .update({
-          intentos_fallidos: intentosFallidos,
-          bloqueado_hasta: bloqueadoHasta?.toISOString() ?? null,
-        })
+        .update({ intentos_fallidos: 0, bloqueado_hasta: null })
         .eq('id', id);
-      if (error) throw new Error(`No se pudieron guardar los intentos: ${error.message}`);
+      if (error) throw new Error(`No se pudieron reiniciar los intentos: ${error.message}`);
     },
   };
 }

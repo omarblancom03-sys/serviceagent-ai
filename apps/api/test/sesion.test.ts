@@ -64,6 +64,14 @@ describe('iniciarSesion', () => {
     expect(await intentar('0000')).toEqual({ tipo: 'pin_incorrecto', intentosRestantes: 4 });
   });
 
+  it('PIN incorrectos enviados al mismo tiempo también bloquean (contador atómico)', async () => {
+    const resultados = await Promise.all(Array.from({ length: 10 }, () => intentar('0000')));
+
+    expect(resultados.filter((r) => r.tipo === 'pin_incorrecto')).toHaveLength(4);
+    expect(resultados.filter((r) => r.tipo === 'bloqueado')).toHaveLength(6);
+    expect((await intentar('2222')).tipo).toBe('bloqueado');
+  });
+
   it('el bloqueo es por empleado', async () => {
     for (let i = 0; i < MAX_INTENTOS_PIN; i++) await intentar('0000');
 

@@ -49,9 +49,31 @@ export async function crearRepoEnMemoria() {
       const encontrado = empleados.get(id);
       return encontrado ? { ...encontrado } : null;
     },
-    async guardarIntentos(id, intentosFallidos, bloqueadoHasta) {
+    // Imita la función SQL `registrar_intento_fallido`: lee y escribe sin `await` de por medio,
+    // así que es atómica igual que el UPDATE de la base.
+    async registrarIntentoFallido(id, { maxIntentos, minutosBloqueo }, ahora) {
       const encontrado = empleados.get(id);
-      if (encontrado) empleados.set(id, { ...encontrado, intentosFallidos, bloqueadoHasta });
+      if (!encontrado) return null;
+      if (encontrado.bloqueadoHasta && encontrado.bloqueadoHasta > ahora) {
+        const { intentosFallidos, bloqueadoHasta } = encontrado;
+        return { intentosFallidos, bloqueadoHasta };
+      }
+      const intentos = encontrado.intentosFallidos + 1;
+      const estado =
+        intentos >= maxIntentos
+          ? {
+              intentosFallidos: 0,
+              bloqueadoHasta: new Date(ahora.getTime() + minutosBloqueo * 60_000),
+            }
+          : { intentosFallidos: intentos, bloqueadoHasta: null };
+      empleados.set(id, { ...encontrado, ...estado });
+      return estado;
+    },
+    async reiniciarIntentos(id) {
+      const encontrado = empleados.get(id);
+      if (encontrado) {
+        empleados.set(id, { ...encontrado, intentosFallidos: 0, bloqueadoHasta: null });
+      }
     },
   };
 
