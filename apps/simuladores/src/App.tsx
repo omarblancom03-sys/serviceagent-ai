@@ -3,7 +3,7 @@ import { Banco } from './pages/Banco';
 import { WhatsApp } from './pages/WhatsApp';
 
 /**
- * Simuladores de sistemas externos (CLAUDE.md D5).
+ * Simuladores de sistemas externos (docs/decisiones.md, D5).
  * Tienen un estilo visual distinto a apps/web a propósito: en la demo deben verse
  * como "otro sistema", no como parte del restaurante.
  */
