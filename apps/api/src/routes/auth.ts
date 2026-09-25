@@ -3,14 +3,19 @@ import {
   EmpleadoPublicoSchema,
   ErrorAuthSchema,
   LoginSchema,
+  SesionActualSchema,
   SesionSchema,
-  TokenPayloadSchema,
 } from '@serviceagent/shared';
 import { z } from 'zod';
 import { duracionEnSegundos, firmarToken, leerSecreto, requiereRol } from '../lib/auth';
 import { leerPepper } from '../lib/pin';
 import type { AppEnv, Bindings } from '../lib/env';
-import { iniciarSesion, listarEmpleados, type EmpleadosRepo } from '../services/sesion';
+import {
+  iniciarSesion,
+  listarEmpleados,
+  obtenerEmpleadoDeSesion,
+  type EmpleadosRepo,
+} from '../services/sesion';
 
 export interface DependenciasAuth {
   crearRepoEmpleados: (env: Bindings) => EmpleadosRepo;
@@ -50,11 +55,18 @@ const sesionRoute = createRoute({
   path: '/auth/sesion',
   tags,
   summary: 'Sesión del token actual',
+  description:
+    'Busca en la base al empleado del token (sub) y devuelve sus datos públicos y la expiración. ' +
+    'El nombre no viaja en el JWT: la web lo obtiene aquí.',
   security: [{ Bearer: [] }],
   middleware: [requiereRol('cocina', 'caja', 'admin')] as const,
   responses: {
-    200: { content: json(TokenPayloadSchema), description: 'Token válido' },
-    401: { content: json(ErrorAuthSchema), description: 'Sin token, token inválido o vencido' },
+    200: { content: json(SesionActualSchema), description: 'Token válido y empleado activo' },
+    401: {
+      content: json(ErrorAuthSchema),
+      description:
+        'Sin token, token inválido o vencido, o empleado inexistente, dado de baja o con otro rol',
+    },
   },
 });
 
@@ -102,5 +114,12 @@ export function registrarAuth(app: OpenAPIHono<AppEnv>, deps: DependenciasAuth) 
     return c.json({ token, expiraEn: new Date(exp * 1000).toISOString(), empleado }, 200);
   });
 
-  app.openapi(sesionRoute, (c) => c.json(c.get('sesion'), 200));
+  app.openapi(sesionRoute, async (c) => {
+    const { sub, rol, exp } = c.get('sesion');
+    const empleado = await obtenerEmpleadoDeSesion(deps.crearRepoEmpleados(c.env), { sub, rol });
+    if (!empleado) {
+      return c.json({ error: 'Sesión inválida o vencida. Vuelve a iniciar sesión.' }, 401);
+    }
+    return c.json({ empleado, exp }, 200);
+  });
 }

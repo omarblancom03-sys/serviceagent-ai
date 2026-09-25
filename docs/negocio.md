@@ -72,6 +72,6 @@ confirmado → (esperando_pago) → en_cola → preparando → listo → entrega
 - PIN guardado con hash (D13), nunca en texto plano.
 - **Bloqueo temporal:** al 5.º PIN incorrecto seguido, el empleado queda bloqueado **15 minutos**, aunque después ponga el PIN correcto. Un acceso correcto reinicia el contador. El bloqueo es por empleado.
 - Un empleado inexistente o dado de baja recibe la misma respuesta que un PIN incorrecto.
-- **JWT propio** de duración limitada (8 h por defecto, `JWT_EXPIRES_IN`). Lo firma y verifica la API con `JWT_SECRET`, no Supabase. El payload lleva **solo** `sub` (id del empleado), `rol` y `exp`; un token con otros campos se rechaza.
+- **JWT propio** de duración limitada (8 h por defecto, `JWT_EXPIRES_IN`). Lo firma y verifica la API con `JWT_SECRET`, no Supabase. El payload lleva **solo** `sub` (id del empleado), `rol` y `exp`; un token con otros campos se rechaza. El nombre no va en el token: `GET /auth/sesion` busca al empleado en la base y devuelve `{ empleado: { id, nombre, rol }, exp }`. Si ya no existe, está dado de baja o su rol cambió, responde 401 y hay que volver a entrar.
 - Cada endpoint interno y cada ruta del frontend se protege por rol. La seguridad real está en la API; las guardas del frontend solo ordenan la navegación.
 - Realtime solo avisa "algo cambió", sin datos sensibles; los datos se piden a la API con el JWT (D12).

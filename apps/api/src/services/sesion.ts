@@ -1,4 +1,4 @@
-import type { EmpleadoPublico, Login } from '@serviceagent/shared';
+import type { EmpleadoPublico, Login, TokenPayload } from '@serviceagent/shared';
 import { verificarPin } from '../lib/pin';
 
 /** Reglas de bloqueo (docs/negocio.md → Autenticación y roles). */
@@ -96,6 +96,20 @@ export async function iniciarSesion(
     tipo: 'pin_incorrecto',
     intentosRestantes: MAX_INTENTOS_PIN - estado.intentosFallidos,
   };
+}
+
+/**
+ * Empleado dueño de un token válido, según la base. `null` si ya no existe, está dado de baja
+ * o su rol cambió desde que se firmó el token: en esos casos el token ya no representa a nadie
+ * y hay que volver a iniciar sesión.
+ */
+export async function obtenerEmpleadoDeSesion(
+  repo: EmpleadosRepo,
+  { sub, rol }: Pick<TokenPayload, 'sub' | 'rol'>,
+): Promise<EmpleadoPublico | null> {
+  const empleado = await repo.buscarPorId(sub);
+  if (!empleado || !empleado.activo || empleado.rol !== rol) return null;
+  return { id: empleado.id, nombre: empleado.nombre, rol: empleado.rol };
 }
 
 function minutosEntre(desde: Date, hasta: Date): number {

@@ -42,6 +42,16 @@ export const SesionSchema = z.object({
 });
 export type Sesion = z.infer<typeof SesionSchema>;
 
+/**
+ * Respuesta de `GET /auth/sesion`: el empleado tal como está en la base (no lo que dice el token)
+ * y la expiración del token (`exp`, segundos Unix). Así la web obtiene el nombre sin meterlo al JWT.
+ */
+export const SesionActualSchema = z.object({
+  empleado: EmpleadoPublicoSchema,
+  exp: z.number().int().positive(),
+});
+export type SesionActual = z.infer<typeof SesionActualSchema>;
+
 /** Respuesta de error de los endpoints de autenticación. */
 export const ErrorAuthSchema = z.object({
   error: z.string(),

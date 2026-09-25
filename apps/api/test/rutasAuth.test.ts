@@ -1,6 +1,7 @@
-import { EmpleadoPublicoSchema, SesionSchema, TokenPayloadSchema } from '@serviceagent/shared';
+import { EmpleadoPublicoSchema, SesionActualSchema, SesionSchema } from '@serviceagent/shared';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { crearApp } from '../src/index';
+import type { EmpleadoConPin } from '../src/services/sesion';
 import { crearRepoEnMemoria, IDS, PEPPER_TEST } from './repoEnMemoria';
 
 const env = {
@@ -13,9 +14,11 @@ const env = {
 };
 
 let app: ReturnType<typeof crearApp>;
+let empleados: Map<string, EmpleadoConPin>;
 beforeEach(async () => {
-  const { repo } = await crearRepoEnMemoria();
-  app = crearApp({ crearRepoEmpleados: () => repo });
+  const enMemoria = await crearRepoEnMemoria();
+  empleados = enMemoria.empleados;
+  app = crearApp({ crearRepoEmpleados: () => enMemoria.repo });
 });
 
 const login = (empleadoId: string, pin: string) =>
@@ -104,19 +107,62 @@ describe('GET /auth/sesion', () => {
     expect((await app.request('/auth/sesion', {}, env)).status).toBe(401);
   });
 
-  it('con token devuelve sub, rol y exp', async () => {
-    const { token } = SesionSchema.parse(await (await login(IDS.caja, '2222')).json());
-    const res = await app.request(
-      '/auth/sesion',
-      { headers: { Authorization: `Bearer ${token}` } },
-      env,
-    );
+  const tokenDe = async (empleadoId: string, pin: string) =>
+    SesionSchema.parse(await (await login(empleadoId, pin)).json()).token;
+  const sesionCon = (token: string) =>
+    app.request('/auth/sesion', { headers: { Authorization: `Bearer ${token}` } }, env);
+  const modificar = (id: string, cambios: Partial<EmpleadoConPin>) => {
+    const empleado = empleados.get(id);
+    if (!empleado) throw new Error(`No existe el empleado ${id}`);
+    empleados.set(id, { ...empleado, ...cambios });
+  };
+
+  it('empleado activo: 200 con su nombre desde la base y la expiración del token', async () => {
+    const { token, expiraEn } = SesionSchema.parse(await (await login(IDS.caja, '2222')).json());
+    const exp = Date.parse(expiraEn) / 1000;
+
+    const res = await sesionCon(token);
 
     expect(res.status).toBe(200);
-    expect(TokenPayloadSchema.parse(await res.json())).toMatchObject({
-      sub: IDS.caja,
-      rol: 'caja',
+    const cuerpo = await res.json();
+    expect(SesionActualSchema.strict().parse(cuerpo)).toEqual({
+      empleado: { id: IDS.caja, nombre: 'Caja de prueba', rol: 'caja' },
+      exp,
     });
+    expect(JSON.stringify(cuerpo)).not.toContain('pbkdf2');
+  });
+
+  it('devuelve el nombre actual de la base, no uno guardado en el token', async () => {
+    const token = await tokenDe(IDS.caja, '2222');
+    modificar(IDS.caja, { nombre: 'Caja renombrada' });
+
+    const cuerpo = SesionActualSchema.parse(await (await sesionCon(token)).json());
+    expect(cuerpo.empleado.nombre).toBe('Caja renombrada');
+  });
+
+  it('empleado desactivado después de entrar: 401 aunque el token siga vigente', async () => {
+    const token = await tokenDe(IDS.caja, '2222');
+    modificar(IDS.caja, { activo: false });
+
+    const res = await sesionCon(token);
+    expect(res.status).toBe(401);
+    expect(await res.json()).toEqual({
+      error: 'Sesión inválida o vencida. Vuelve a iniciar sesión.',
+    });
+  });
+
+  it('empleado que ya no existe: 401', async () => {
+    const token = await tokenDe(IDS.caja, '2222');
+    empleados.delete(IDS.caja);
+
+    expect((await sesionCon(token)).status).toBe(401);
+  });
+
+  it('empleado al que le cambiaron el rol: 401 (el token dice otro rol)', async () => {
+    const token = await tokenDe(IDS.caja, '2222');
+    modificar(IDS.caja, { rol: 'admin' });
+
+    expect((await sesionCon(token)).status).toBe(401);
   });
 });
 
