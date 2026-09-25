@@ -13,7 +13,7 @@ export default tseslint.config(
   ...tseslint.configs.recommended,
   {
     rules: {
-      // CLAUDE.md §8: nada de `any` salvo justificación en comentario.
+      // CLAUDE.md → Reglas de oro: nada de `any` salvo justificación en comentario.
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/consistent-type-imports': 'error',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
