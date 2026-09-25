@@ -9,6 +9,9 @@ coverage/
 # Cloudflare / Wrangler
 .wrangler/
 
+# Claude Code: ajustes personales (los compartidos van en .claude/settings.json)
+.claude/settings.local.json
+
 # Secretos (nunca se suben)
 .env
 .env.*

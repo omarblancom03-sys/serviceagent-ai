@@ -29,3 +29,4 @@
 - [ ] Si toca al agente: prompt versionado en `agent/` y pasan los casos de `agent/tests/`.
 - [ ] `.env.example` actualizado si hay variables nuevas. Ningún secreto en el código.
 - [ ] Dependencias nuevas justificadas en este PR (por qué y qué alternativas se consideraron).
+- [ ] Corrí `/cerrar-historia` y la documentación está al día.
