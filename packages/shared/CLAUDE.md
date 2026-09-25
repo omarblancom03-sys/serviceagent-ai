@@ -8,6 +8,7 @@ Paquete `@serviceagent/shared`: esquemas zod, tipos y constantes que usan la API
 
 - `src/index.ts`: reexporta todo (`export * from './<archivo>'`). Es la única entrada del paquete.
 - `src/health.ts`: `HealthResponseSchema` y `HealthResponse`, la respuesta de `GET /health`.
+- `src/auth.ts`: roles, PIN, login, sesión, errores de autenticación y `TokenPayloadSchema` (estricto: solo `sub`, `rol`, `exp`).
 - Esquemas del menú: pendiente: se define en US-03-P1.
 
 Se consume como **código TypeScript fuente, sin paso de build** (D9): `package.json` apunta `exports` a `./src/index.ts` y Vite y Wrangler lo compilan.

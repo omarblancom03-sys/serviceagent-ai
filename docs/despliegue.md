@@ -17,6 +17,27 @@
   pnpm exec wrangler secret list                            # lista los secretos cargados
   ```
 
+### `JWT_SECRET` (sesiones de empleados)
+
+Firma los JWT del login por PIN (docs/negocio.md → Autenticación). Si falta o tiene menos de 32 caracteres, `POST /auth/login` responde 500 y no toca los intentos del empleado.
+
+- **Local:** genera uno y ponlo en `apps/api/.dev.vars` (`JWT_SECRET=<valor>`):
+
+  ```bash
+  openssl rand -base64 32
+  ```
+
+- **Producción:** uno distinto al de local, cargado con `cd apps/api && pnpm exec wrangler secret put JWT_SECRET`.
+- Nunca en código, en `wrangler.jsonc` ni en commits. Cambiarlo cierra todas las sesiones abiertas.
+
+### `PIN_PEPPER` (hash de los PIN)
+
+Secreto que se mezcla con cada PIN (HMAC) antes del hash (D13). No vive en la base: si alguien roba la tabla `empleados`, sin el pepper no puede probar los 10 000 PIN posibles. Si falta o tiene menos de 32 caracteres, `POST /auth/login` responde 500 sin tocar los intentos.
+
+- **Desarrollo:** un solo valor para todo el equipo, porque todos usan el mismo proyecto de Supabase y el seed se genera con él. Quien lo crea (`openssl rand -base64 32`) lo comparte por un canal privado; cada quien lo pone en `apps/api/.dev.vars`.
+- **Producción:** uno distinto, con `cd apps/api && pnpm exec wrangler secret put PIN_PEPPER`. Los empleados de producción se crean con hashes generados con ese pepper, nunca con el seed de desarrollo.
+- **Cambiarlo invalida todos los PIN guardados.** Hay que regenerar los hashes (`pnpm --filter @serviceagent/api hash-pin <PIN>`).
+
 ### Frontends (web y simuladores)
 
 - Vite solo expone variables con prefijo `VITE_`, y **terminan en el navegador**. Nunca pongas secretos ahí.
