@@ -1,6 +1,7 @@
 import { createRoute, type OpenAPIHono } from '@hono/zod-openapi';
 import { HealthResponseSchema } from '@serviceagent/shared';
 import pkg from '../../package.json';
+import type { AppEnv } from '../lib/env';
 
 const healthRoute = createRoute({
   method: 'get',
@@ -15,6 +16,6 @@ const healthRoute = createRoute({
   },
 });
 
-export function registrarHealth(app: OpenAPIHono) {
+export function registrarHealth(app: OpenAPIHono<AppEnv>) {
   app.openapi(healthRoute, (c) => c.json({ ok: true as const, version: pkg.version }, 200));
 }

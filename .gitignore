@@ -6,6 +6,9 @@ dist/
 coverage/
 *.tsbuildinfo
 
+# Supabase CLI (datos locales de `supabase link`)
+supabase/.temp/
+
 # Cloudflare / Wrangler
 .wrangler/
 

@@ -1,0 +1,6 @@
+# Configuración del CLI de Supabase. Por ahora solo declara el seed (US-04);
+# el resto de la configuración se agrega en US-02-P1. Ver supabase/CLAUDE.md.
+
+[db.seed]
+enabled = true
+sql_paths = ["./seed/*.sql"]
