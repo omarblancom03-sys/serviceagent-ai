@@ -2,6 +2,7 @@ import {
   EmpleadoPublicoSchema,
   TokenPayloadSchema,
   type EmpleadoPublico,
+  type SesionActual,
   type TokenPayload,
 } from '@serviceagent/shared';
 
@@ -48,6 +49,20 @@ export function crearSesion(
   if (!payload || tokenVencido(payload, ahora)) return null;
   if (payload.sub !== empleado.id || payload.rol !== empleado.rol) return null;
   return { token, payload, empleado };
+}
+
+/**
+ * Sesión con el empleado que devolvió `GET /auth/sesion` (sale de la base: el nombre no viaja en
+ * el JWT). `null` si la respuesta no corresponde a este token: otro empleado, otro rol u otra
+ * expiración.
+ */
+export function confirmarSesion(
+  token: string,
+  actual: SesionActual,
+  ahora: number = Date.now(),
+): SesionActiva | null {
+  const sesion = crearSesion(token, actual.empleado, ahora);
+  return sesion && sesion.payload.exp === actual.exp ? sesion : null;
 }
 
 /**

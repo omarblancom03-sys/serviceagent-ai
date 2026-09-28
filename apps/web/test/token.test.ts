@@ -1,6 +1,7 @@
 import type { EmpleadoPublico } from '@serviceagent/shared';
 import { describe, expect, it } from 'vitest';
 import {
+  confirmarSesion,
   crearSesion,
   leerPayload,
   leerSesionGuardada,
@@ -65,6 +66,22 @@ describe('crearSesion', () => {
   it('rechaza un token de otro empleado o con otro rol', () => {
     expect(crearSesion(tokenCaja(), { ...CAJA, id: crypto.randomUUID() }, AHORA)).toBeNull();
     expect(crearSesion(tokenCaja(), { ...CAJA, rol: 'admin' }, AHORA)).toBeNull();
+  });
+});
+
+describe('confirmarSesion', () => {
+  it('toma el nombre que devuelve /auth/sesion, no el guardado del login', () => {
+    const actual = { empleado: { ...CAJA, nombre: 'Caja renombrada' }, exp: EN_8_HORAS };
+    expect(confirmarSesion(tokenCaja(), actual, AHORA)?.empleado.nombre).toBe('Caja renombrada');
+  });
+
+  it('rechaza una respuesta de otro empleado, con otro rol o con otra expiración', () => {
+    const otroId = { empleado: { ...CAJA, id: crypto.randomUUID() }, exp: EN_8_HORAS };
+    const otroRol = { empleado: { ...CAJA, rol: 'admin' as const }, exp: EN_8_HORAS };
+    const otraExp = { empleado: CAJA, exp: EN_8_HORAS + 60 };
+    expect(confirmarSesion(tokenCaja(), otroId, AHORA)).toBeNull();
+    expect(confirmarSesion(tokenCaja(), otroRol, AHORA)).toBeNull();
+    expect(confirmarSesion(tokenCaja(), otraExp, AHORA)).toBeNull();
   });
 });
 

@@ -1,8 +1,9 @@
-import { TokenPayloadSchema, type Sesion } from '@serviceagent/shared';
+import { SesionActualSchema, type Sesion } from '@serviceagent/shared';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { ErrorApi, pedirApi } from '../lib/api';
 import {
+  confirmarSesion,
   crearSesion,
   LLAVE_SESION,
   leerSesionGuardada,
@@ -45,7 +46,8 @@ function guardar(sesion: SesionActiva | null) {
 /**
  * Sesión del empleado (docs/negocio.md → Autenticación y roles). El token vive en `localStorage`
  * hasta que vence (8 h). Al cargar la app se descarta si venció y se confirma con
- * `GET /auth/sesion`; al llegar la hora de `exp` se cierra sola.
+ * `GET /auth/sesion`, que además trae el nombre actual del empleado desde la base; al llegar la
+ * hora de `exp` se cierra sola.
  */
 export function SesionProvider({ children }: { children: ReactNode }) {
   const [sesion, setSesion] = useState<SesionActiva | null>(leerAlmacenada);
@@ -72,12 +74,25 @@ export function SesionProvider({ children }: { children: ReactNode }) {
     return () => clearTimeout(temporizador);
   }, [exp, cerrarSesion]);
 
-  // Confirma con la API que el token guardado sigue siendo válido (firma y secreto actuales).
+  // Confirma con la API que el token guardado sigue siendo válido y que el empleado sigue activo
+  // con ese rol, y toma de la base sus datos actuales (el nombre no viaja en el JWT).
   useEffect(() => {
     if (!token) return;
-    pedirApi('/auth/sesion', TokenPayloadSchema, { token }).catch((error: unknown) => {
-      if (error instanceof ErrorApi && error.status === 401) cerrarSesion();
-    });
+    let vigente = true;
+    pedirApi('/auth/sesion', SesionActualSchema, { token })
+      .then((actual) => {
+        if (!vigente) return;
+        const confirmada = confirmarSesion(token, actual);
+        if (!confirmada) return cerrarSesion();
+        guardar(confirmada);
+        setSesion(confirmada);
+      })
+      .catch((error: unknown) => {
+        if (vigente && error instanceof ErrorApi && error.status === 401) cerrarSesion();
+      });
+    return () => {
+      vigente = false;
+    };
   }, [token, cerrarSesion]);
 
   const pedirConSesion = useCallback<typeof pedirApi>(

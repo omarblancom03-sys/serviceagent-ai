@@ -34,7 +34,7 @@ SPA en React + Vite + Tailwind + React Router para clientes y empleados. Se desp
 - **Pantalla interna nueva:** se agrega a `PANTALLAS_EMPLEADO` con sus roles; `App.tsx` la envuelve en `RutaProtegida` y la muestra en el menú solo a quien puede verla. `admin` entra a todo.
 - Las guardas solo ordenan la navegación; la seguridad real está en la API (`requiereRol`). Nunca se oculta un dato sensible solo en el frontend.
 - **Llamadas con sesión:** siempre con `pedirConSesion` de `useSesion()`. Agrega el token y, ante un 401, cierra la sesión (vencida o inválida). Sin sesión: `pedirApi`.
-- **Sesión:** en `localStorage` (`serviceagent.sesion`) se guardan el token y los datos públicos del empleado (`id`, `nombre`, `rol`) que devuelve `POST /auth/login`. Al cargar la app se descarta si venció o no coincide con el token, y se confirma con `GET /auth/sesion`. Se cierra sola al llegar a `exp`.
+- **Sesión:** en `localStorage` (`serviceagent.sesion`) se guardan el token y los datos públicos del empleado (`id`, `nombre`, `rol`) que devuelve `POST /auth/login`. Al cargar la app se descarta si venció o no coincide con el token, y se confirma con `GET /auth/sesion`: con 401 se cierra; si no, el empleado guardado se reemplaza por el que devuelve la API (el nombre sale de la base, no del JWT). Se cierra sola al llegar a `exp`.
 - El rol se lee del token (`sesion.payload.rol`), no de los datos guardados del empleado.
 - Variables de entorno solo con prefijo `VITE_` y nunca secretas (terminan en el navegador).
 
