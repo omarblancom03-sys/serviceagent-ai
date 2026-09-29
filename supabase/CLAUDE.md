@@ -6,9 +6,10 @@ Esquema y datos de la base de datos del proyecto (Supabase / PostgreSQL). Aquí 
 
 ## Cómo está organizado
 
-- `migrations/`: migraciones SQL versionadas. Hoy: `*_crear_empleados.sql` (US-04): tabla `empleados` y función `registrar_intento_fallido` (contador atómico de PIN incorrectos, D14). `*_crear_esquema_menu.sql` (US-02): tablas del menú. `*_cerrar_lectura_publica_menu.sql`: quita la lectura pública del menú (D15).
-- `seed/`: datos de desarrollo y demostración. Hoy: `empleados.sql` (un empleado por rol). El menú real se define en US-02-P2.
-- `config.toml`: configuración del CLI. Hoy solo declara el seed (`[db.seed] sql_paths`); el resto y `pnpm db:reset` se definen en US-02-P1.
+- `migrations/`: migraciones SQL versionadas. Hoy: `*_crear_empleados.sql` (US-04): tabla `empleados` y función `registrar_intento_fallido` (contador atómico de PIN incorrectos, D14). `*_crear_esquema_menu.sql` (US-02): tablas del menú. `*_cerrar_lectura_publica_menu.sql`: quita la lectura pública del menú (D15). `*_platillo_extra_y_fix_permisos.sql` (US-02-P1): tabla `platillo_extra` (qué extras aplican a qué platillo) y corrige un GRANT faltante de `sinonimo_producto`.
+- `seed/`: datos de desarrollo y demostración. Hoy: `empleados.sql` (un empleado por rol), `01_menu_el_granero.sql` (menú real, US-02-P2) y `02_platillo_extra.sql` (relación de "Espuelas" con los cortes que la permiten, US-02-P1).
+- `config.toml`: configuración del CLI. Declara el orden de los seeds (`[db.seed] sql_paths`) y se usa junto con el script `pnpm db:reset` de la raíz.
+- [`README.md`](./README.md): diagrama entidad-relación del menú (Mermaid), con las tablas reales y su explicación.
 
 ### Empleados de prueba (SOLO DESARROLLO)
 
@@ -31,7 +32,7 @@ Estos PIN son públicos: **nunca** se usa este seed en un ambiente real. Los has
   3. Ningún permiso para `anon` ni `authenticated`: los frontends nunca leen tablas directo, piden a la API (D12).
 - **Funciones:** `set search_path = ''` y nombres con esquema (`public.tabla`). Postgres deja ejecutar funciones a `PUBLIC` por defecto, así que cada una lleva `revoke execute ... from public, anon, authenticated;` y `grant execute ... to service_role;`.
 - **RLS activo en toda tabla nueva** (el proyecto también lo activa solo). Sin políticas: `service_role` tiene `BYPASSRLS` y los permisos por rol viven en la API.
-- El seed se puede correr varias veces (`on conflict ... do update`). Los datos simulados se marcan como tales.
+- El seed se puede correr varias veces (`on conflict ... do nothing` o `do update`). Los datos simulados se marcan como tales.
 - El descuento y la reposición de inventario ocurren dentro de una transacción.
 
 ## Cómo probar
@@ -43,12 +44,13 @@ pnpm dlx supabase login                                  # una vez: abre el nave
 pnpm dlx supabase link --project-ref <ref-del-proyecto>  # una vez: pide la contraseña de la base
 pnpm dlx supabase db push --dry-run --include-seed       # ver qué se aplicaría
 pnpm dlx supabase db push --include-seed                 # aplicar migraciones pendientes + seed
+pnpm db:reset                                             # recrea todo desde cero (equivale a `supabase db reset --linked`)
 ```
 
 - `db push` aplica solo las migraciones que faltan y lleva el registro en la base. `--include-seed` además corre los archivos de `seed/` declarados en `config.toml`.
-- `supabase db reset --linked` **borra todo** en el proyecto remoto y lo recrea: solo en el proyecto de desarrollo y avisando al equipo.
+- `pnpm db:reset` (`supabase db reset --linked`) **borra todo** en el proyecto enlazado y lo recrea. **Solo se usa contra un proyecto personal de Supabase** (uno por dev, gratuito, fuera de la organización) — nunca contra el proyecto compartido de desarrollo. Ahí solo se hace `db push`; un reset completo del compartido lo coordina Omar avisando al equipo.
 - Necesitan Docker, y **no** los usamos: `supabase start`, `db pull`, `db diff`.
-- Verificar: en el dashboard (Table Editor) debe verse `empleados` con 3 filas, y `POST /auth/login` con los PIN de arriba debe responder 200.
+- Verificar: en el dashboard (Table Editor) debe verse `empleados` con 3 filas, el menú con sus categorías y platillos, `platillo_extra` con 5 filas (espuelas), y `POST /auth/login` con los PIN de arriba debe responder 200.
 
 ## Reglas que aplican
 
