@@ -1,4 +1,4 @@
-# supabase/ — Base de datos
+﻿# supabase/ — Base de datos
 
 ## Qué es
 

@@ -1,4 +1,4 @@
--- US-02-P1: relacion platillo <-> extra, y correccion de un permiso faltante
+﻿-- US-02-P1: relacion platillo <-> extra, y correccion de un permiso faltante
 -- de la migracion anterior.
 --
 -- A) Bug encontrado en 20260929120000_cerrar_lectura_publica_menu.sql: el
