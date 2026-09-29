@@ -21,7 +21,7 @@ Proyecto académico de Metodologías Ágiles (Scrum). El restaurante es real, pe
 - **Agente:** Retell AI, chat primero y voz al final (Sprint 10). **Anti-abuso:** Cloudflare Turnstile + límites de uso en la API.
 - **Calidad:** Vitest · ESLint + Prettier · GitHub Actions (lint, tipos, tests) y despliegue automático a Cloudflare al fusionar a `main`.
 
-No usamos Docker. No agregues dependencias sin justificarlo en el PR.
+No usamos Docker por ahora ([D16](docs/decisiones.md)). No agregues dependencias sin justificarlo en el PR.
 
 ## Estructura
 
@@ -70,7 +70,8 @@ pnpm --filter @serviceagent/api test   # un script en un solo paquete
 - Una rama por historia o tarea: `feat/US-07-cotizar-pedido`, `fix/US-10-orden-tickets`, `chore/US-01-ci`.
 - Conventional Commits con la historia: `feat(US-07): calcular total con extras en backend`.
 - PR pequeños (idealmente < 400 líneas) con la plantilla: historia (`US-XX`) y enlace a Trello, criterios de aceptación que cubre y cómo probarlo.
-- **Cada PR necesita 1 aprobación de otro developer** (no del autor); las revisiones se rotan entre los 4. CI en verde antes de fusionar.
+- **Cada PR necesita 1 aprobación de otro developer** que no sea autor ni coautor; las revisiones se rotan entre los 4. CI en verde antes de fusionar.
+- **Solo Omar (PO) fusiona a `main`**, con **Squash and merge** y borrando la rama después ([D17](docs/decisiones.md)).
 - Versiones por sprint y Definition of Done: [docs/proceso.md](docs/proceso.md).
 
 ## Documentación
@@ -86,16 +87,17 @@ Reglas completas en [docs/documentacion.md](docs/documentacion.md):
 ## Instrucciones para la IA
 
 1. Si no te lo dijeron, **pregunta en qué historia (`US-XX`) se trabaja** y pide sus criterios de aceptación.
-2. Limítate al alcance de esa historia. Nada de refactors ni cambios en otras áreas sin avisar.
-3. Antes de escribir código, propón un plan corto (archivos, enfoque) y espera confirmación en cambios grandes.
-4. Respeta las [reglas de negocio](docs/negocio.md), en especial: **el dinero lo calcula el backend**.
-5. Escribe tests (Vitest) para lo que implementes. Para cambios del agente, agrega casos en `agent/tests/`.
-6. No agregues dependencias sin explicar por qué y qué alternativas consideraste.
-7. No inventes APIs de Retell, Supabase, Cloudflare o Hono: consulta la documentación oficial o di que no estás seguro.
-8. Nunca escribas secretos en el código ni en commits.
-9. Al terminar, resume qué cambió, qué criterios cubre, cómo probarlo y qué quedó pendiente; sugiere mensaje de commit y descripción del PR.
-10. Si detectas un bloqueo o una decisión de producto o arquitectura que no te corresponde, detente y repórtalo.
-11. Explica en español y de forma clara: el equipo está aprendiendo, la explicación importa tanto como el código.
+2. Antes de escribir código, confirma que la historia está asignada en Trello a quien pide el trabajo; si es de otra persona, solo revisa y da retroalimentación: no implementes, no apliques migraciones ni hagas commits.
+3. Limítate al alcance de esa historia. Nada de refactors ni cambios en otras áreas sin avisar.
+4. Antes de escribir código, propón un plan corto (archivos, enfoque) y espera confirmación en cambios grandes.
+5. Respeta las [reglas de negocio](docs/negocio.md), en especial: **el dinero lo calcula el backend**.
+6. Escribe tests (Vitest) para lo que implementes. Para cambios del agente, agrega casos en `agent/tests/`.
+7. No agregues dependencias sin explicar por qué y qué alternativas consideraste.
+8. No inventes APIs de Retell, Supabase, Cloudflare o Hono: consulta la documentación oficial o di que no estás seguro.
+9. Nunca escribas secretos en el código ni en commits.
+10. Al terminar, resume qué cambió, qué criterios cubre, cómo probarlo y qué quedó pendiente; sugiere mensaje de commit y descripción del PR.
+11. Si detectas un bloqueo o una decisión de producto o arquitectura que no te corresponde, detente y repórtalo.
+12. Explica en español y de forma clara: el equipo está aprendiendo, la explicación importa tanto como el código.
 
 ## Índice: dónde está qué
 
