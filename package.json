@@ -14,7 +14,8 @@
     "lint": "eslint . && prettier --check .",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "db:reset": "pnpm dlx supabase db reset --linked"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
