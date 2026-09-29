@@ -6,7 +6,7 @@ Esquema y datos de la base de datos del proyecto (Supabase / PostgreSQL). Aquí 
 
 ## Cómo está organizado
 
-- `migrations/`: migraciones SQL versionadas. Hoy: `*_crear_empleados.sql` (US-04): tabla `empleados` y función `registrar_intento_fallido` (contador atómico de PIN incorrectos, D14).
+- `migrations/`: migraciones SQL versionadas. Hoy: `*_crear_empleados.sql` (US-04): tabla `empleados` y función `registrar_intento_fallido` (contador atómico de PIN incorrectos, D14). `*_crear_esquema_menu.sql` (US-02): tablas del menú. `*_cerrar_lectura_publica_menu.sql`: quita la lectura pública del menú (D15).
 - `seed/`: datos de desarrollo y demostración. Hoy: `empleados.sql` (un empleado por rol). El menú real se define en US-02-P2.
 - `config.toml`: configuración del CLI. Hoy solo declara el seed (`[db.seed] sql_paths`); el resto y `pnpm db:reset` se definen en US-02-P1.
 
@@ -53,5 +53,5 @@ pnpm dlx supabase db push --include-seed                 # aplicar migraciones p
 ## Reglas que aplican
 
 - [docs/negocio.md](../docs/negocio.md): autenticación, estados del pedido con su hora, pagos, inventario y recetas.
-- [docs/decisiones.md](../docs/decisiones.md): D2, D3, D7, D12, D13 y pendiente de embeddings (US-16).
+- [docs/decisiones.md](../docs/decisiones.md): D2, D3, D7, D12, D13, D14, D15 y pendiente de embeddings (US-16).
 - [docs/despliegue.md](../docs/despliegue.md): variables `SUPABASE_*`; la llave de servicio solo en la API.
