@@ -1,15 +1,6 @@
-﻿-- US-02-P1: relacion platillo <-> extra, y correccion de un permiso faltante
--- de la migracion anterior.
+-- US-02-P1: relacion platillo <-> extra.
 --
--- A) Bug encontrado en 20260929120000_cerrar_lectura_publica_menu.sql: el
---    revoke all quito TODOS los permisos de sinonimo_producto (incluido
---    service_role) pero el grant select nunca se lo devolvio. Sin este
---    fix, la API no puede leer esa tabla. Se corrige aqui en vez de editar
---    la migracion ya aplicada, porque las migraciones existentes no se
---    tocan (regla del equipo: toda correccion va en una migracion nueva).
-grant select on table public.sinonimo_producto to service_role;
-
--- B) Tabla platillo_extra: falta en el esquema una forma de saber que
+-- Tabla platillo_extra: falta en el esquema una forma de saber que
 --    extras aplican a que platillo. Ejemplo real del menu: "con espuelas"
 --    (+$55) solo aplica a T-Bone, Arrachera, Arrachera al Chipotle, Sirloin
 --    y Rib Eye (450 gr) -- no a cualquier platillo. Sin esta tabla el

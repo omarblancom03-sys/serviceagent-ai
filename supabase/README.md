@@ -1,11 +1,11 @@
-﻿# supabase/
+# supabase/
 
 Documentación de esta carpeta: [CLAUDE.md](./CLAUDE.md).
 
 ## Diagrama entidad-relación — Menú (US-02-P1)
 
 Refleja el esquema real definido en `migrations/20260929100000_crear_esquema_menu.sql`
-y `migrations/20260929130000_platillo_extra_y_fix_permisos.sql`.
+y `migrations/20260929130000_crear_platillo_extra.sql`.
 
 ```mermaid
 erDiagram

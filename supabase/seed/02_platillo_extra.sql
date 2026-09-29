@@ -1,4 +1,4 @@
-﻿-- Seed de platillo_extra (US-02-P1)
+-- Seed de platillo_extra (US-02-P1)
 --
 -- Relaciona el extra "Espuelas (camarones)" con los 5 cortes de 450 gr que
 -- lo permiten, segun ProductosRestaurante.MD. El propio comentario del seed

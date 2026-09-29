@@ -1,4 +1,4 @@
-﻿# supabase/ — Base de datos
+# supabase/ — Base de datos
 
 ## Qué es
 
@@ -6,9 +6,9 @@ Esquema y datos de la base de datos del proyecto (Supabase / PostgreSQL). Aquí 
 
 ## Cómo está organizado
 
-- `migrations/`: migraciones SQL versionadas. Hoy: `*_crear_empleados.sql` (US-04): tabla `empleados` y función `registrar_intento_fallido` (contador atómico de PIN incorrectos, D14). `*_crear_esquema_menu.sql` (US-02): tablas del menú. `*_cerrar_lectura_publica_menu.sql`: quita la lectura pública del menú (D15). `*_platillo_extra_y_fix_permisos.sql` (US-02-P1): tabla `platillo_extra` (qué extras aplican a qué platillo) y corrige un GRANT faltante de `sinonimo_producto`.
+- `migrations/`: migraciones SQL versionadas. Hoy: `*_crear_empleados.sql` (US-04): tabla `empleados` y función `registrar_intento_fallido` (contador atómico de PIN incorrectos, D14). `*_crear_esquema_menu.sql` (US-02): tablas del menú. `*_cerrar_lectura_publica_menu.sql`: quita la lectura pública del menú (D15). `*_crear_platillo_extra.sql` (US-02-P1): tabla `platillo_extra` (qué extras aplican a qué platillo).
 - `seed/`: datos de desarrollo y demostración. Hoy: `empleados.sql` (un empleado por rol), `01_menu_el_granero.sql` (menú real, US-02-P2) y `02_platillo_extra.sql` (relación de "Espuelas" con los cortes que la permiten, US-02-P1).
-- `config.toml`: configuración del CLI. Declara el orden de los seeds (`[db.seed] sql_paths`) y se usa junto con el script `pnpm db:reset` de la raíz.
+- `config.toml`: configuración del CLI. Declara el orden de los seeds (`[db.seed] sql_paths`) y se usa junto con el script `pnpm db:reset:personal` de la raíz.
 - [`README.md`](./README.md): diagrama entidad-relación del menú (Mermaid), con las tablas reales y su explicación.
 
 ### Empleados de prueba (SOLO DESARROLLO)
@@ -45,13 +45,13 @@ pnpm dlx supabase link --project-ref <ref-del-proyecto>  # una vez: pide la cont
 pnpm dlx supabase projects list                          # verificar a qué proyecto está enlazado (LINKED)
 pnpm dlx supabase db push --dry-run --include-seed       # ver qué se aplicaría
 pnpm dlx supabase db push --include-seed                 # aplicar (solo con el dry-run aprobado por Omar, si es serviceagent-dev)
-pnpm db:reset                                             # recrea todo desde cero — solo contra tu proyecto personal
+pnpm db:reset:personal                                    # recrea todo desde cero — solo contra tu proyecto personal
 ```
 
 - `db push` aplica solo las migraciones que faltan y lleva el registro en la base. `--include-seed` además corre los archivos de `seed/` declarados en `config.toml`.
 - **Antes de cualquier `db reset` o `db push`, verifica a qué proyecto está enlazado el CLI** (`projects list`).
 - **`serviceagent-dev` nunca se resetea** (D16): prohibido `db reset --linked` enlazado a él. Solo Omar, o quien él autorice, hace `db push` a `serviceagent-dev`, y solo después de que apruebe la salida del `--dry-run`.
-- Para probar que la base se recrea desde cero (criterio de US-02-P1), usa el script `pnpm db:reset` (equivale a `supabase db reset --linked`), enlazado a tu **proyecto personal** de Supabase. No lo uses enlazado al compartido.
+- Para probar que la base se recrea desde cero (criterio de US-02-P1), usa el script `pnpm db:reset:personal` (equivale a `supabase db reset --linked`), enlazado a tu **proyecto personal** de Supabase. No lo uses enlazado al compartido.
 - Necesitan Docker, y **no** los usamos: `supabase start`, `db pull`, `db diff`.
 - Verificar: en el dashboard (Table Editor) debe verse `empleados` con 3 filas, el menú con sus categorías y platillos, `platillo_extra` con 5 filas (espuelas), y `POST /auth/login` con los PIN de arriba debe responder 200.
 
