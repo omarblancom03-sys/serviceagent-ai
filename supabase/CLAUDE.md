@@ -2,7 +2,7 @@
 
 ## Qué es
 
-Esquema y datos de la base de datos del proyecto (Supabase / PostgreSQL). Aquí vive todo lo que define tablas, índices, funciones, RLS y datos iniciales. En desarrollo usamos un **proyecto de Supabase en la nube**, sin Docker.
+Esquema y datos de la base de datos del proyecto (Supabase / PostgreSQL). Aquí vive todo lo que define tablas, índices, funciones, RLS y datos iniciales. En desarrollo todos usamos el proyecto compartido **`serviceagent-dev`** en la nube de Supabase, sin Docker ([D16](../docs/decisiones.md)).
 
 ## Cómo está organizado
 
@@ -29,7 +29,7 @@ Estos PIN son públicos: **nunca** se usa este seed en un ambiente real. Los has
 - **Permisos explícitos en toda tabla nueva.** El proyecto tiene desactivado "Automatically expose new tables", así que una tabla sin GRANT no se puede usar (error `42501`). Cada migración que crea una tabla incluye, en este orden:
   1. `revoke all on table public.<tabla> from anon, authenticated, service_role;`
   2. `grant` solo lo que la API necesita a `service_role` (el rol de la llave secreta), por columna si aplica. Ejemplo: `grant select on table public.empleados to service_role;`
-  3. Ningún permiso para `anon` ni `authenticated`: los frontends nunca leen tablas directo, piden a la API (D12).
+  3. Ningún permiso ni policy para `anon` ni `authenticated`, **ni siquiera en tablas de lectura pública como el menú**: los frontends nunca leen tablas directo, piden a la API (D12, D15).
 - **Funciones:** `set search_path = ''` y nombres con esquema (`public.tabla`). Postgres deja ejecutar funciones a `PUBLIC` por defecto, así que cada una lleva `revoke execute ... from public, anon, authenticated;` y `grant execute ... to service_role;`.
 - **RLS activo en toda tabla nueva** (el proyecto también lo activa solo). Sin políticas: `service_role` tiene `BYPASSRLS` y los permisos por rol viven en la API.
 - El seed se puede correr varias veces (`on conflict ... do nothing` o `do update`). Los datos simulados se marcan como tales.
@@ -42,18 +42,21 @@ Comandos del CLI que **no necesitan Docker** (se corren desde la raíz del repo 
 ```bash
 pnpm dlx supabase login                                  # una vez: abre el navegador
 pnpm dlx supabase link --project-ref <ref-del-proyecto>  # una vez: pide la contraseña de la base
+pnpm dlx supabase projects list                          # verificar a qué proyecto está enlazado (LINKED)
 pnpm dlx supabase db push --dry-run --include-seed       # ver qué se aplicaría
-pnpm dlx supabase db push --include-seed                 # aplicar migraciones pendientes + seed
-pnpm db:reset                                             # recrea todo desde cero (equivale a `supabase db reset --linked`)
+pnpm dlx supabase db push --include-seed                 # aplicar (solo con el dry-run aprobado por Omar, si es serviceagent-dev)
+pnpm db:reset                                             # recrea todo desde cero — solo contra tu proyecto personal
 ```
 
 - `db push` aplica solo las migraciones que faltan y lleva el registro en la base. `--include-seed` además corre los archivos de `seed/` declarados en `config.toml`.
-- `pnpm db:reset` (`supabase db reset --linked`) **borra todo** en el proyecto enlazado y lo recrea. **Solo se usa contra un proyecto personal de Supabase** (uno por dev, gratuito, fuera de la organización) — nunca contra el proyecto compartido de desarrollo. Ahí solo se hace `db push`; un reset completo del compartido lo coordina Omar avisando al equipo.
+- **Antes de cualquier `db reset` o `db push`, verifica a qué proyecto está enlazado el CLI** (`projects list`).
+- **`serviceagent-dev` nunca se resetea** (D16): prohibido `db reset --linked` enlazado a él. Solo Omar, o quien él autorice, hace `db push` a `serviceagent-dev`, y solo después de que apruebe la salida del `--dry-run`.
+- Para probar que la base se recrea desde cero (criterio de US-02-P1), usa el script `pnpm db:reset` (equivale a `supabase db reset --linked`), enlazado a tu **proyecto personal** de Supabase. No lo uses enlazado al compartido.
 - Necesitan Docker, y **no** los usamos: `supabase start`, `db pull`, `db diff`.
 - Verificar: en el dashboard (Table Editor) debe verse `empleados` con 3 filas, el menú con sus categorías y platillos, `platillo_extra` con 5 filas (espuelas), y `POST /auth/login` con los PIN de arriba debe responder 200.
 
 ## Reglas que aplican
 
 - [docs/negocio.md](../docs/negocio.md): autenticación, estados del pedido con su hora, pagos, inventario y recetas.
-- [docs/decisiones.md](../docs/decisiones.md): D2, D3, D7, D12, D13, D14, D15 y pendiente de embeddings (US-16).
+- [docs/decisiones.md](../docs/decisiones.md): D2, D3, D7, D12, D13, D14, D15, D16 y pendiente de embeddings (US-16).
 - [docs/despliegue.md](../docs/despliegue.md): variables `SUPABASE_*`; la llave de servicio solo en la API.
