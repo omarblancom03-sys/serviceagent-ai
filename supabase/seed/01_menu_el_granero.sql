@@ -28,12 +28,11 @@
 --     (id_platillo, nombre) y extra.nombre). Correr este archivo mas de
 --     una vez ya no duplica filas.
 --   - El cargo "con espuelas" (+$55 en varios cortes) se modela como un
---     `extra`, no como variante. Los platillos donde aplica se relacionan
+--     extra, no como variante. Los platillos donde aplica se relacionan
 --     en platillo_extra (seed 02_platillo_extra.sql, US-02-P1).
 
--- =====================================================================
 -- 1) CATEGORIAS
--- =====================================================================
+
 insert into categoria_producto (nombre) values
   ('De entradas al rancho'),
   ('Papas asadas'),
@@ -53,9 +52,8 @@ insert into categoria_producto (nombre) values
   ('Postres')
 on conflict (nombre) do nothing;
 
--- =====================================================================
 -- 2) PLATILLOS (categoria por nombre, para no depender de ids fijos)
--- =====================================================================
+
 insert into platillo (id_categoria, nombre, descripcion)
 select c.id_categoria, v.nombre, v.descripcion
 from (values
@@ -176,9 +174,8 @@ on conflict (nombre) do update set
   id_categoria = excluded.id_categoria,
   descripcion = excluded.descripcion;
 
--- =====================================================================
 -- 3) VARIANTES (todo platillo tiene al menos una; ver nota al inicio)
--- =====================================================================
+
 insert into variante_producto (id_platillo, nombre, precio_centavos)
 select p.id_platillo, v.nombre_variante, v.precio_centavos
 from (values
@@ -320,9 +317,8 @@ join platillo p on p.nombre = v.platillo
 on conflict (id_platillo, nombre) do update set
   precio_centavos = excluded.precio_centavos;
 
--- =====================================================================
 -- 4) SINONIMOS
--- =====================================================================
+
 insert into sinonimo_producto (id_platillo, frase)
 select p.id_platillo, v.frase
 from (values
@@ -440,9 +436,8 @@ from (values
 join platillo p on p.nombre = v.platillo
 on conflict (id_platillo, frase) do nothing;
 
--- =====================================================================
 -- 5) EXTRAS
--- =====================================================================
+
 insert into extra (nombre, precio_centavos, descripcion) values
   ('Totopos', 2000, 'Porción extra de totopos.'),
   ('BBQ', 1500, 'Porción extra de salsa BBQ.'),
