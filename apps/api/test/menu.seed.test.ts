@@ -11,7 +11,7 @@ const directorioDeEsteArchivo = path.dirname(fileURLToPath(import.meta.url));
 const raizRepo = path.resolve(directorioDeEsteArchivo, '../../..');
 
 const rutaSeedMenu = path.join(raizRepo, 'supabase/seed/01_menu_el_granero.sql');
-const rutaSeedTiempos = path.join(raizRepo, 'supabase/seed/02_tiempos_preparacion_menu.sql');
+const rutaSeedTiempos = path.join(raizRepo, 'supabase/seed/03_tiempos_preparacion_menu.sql');
 
 const contenidoMenu = readFileSync(rutaSeedMenu, 'utf-8');
 const contenidoTiempos = readFileSync(rutaSeedTiempos, 'utf-8');
@@ -90,7 +90,7 @@ describe('seed del menu (01_menu_el_granero.sql)', () => {
   });
 });
 
-describe('seed de tiempos de preparacion (02_tiempos_preparacion_menu.sql)', () => {
+describe('seed de tiempos de preparacion (03_tiempos_preparacion_menu.sql)', () => {
   const filas = [...contenidoTiempos.matchAll(/\('([^']+)',\s*(\d+)\)/g)].map((m) => ({
     categoria: m[1],
     minutos: Number(m[2]),

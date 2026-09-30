@@ -1,5 +1,35 @@
 -- Seed del menu real de El Granero (US-02-P2)
-
+-- Fuente: ProductosRestaurante.MD
+-- Requiere que ya corriera 20260929100000_crear_esquema_menu.sql
+--
+-- Notas de transcripcion (avisar a Omar / revisar en el PR):
+--   - tiempo_estimado_min queda en NULL para todos los platillos: el menu
+--     fuente no trae ese dato. Pendiente de definicion de producto.
+--   - "platillo" no tiene precio propio (ver migracion): todo platillo
+--     recibe al menos una variante. Los que no tienen opciones reales en
+--     el menu llevan una sola variante llamada 'Unico'.
+--   - Las 5 taquizas SI llevan 2 variantes (charros/refritos) aunque no
+--     cambien de precio, porque el menu dice explicitamente "preguntar si
+--     desea frijoles charros o refritos".
+--   - 3 nombres se desambiguaron por colision entre categorias distintas,
+--     usando los sinonimos que ya trae el propio menu:
+--       * "Luiggi Especial" (papa asada, $204) -> 'Papa Luiggi Especial'
+--       * "Fajitas de pollo" (infantil, $123)  -> 'Fajitas de pollo infantil'
+--       * "Fajitas de arrachera" (infantil, $159) -> 'Fajitas de arrachera infantil'
+--   - Otros 6 nombres de "Papas asadas" llevan el prefijo "Papa" (el menu
+--     original solo dice "Natural", "Elote", etc.), para que no queden
+--     ambiguos frente a otros platillos del menu. Lista completa de los
+--     9 nombres cambiados: supabase/CLAUDE.md.
+--   - Idempotente (revision de Omar, US-02-P2): requiere la migracion
+--     20260929140000_restricciones_unicas_menu.sql (constraints unicos en
+--     categoria_producto.nombre, platillo.nombre, variante_producto
+--     (id_platillo, nombre) y extra.nombre). Correr este archivo mas de
+--     una vez ya no duplica filas.
+--   - El cargo "con espuelas" (+$55 en varios cortes) se modela como un
+--     `extra` generico, no como variante: el diagrama no tiene forma de
+--     restringir un extra a ciertos platillos a nivel de catalogo, asi que
+--     esa regla ("solo en T-Bone, Arrachera, Arrachera al Chipotle, Sirloin,
+--     Rib Eye") queda para el prompt del agente, no para la base de datos.
 
 -- =====================================================================
 -- 1) CATEGORIAS
@@ -20,7 +50,8 @@ insert into categoria_producto (nombre) values
   ('Niños granjeros'),
   ('Bebidas'),
   ('Cervezas'),
-  ('Postres');
+  ('Postres')
+on conflict (nombre) do nothing;
 
 -- =====================================================================
 -- 2) PLATILLOS (categoria por nombre, para no depender de ids fijos)
@@ -140,7 +171,10 @@ from (values
   ('Postres', 'Brownies con nieve', 'Brownie acompañado con nieve. No incluye acompañamientos adicionales.'),
   ('Postres', 'Cheesecake con nieve', 'Cheesecake acompañado con nieve. No incluye acompañamientos adicionales.')
 ) as v(categoria, nombre, descripcion)
-join categoria_producto c on c.nombre = v.categoria;
+join categoria_producto c on c.nombre = v.categoria
+on conflict (nombre) do update set
+  id_categoria = excluded.id_categoria,
+  descripcion = excluded.descripcion;
 
 -- =====================================================================
 -- 3) VARIANTES (todo platillo tiene al menos una; ver nota al inicio)
@@ -282,7 +316,9 @@ from (values
   ('Brownies con nieve', 'Único', 9800),
   ('Cheesecake con nieve', 'Único', 9800)
 ) as v(platillo, nombre_variante, precio_centavos)
-join platillo p on p.nombre = v.platillo;
+join platillo p on p.nombre = v.platillo
+on conflict (id_platillo, nombre) do update set
+  precio_centavos = excluded.precio_centavos;
 
 -- =====================================================================
 -- 4) SINONIMOS
@@ -401,7 +437,8 @@ from (values
   ('Brownies con nieve', 'brownie'), ('Brownies con nieve', 'brownies con nieve'),
   ('Cheesecake con nieve', 'cheesecake')
 ) as v(platillo, frase)
-join platillo p on p.nombre = v.platillo;
+join platillo p on p.nombre = v.platillo
+on conflict (id_platillo, frase) do nothing;
 
 -- =====================================================================
 -- 5) EXTRAS
@@ -411,4 +448,7 @@ insert into extra (nombre, precio_centavos, descripcion) values
   ('BBQ', 1500, 'Porción extra de salsa BBQ.'),
   ('Aguacate', 2500, 'Porción extra de aguacate.'),
   ('Toreados', 2100, 'Porción extra de chiles toreados.'),
-  ('Espuelas (camarones)', 5500, 'Cargo adicional por camarones. Según el menú, solo aplica en T-Bone, Arrachera, Arrachera al Chipotle, Sirloin y Rib Eye; esa restricción no está en la base de datos y debe validarla el agente antes de confirmar.');
+  ('Espuelas (camarones)', 5500, 'Cargo adicional por camarones. Según el menú, solo aplica en T-Bone, Arrachera, Arrachera al Chipotle, Sirloin y Rib Eye; esa restricción no está en la base de datos y debe validarla el agente antes de confirmar.')
+on conflict (nombre) do update set
+  precio_centavos = excluded.precio_centavos,
+  descripcion = excluded.descripcion;
