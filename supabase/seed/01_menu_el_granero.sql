@@ -22,11 +22,11 @@
 --       * "Natural" -> 'Papa Natural'        * "Elote" -> 'Papa con Elote'
 --       * "Champiñón" -> 'Papa con Champiñón' * "Chorizo" -> 'Papa con Chorizo'
 --       * "Tocino" -> 'Papa con Tocino'      * "Arrachera" -> 'Papa con Arrachera'
---   - Idempotente (revision de Omar, US-02-P2): requiere la migracion
---     20260929140000_restricciones_unicas_menu.sql (constraints unicos en
+--   - Idempotente: cada insert usa "on conflict" sobre un indice unico, asi
+--     que correr este archivo mas de una vez no duplica filas. Requiere la
+--     migracion 20260929140000_restricciones_unicas_menu.sql (unicos en
 --     categoria_producto.nombre, platillo.nombre, variante_producto
---     (id_platillo, nombre) y extra.nombre). Correr este archivo mas de
---     una vez ya no duplica filas.
+--     (id_platillo, nombre) y extra.nombre).
 --   - El cargo "con espuelas" (+$55 en varios cortes) se modela como un
 --     extra, no como variante. Los platillos donde aplica se relacionan
 --     en platillo_extra (seed 02_platillo_extra.sql, US-02-P1).

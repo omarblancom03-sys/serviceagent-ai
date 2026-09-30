@@ -1,10 +1,9 @@
 -- Seed de platillo_extra (US-02-P1)
 --
 -- Relaciona el extra "Espuelas (camarones)" con los 5 cortes de 450 gr que
--- lo permiten, segun ProductosRestaurante.MD. El propio comentario del seed
--- de extras (01_menu_el_granero.sql) ya senalaba que esta restriccion
--- faltaba en la base de datos ("esa restriccion no esta en la base de datos
--- y debe validarla el agente antes de confirmar"); esta migracion la agrega.
+-- lo permiten, segun ProductosRestaurante.MD. Esta tabla es la que hace
+-- cumplir la restriccion que describe el extra en 01_menu_el_granero.sql
+-- ("validado mediante la tabla platillo_extra").
 --
 -- Los demas extras (Totopos, BBQ, Aguacate, Toreados) no tienen ninguna
 -- restriccion de platillo en el menu fuente, asi que no llevan filas aqui
