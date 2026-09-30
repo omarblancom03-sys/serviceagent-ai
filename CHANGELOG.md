@@ -14,3 +14,4 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). *
 - US-01: documentación modular (`CLAUDE.md` raíz + `CLAUDE.md` por área + `docs/`), permisos compartidos de Claude Code que bloquean leer secretos y skill `/cerrar-historia`.
 - US-04 (API): login por PIN con JWT propio (`/auth/empleados`, `/auth/login`, `/auth/sesion`), roles con `requiereRol`, bloqueo de 15 min tras 5 intentos con contador atómico en SQL, tabla `empleados` y seed de desarrollo.
 - US-04 (web): pantalla `/login` con tarjeta de empleado y teclado de PIN, guardas por rol en `/cocina`, `/caja` y `/admin` (admin entra a todo), sesión en `localStorage` que se cierra al vencer o ante un 401, y botón Cerrar sesión.
+- US-02: tiempo estimado de preparación por categoría en el seed (`02_tiempos_preparacion_menu.sql`) y test estático de los archivos del seed del menú.

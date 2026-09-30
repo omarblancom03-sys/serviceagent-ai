@@ -7,7 +7,7 @@ Esquema y datos de la base de datos del proyecto (Supabase / PostgreSQL). Aquí 
 ## Cómo está organizado
 
 - `migrations/`: migraciones SQL versionadas. Hoy: `*_crear_empleados.sql` (US-04): tabla `empleados` y función `registrar_intento_fallido` (contador atómico de PIN incorrectos, D14). `*_crear_esquema_menu.sql` (US-02): tablas del menú. `*_cerrar_lectura_publica_menu.sql`: quita la lectura pública del menú (D15).
-- `seed/`: datos de desarrollo y demostración. Hoy: `empleados.sql` (un empleado por rol). El menú real se define en US-02-P2.
+- `seed/`: datos de desarrollo y demostración, se corren en orden alfabético. Hoy: `01_menu_el_granero.sql` (menú real: 16 categorías, 95 platillos, variantes, sinónimos y extras), `02_tiempos_preparacion_menu.sql` (llena `platillo.tiempo_estimado_min` con un tiempo fijo por categoría, D18; datos simulados) y `empleados.sql` (un empleado por rol).
 - `config.toml`: configuración del CLI. Hoy solo declara el seed (`[db.seed] sql_paths`); el resto y `pnpm db:reset` se definen en US-02-P1.
 
 ### Empleados de prueba (SOLO DESARROLLO)
@@ -51,10 +51,11 @@ pnpm dlx supabase db push --include-seed                 # aplicar (solo con el 
 - **`serviceagent-dev` nunca se resetea** (D16): prohibido `db reset --linked` enlazado a él. Solo Omar, o quien él autorice para un `db push` específico, enlaza el CLI a `serviceagent-dev`, y los cambios entran solo con `db push` después de que Omar apruebe la salida del `--dry-run`.
 - Para probar que la base se recrea desde cero: enlaza tu **proyecto personal** de Supabase y ahí corre `db reset --linked`. No necesitas enlazar el compartido.
 - Necesitan Docker, y **no** los usamos: `supabase start`, `db pull`, `db diff`.
-- Verificar: en el dashboard (Table Editor) debe verse `empleados` con 3 filas, y `POST /auth/login` con los PIN de arriba debe responder 200.
+- Verificar: en el dashboard (Table Editor) debe verse `empleados` con 3 filas, y `POST /auth/login` con los PIN de arriba debe responder 200. En `platillo` ningún registro debe quedar con `tiempo_estimado_min` en `NULL`.
+- `apps/api/test/menu.seed.test.ts` valida los archivos del seed como texto (sin conectarse a Supabase): conteos, nombres únicos y tiempos múltiplos de 5.
 
 ## Reglas que aplican
 
 - [docs/negocio.md](../docs/negocio.md): autenticación, estados del pedido con su hora, pagos, inventario y recetas.
-- [docs/decisiones.md](../docs/decisiones.md): D2, D3, D7, D12, D13, D14, D15, D16 y pendiente de embeddings (US-16).
+- [docs/decisiones.md](../docs/decisiones.md): D2, D3, D7, D12, D13, D14, D15, D16, D18 y pendiente de embeddings (US-16).
 - [docs/despliegue.md](../docs/despliegue.md): variables `SUPABASE_*`; la llave de servicio solo en la API.
