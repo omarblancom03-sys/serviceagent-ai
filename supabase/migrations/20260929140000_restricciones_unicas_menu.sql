@@ -1,5 +1,5 @@
 -- US-02-P2: restricciones unicas para que el seed sea idempotente.
-Sin esto, correr el seed dos veces duplica el menu completo.
+-- Sin esto, correr el seed dos veces duplica el menu completo.
 
 alter table categoria_producto
   add constraint categoria_producto_nombre_key unique (nombre);

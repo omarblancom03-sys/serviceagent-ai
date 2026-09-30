@@ -2,9 +2,9 @@
 -- Fuente: ProductosRestaurante.MD
 -- Requiere que ya corriera 20260929100000_crear_esquema_menu.sql
 --
--- Notas de transcripcion (avisar a Omar / revisar en el PR):
---   - tiempo_estimado_min queda en NULL para todos los platillos: el menu
---     fuente no trae ese dato. Pendiente de definicion de producto.
+-- Notas de transcripcion:
+--   - tiempo_estimado_min no se carga aqui: el menu fuente no trae ese dato
+--     y lo llena 03_tiempos_preparacion_menu.sql (fijo por categoria, D18).
 --   - "platillo" no tiene precio propio (ver migracion): todo platillo
 --     recibe al menos una variante. Los que no tienen opciones reales en
 --     el menu llevan una sola variante llamada 'Unico'.
@@ -17,19 +17,19 @@
 --       * "Fajitas de pollo" (infantil, $123)  -> 'Fajitas de pollo infantil'
 --       * "Fajitas de arrachera" (infantil, $159) -> 'Fajitas de arrachera infantil'
 --   - Otros 6 nombres de "Papas asadas" llevan el prefijo "Papa" (el menu
---     original solo dice "Natural", "Elote", etc.), para que no queden
---     ambiguos frente a otros platillos del menu. Lista completa de los
---     9 nombres cambiados: supabase/CLAUDE.md.
+--     original los lista sin prefijo), para que no queden ambiguos frente
+--     a otros platillos al buscar por nombre:
+--       * "Natural" -> 'Papa Natural'        * "Elote" -> 'Papa con Elote'
+--       * "Champiñón" -> 'Papa con Champiñón' * "Chorizo" -> 'Papa con Chorizo'
+--       * "Tocino" -> 'Papa con Tocino'      * "Arrachera" -> 'Papa con Arrachera'
 --   - Idempotente (revision de Omar, US-02-P2): requiere la migracion
 --     20260929140000_restricciones_unicas_menu.sql (constraints unicos en
 --     categoria_producto.nombre, platillo.nombre, variante_producto
 --     (id_platillo, nombre) y extra.nombre). Correr este archivo mas de
 --     una vez ya no duplica filas.
 --   - El cargo "con espuelas" (+$55 en varios cortes) se modela como un
---     `extra` generico, no como variante: el diagrama no tiene forma de
---     restringir un extra a ciertos platillos a nivel de catalogo, asi que
---     esa regla ("solo en T-Bone, Arrachera, Arrachera al Chipotle, Sirloin,
---     Rib Eye") queda para el prompt del agente, no para la base de datos.
+--     `extra`, no como variante. Los platillos donde aplica se relacionan
+--     en platillo_extra (seed 02_platillo_extra.sql, US-02-P1).
 
 -- =====================================================================
 -- 1) CATEGORIAS
@@ -448,7 +448,7 @@ insert into extra (nombre, precio_centavos, descripcion) values
   ('BBQ', 1500, 'Porción extra de salsa BBQ.'),
   ('Aguacate', 2500, 'Porción extra de aguacate.'),
   ('Toreados', 2100, 'Porción extra de chiles toreados.'),
-  ('Espuelas (camarones)', 5500, 'Cargo adicional por camarones. Según el menú, solo aplica en T-Bone, Arrachera, Arrachera al Chipotle, Sirloin y Rib Eye; esa restricción no está en la base de datos y debe validarla el agente antes de confirmar.')
+  ('Espuelas (camarones)', 5500, 'Cargo adicional por camarones, disponible únicamente en los cortes que lo permiten (T-Bone, Arrachera, Arrachera al Chipotle, Sirloin y Rib Eye), validado mediante la tabla platillo_extra.')
 on conflict (nombre) do update set
   precio_centavos = excluded.precio_centavos,
   descripcion = excluded.descripcion;

@@ -1,4 +1,5 @@
--- US-02: tiempo estimado de preparacion, fijo por categoria 
+-- US-02: tiempo estimado de preparacion, fijo por categoria (D18).
+-- Datos simulados: el menu fuente no trae tiempos.
 update platillo
 set tiempo_estimado_min = v.minutos
 from categoria_producto c

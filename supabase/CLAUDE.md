@@ -34,25 +34,7 @@ Estos PIN son públicos: **nunca** se usa este seed en un ambiente real. Los has
 - **RLS activo en toda tabla nueva** (el proyecto también lo activa solo). Sin políticas: `service_role` tiene `BYPASSRLS` y los permisos por rol viven en la API.
 - El seed se puede correr varias veces (`on conflict ... do nothing` o `do update`). Los datos simulados se marcan como tales.
 - El descuento y la reposición de inventario ocurren dentro de una transacción.
-
-### Nombres ajustados al transcribir el menú (US-02-P2)
-
-9 nombres del menú fuente (`ProductosRestaurante.MD`) se ajustaron al cargarlos a `platillo.nombre`:
-
-**Por colisión real** (mismo nombre en dos categorías distintas del menú original; se usó el propio sinónimo que trae el menú para distinguirlos):
-
-- "Luiggi Especial" (papa asada, $204) → `Papa Luiggi Especial`
-- "Fajitas de pollo" (versión infantil, $123) → `Fajitas de pollo infantil`
-- "Fajitas de arrachera" (versión infantil, $159) → `Fajitas de arrachera infantil`
-
-**Por claridad** (el menú original los lista sin prefijo dentro de la categoría "Papas asadas"; se agregó "Papa" para que no se confundan con otros platillos al buscar por nombre):
-
-- "Natural" → `Papa Natural`
-- "Elote" → `Papa con Elote`
-- "Champiñón" → `Papa con Champiñón`
-- "Chorizo" → `Papa con Chorizo`
-- "Tocino" → `Papa con Tocino`
-- "Arrachera" → `Papa con Arrachera`
+- `platillo.nombre` es único: 9 nombres del menú fuente se ajustaron al cargarlos (3 por colisión entre categorías, 6 papas asadas con prefijo "Papa"). La lista está al inicio de `seed/01_menu_el_granero.sql`.
 
 ## Cómo probar
 
