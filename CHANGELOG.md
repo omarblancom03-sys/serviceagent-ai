@@ -16,4 +16,5 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). *
 - Ambiente desplegado en Cloudflare (API en Workers, web y simuladores en Pages) con secretos del Worker y `VITE_API_URL`; cada merge a `main` despliega.
 - US-04 (web): pantalla `/login` con tarjeta de empleado y teclado de PIN, guardas por rol en `/cocina`, `/caja` y `/admin` (admin entra a todo), sesión en `localStorage` que se cierra al vencer o ante un 401, y botón Cerrar sesión.
 - US-02-P1: tabla `platillo_extra` (qué extras aplican a qué platillo), comando `pnpm db:reset:personal` (contra un proyecto personal de Supabase, sin Docker) y diagrama entidad-relación del menú en `supabase/README.md`.
+- US-02-P2: menú real completo de El Granero en el seed (16 categorías, 95 platillos, 118 variantes, sinónimos y 5 extras), idempotente con `on conflict`.
 - US-02-P2: tiempo estimado de preparación por categoría en el seed (`03_tiempos_preparacion_menu.sql`), restricciones únicas para que el seed del menú sea idempotente, y test estático de los archivos del seed.

@@ -34,7 +34,7 @@ Estos PIN son públicos: **nunca** se usa este seed en un ambiente real. Los has
 - **RLS activo en toda tabla nueva** (el proyecto también lo activa solo). Sin políticas: `service_role` tiene `BYPASSRLS` y los permisos por rol viven en la API.
 - El seed se puede correr varias veces (`on conflict ... do nothing` o `do update`). Los datos simulados se marcan como tales.
 - El descuento y la reposición de inventario ocurren dentro de una transacción.
-- `platillo.nombre` es único: 9 nombres del menú fuente se ajustaron al cargarlos (3 por colisión entre categorías, 6 papas asadas con prefijo "Papa"). La lista está al inicio de `seed/01_menu_el_granero.sql`.
+- `platillo.nombre` es único: 16 nombres del menú fuente se ajustaron al cargarlos (3 por colisión entre categorías, 6 papas asadas con prefijo "Papa", y por decisión del PO 6 hamburguesas con prefijo "Hamburguesa" más "Filete de pescado infantil", para que no se lean ambiguos en cocina; el nombre original queda como sinónimo). La lista está al inicio de `seed/01_menu_el_granero.sql`.
 
 ## Cómo probar
 
@@ -55,7 +55,7 @@ pnpm db:reset:personal                                    # recrea todo desde ce
 - Para probar que la base se recrea desde cero (criterio de US-02-P1), usa el script `pnpm db:reset:personal` (equivale a `supabase db reset --linked`), enlazado a tu **proyecto personal** de Supabase. No lo uses enlazado al compartido.
 - Necesitan Docker, y **no** los usamos: `supabase start`, `db pull`, `db diff`.
 - Verificar: en el dashboard (Table Editor) debe verse `empleados` con 3 filas, el menú con sus categorías y platillos, `platillo_extra` con 5 filas (espuelas), ningún `platillo` con `tiempo_estimado_min` en `NULL`, y `POST /auth/login` con los PIN de arriba debe responder 200.
-- `apps/api/test/menu.seed.test.ts` valida los archivos del seed como texto (sin conectarse a Supabase): conteos, nombres únicos, y que los tiempos sean múltiplos de 5.
+- `apps/api/test/menu.seed.test.ts` valida los archivos del seed como texto (sin conectarse a Supabase): conteos, nombres únicos, pares (platillo, variante) sin repetir, mismas categorías en `01` y `03`, y que los tiempos sean múltiplos de 5.
 
 ## Reglas que aplican
 

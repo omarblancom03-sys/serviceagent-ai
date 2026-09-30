@@ -22,6 +22,14 @@
 --       * "Natural" -> 'Papa Natural'        * "Elote" -> 'Papa con Elote'
 --       * "Champiñón" -> 'Papa con Champiñón' * "Chorizo" -> 'Papa con Chorizo'
 --       * "Tocino" -> 'Papa con Tocino'      * "Arrachera" -> 'Papa con Arrachera'
+--   - Otros 7 nombres se ajustaron por decision del PO para que no se lean
+--     ambiguos en cocina; el nombre original queda como sinonimo:
+--       * "Pollo" -> 'Hamburguesa de Pollo'  * "Granero" -> 'Hamburguesa Granero'
+--       * "Delicias" -> 'Hamburguesa Delicias'
+--       * "Delicias Tocino" -> 'Hamburguesa Delicias Tocino'
+--       * "Algodoneros" -> 'Hamburguesa Algodoneros'
+--       * "Hawaiana" -> 'Hamburguesa Hawaiana'
+--       * "Filete de pescado" (infantil) -> 'Filete de pescado infantil'
 --   - Idempotente: cada insert usa "on conflict" sobre un indice unico, asi
 --     que correr este archivo mas de una vez no duplica filas. Requiere la
 --     migracion 20260929140000_restricciones_unicas_menu.sql (unicos en
@@ -99,12 +107,12 @@ from (values
   ('Más con carnita', 'Fajitas de pollo', 'Fajitas de pollo. Acompañadas de arroz, papas a la francesa y verduras.'),
   ('Más con carnita', 'Tiras de pollo', 'Pechuga de pollo con empanizado de la casa. Acompañada de vegetales y aderezo de la casa.'),
   -- Hamburguesas (todas acompañadas de papas)
-  ('Hamburguesas', 'Delicias', 'Hamburguesa sencilla con lechuga fresca, tomate y queso. Acompañada de papas.'),
-  ('Hamburguesas', 'Delicias Tocino', 'Hamburguesa sencilla con tocino, lechuga fresca y queso. Acompañada de papas.'),
-  ('Hamburguesas', 'Granero', 'Hamburguesa bañada en salsa BBQ con tocino. Acompañada de papas.'),
-  ('Hamburguesas', 'Pollo', 'Hamburguesa con pechuga de pollo a la parrilla y verduras. Acompañada de papas.'),
-  ('Hamburguesas', 'Algodoneros', 'Hamburguesa de doble carne con lechuga fresca, tomate y queso. Acompañada de papas.'),
-  ('Hamburguesas', 'Hawaiana', 'Hamburguesa sencilla con lechuga fresca y piña. Acompañada de papas.'),
+  ('Hamburguesas', 'Hamburguesa Delicias', 'Hamburguesa sencilla con lechuga fresca, tomate y queso. Acompañada de papas.'),
+  ('Hamburguesas', 'Hamburguesa Delicias Tocino', 'Hamburguesa sencilla con tocino, lechuga fresca y queso. Acompañada de papas.'),
+  ('Hamburguesas', 'Hamburguesa Granero', 'Hamburguesa bañada en salsa BBQ con tocino. Acompañada de papas.'),
+  ('Hamburguesas', 'Hamburguesa de Pollo', 'Hamburguesa con pechuga de pollo a la parrilla y verduras. Acompañada de papas.'),
+  ('Hamburguesas', 'Hamburguesa Algodoneros', 'Hamburguesa de doble carne con lechuga fresca, tomate y queso. Acompañada de papas.'),
+  ('Hamburguesas', 'Hamburguesa Hawaiana', 'Hamburguesa sencilla con lechuga fresca y piña. Acompañada de papas.'),
   -- De nuestras mejores vacas
   ('De nuestras mejores vacas', 'Parrillada Familiar', 'Parrillada para compartir con costilla, sirloin, arrachera, dos salchichas asadas, tiras de pollo y fajitas de pollo. Incluye frijoles charros, arroz y elote.'),
   ('De nuestras mejores vacas', 'Parrillada Mar y Tierra', 'Parrillada para aproximadamente seis personas con costilla, sirloin, arrachera, dos salchichas asadas, dos filetes de pescado empanizado, dos brochetas de camarón, tiras de pollo y fajitas de pollo. Incluye frijoles charros, arroz, elote, ensalada y papas francesas.'),
@@ -149,7 +157,7 @@ from (values
   ('Camarones', 'Camarones al Coco', 'Camarones empanizados al coco. Acompañados de arroz blanco y ensalada con aderezo de frutos rojos al chipotle.'),
   -- Niños granjeros
   ('Niños granjeros', 'Fajitas de pollo infantil', 'Pechuga de pollo en fajitas a la parrilla. Acompañada de papas a la francesa y arroz.'),
-  ('Niños granjeros', 'Filete de pescado', 'Filete de pescado empanizado. Acompañado de papas a la francesa y arroz.'),
+  ('Niños granjeros', 'Filete de pescado infantil', 'Filete de pescado empanizado. Acompañado de papas a la francesa y arroz.'),
   ('Niños granjeros', 'Fajitas de arrachera infantil', 'Fajitas de arrachera. Acompañadas de papas a la francesa y arroz.'),
   ('Niños granjeros', 'Caldito Granero', 'Caldo infantil con pechuga de pollo, arroz norteño, asadero y aguacate. No incluye acompañamientos adicionales.'),
   ('Niños granjeros', 'Boneless', 'Boneless de pollo. Acompañados con papas a la francesa.'),
@@ -230,12 +238,12 @@ from (values
   ('Tiras de pollo', 'Salsa Búfalo', 18600),
   ('Tiras de pollo', 'Salsa BBQ', 18600),
 
-  ('Delicias', 'Único', 12900),
-  ('Delicias Tocino', 'Único', 14400),
-  ('Granero', 'Único', 14900),
-  ('Pollo', 'Único', 12400),
-  ('Algodoneros', 'Único', 16900),
-  ('Hawaiana', 'Único', 14900),
+  ('Hamburguesa Delicias', 'Único', 12900),
+  ('Hamburguesa Delicias Tocino', 'Único', 14400),
+  ('Hamburguesa Granero', 'Único', 14900),
+  ('Hamburguesa de Pollo', 'Único', 12400),
+  ('Hamburguesa Algodoneros', 'Único', 16900),
+  ('Hamburguesa Hawaiana', 'Único', 14900),
 
   ('Parrillada Familiar', 'Único', 104900),
   ('Parrillada Mar y Tierra', 'Único', 123800),
@@ -283,7 +291,7 @@ from (values
   ('Camarones al Coco', 'Único', 31200),
 
   ('Fajitas de pollo infantil', 'Único', 12300),
-  ('Filete de pescado', 'Único', 14900),
+  ('Filete de pescado infantil', 'Único', 14900),
   ('Fajitas de arrachera infantil', 'Único', 15900),
   ('Caldito Granero', 'Único', 7400),
   ('Boneless', 'Único', 15400),
@@ -363,12 +371,14 @@ from (values
   ('Fajitas de pollo', 'fajitas de pollo'),
   ('Tiras de pollo', 'tiras de pollo'), ('Tiras de pollo', 'pollo empanizado'),
 
-  ('Delicias', 'hamburguesa delicias'), ('Delicias', 'delicias'),
-  ('Delicias Tocino', 'delicias tocino'), ('Delicias Tocino', 'hamburguesa con tocino'),
-  ('Granero', 'hamburguesa granero'), ('Granero', 'granero'),
-  ('Pollo', 'hamburguesa de pollo'),
-  ('Algodoneros', 'algodoneros'), ('Algodoneros', 'hamburguesa doble'),
-  ('Hawaiana', 'hawaiana'), ('Hawaiana', 'hamburguesa hawaiana'),
+  ('Hamburguesa Delicias', 'hamburguesa delicias'), ('Hamburguesa Delicias', 'delicias'),
+  ('Hamburguesa Delicias Tocino', 'delicias tocino'), ('Hamburguesa Delicias Tocino', 'hamburguesa con tocino'),
+  ('Hamburguesa Granero', 'hamburguesa granero'), ('Hamburguesa Granero', 'granero'),
+  ('Hamburguesa Granero', 'la granero'),
+  ('Hamburguesa de Pollo', 'hamburguesa de pollo'), ('Hamburguesa de Pollo', 'pollo'),
+  ('Hamburguesa de Pollo', 'una de pollo'),
+  ('Hamburguesa Algodoneros', 'algodoneros'), ('Hamburguesa Algodoneros', 'hamburguesa doble'),
+  ('Hamburguesa Hawaiana', 'hawaiana'), ('Hamburguesa Hawaiana', 'hamburguesa hawaiana'),
 
   ('Parrillada Familiar', 'parrillada familiar'),
   ('Parrillada Mar y Tierra', 'parrillada mar y tierra'), ('Parrillada Mar y Tierra', 'mar y tierra'),
@@ -413,7 +423,8 @@ from (values
   ('Camarones al Coco', 'camarones coco'),
 
   ('Fajitas de pollo infantil', 'fajitas niño'), ('Fajitas de pollo infantil', 'fajitas de pollo infantil'),
-  ('Filete de pescado', 'filete niño'), ('Filete de pescado', 'pescado infantil'),
+  ('Filete de pescado infantil', 'filete niño'), ('Filete de pescado infantil', 'pescado infantil'),
+  ('Filete de pescado infantil', 'filete de pescado'),
   ('Fajitas de arrachera infantil', 'fajitas arrachera niño'),
   ('Caldito Granero', 'caldito granero'), ('Caldito Granero', 'caldo niño'),
   ('Boneless', 'boneless'),

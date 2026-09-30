@@ -33,9 +33,10 @@ describe('seed del menu (01_menu_el_granero.sql)', () => {
   }));
 
   const bloqueVariantes = extraerBloque(contenidoMenu, '3) VARIANTES', '4) SINONIMOS');
-  const nombresConVariante = new Set(
-    [...bloqueVariantes.matchAll(/\n\s*\('([^']+)',\s*'[^']+',\s*\d+\)/g)].map((m) => m[1]),
+  const variantes = [...bloqueVariantes.matchAll(/\n\s*\('([^']+)',\s*'([^']+)',\s*\d+\)/g)].map(
+    (m) => ({ platillo: m[1], nombre: m[2] }),
   );
+  const nombresConVariante = new Set(variantes.map((v) => v.platillo));
 
   const bloqueSinonimos = extraerBloque(contenidoMenu, '4) SINONIMOS', '5) EXTRAS');
   const nombresConSinonimo = new Set(
@@ -74,6 +75,15 @@ describe('seed del menu (01_menu_el_granero.sql)', () => {
     expect(sinVariante).toEqual([]);
   });
 
+  it('no repite ningun par (platillo, variante)', () => {
+    // Con "on conflict ... do update", Postgres falla si el mismo par viene
+    // dos veces en un solo insert ("cannot affect row a second time").
+    expect(variantes).toHaveLength(118);
+    const pares = variantes.map((v) => `${v.platillo} | ${v.nombre}`);
+    const repetidos = pares.filter((par, i) => pares.indexOf(par) !== i);
+    expect(repetidos).toEqual([]);
+  });
+
   it('todo platillo tiene al menos un sinonimo', () => {
     const sinSinonimo = platillos.filter((p) => !nombresConSinonimo.has(p.nombre));
     expect(sinSinonimo).toEqual([]);
@@ -100,6 +110,15 @@ describe('seed de tiempos de preparacion (03_tiempos_preparacion_menu.sql)', () 
     const nombres = filas.map((f) => f.categoria);
     expect(new Set(nombres).size).toBe(16);
     expect(nombres).toHaveLength(16);
+  });
+
+  it('usa exactamente los mismos nombres de categoria que el seed del menu', () => {
+    // Si un nombre difiere (acento, mayuscula), el update no toca esos
+    // platillos y su tiempo_estimado_min se queda en NULL sin avisar.
+    const bloqueCategorias = extraerBloque(contenidoMenu, '1) CATEGORIAS', '2) PLATILLOS');
+    const categoriasMenu = [...bloqueCategorias.matchAll(/\('([^']+)'\)/g)].map((m) => m[1]);
+    const categoriasTiempos = filas.map((f) => f.categoria);
+    expect([...categoriasTiempos].sort()).toEqual([...categoriasMenu].sort());
   });
 
   it('todos los tiempos son multiplos de 5 y mayores que cero', () => {
