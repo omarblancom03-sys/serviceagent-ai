@@ -6,8 +6,8 @@ Esquema y datos de la base de datos del proyecto (Supabase / PostgreSQL). Aquí 
 
 ## Cómo está organizado
 
-- `migrations/`: migraciones SQL versionadas. Hoy: `*_crear_empleados.sql` (US-04): tabla `empleados` y función `registrar_intento_fallido` (contador atómico de PIN incorrectos, D14). `*_crear_esquema_menu.sql` (US-02): tablas del menú. `*_cerrar_lectura_publica_menu.sql`: quita la lectura pública del menú (D15). `*_crear_platillo_extra.sql` (US-02-P1): tabla `platillo_extra` (qué extras aplican a qué platillo).
-- `seed/`: datos de desarrollo y demostración. Hoy: `empleados.sql` (un empleado por rol), `01_menu_el_granero.sql` (menú real, US-02-P2) y `02_platillo_extra.sql` (relación de "Espuelas" con los cortes que la permiten, US-02-P1).
+- `migrations/`: migraciones SQL versionadas. Hoy: `*_crear_empleados.sql` (US-04): tabla `empleados` y función `registrar_intento_fallido` (contador atómico de PIN incorrectos, D14). `*_crear_esquema_menu.sql` (US-02): tablas del menú. `*_cerrar_lectura_publica_menu.sql`: quita la lectura pública del menú (D15). `*_crear_platillo_extra.sql` (US-02-P1): tabla `platillo_extra` (qué extras aplican a qué platillo). `*_restricciones_unicas_menu.sql` (US-02-P2): restricciones únicas para que el seed del menú sea idempotente.
+- `seed/`: datos de desarrollo y demostración, se corren en el orden declarado en `config.toml`. Hoy: `01_menu_el_granero.sql` (menú real: 16 categorías, 95 platillos, variantes, sinónimos y extras, US-02-P2, idempotente con `on conflict`), `02_platillo_extra.sql` (relación de "Espuelas" con los cortes que la permiten, US-02-P1), `03_tiempos_preparacion_menu.sql` (llena `platillo.tiempo_estimado_min` con un tiempo fijo por categoría, D18; datos simulados) y `empleados.sql` (un empleado por rol).
 - `config.toml`: configuración del CLI. Declara el orden de los seeds (`[db.seed] sql_paths`) y se usa junto con el script `pnpm db:reset:personal` de la raíz.
 - [`README.md`](./README.md): diagrama entidad-relación del menú (Mermaid), con las tablas reales y su explicación.
 
@@ -35,6 +35,25 @@ Estos PIN son públicos: **nunca** se usa este seed en un ambiente real. Los has
 - El seed se puede correr varias veces (`on conflict ... do nothing` o `do update`). Los datos simulados se marcan como tales.
 - El descuento y la reposición de inventario ocurren dentro de una transacción.
 
+### Nombres ajustados al transcribir el menú (US-02-P2)
+
+9 nombres del menú fuente (`ProductosRestaurante.MD`) se ajustaron al cargarlos a `platillo.nombre`:
+
+**Por colisión real** (mismo nombre en dos categorías distintas del menú original; se usó el propio sinónimo que trae el menú para distinguirlos):
+
+- "Luiggi Especial" (papa asada, $204) → `Papa Luiggi Especial`
+- "Fajitas de pollo" (versión infantil, $123) → `Fajitas de pollo infantil`
+- "Fajitas de arrachera" (versión infantil, $159) → `Fajitas de arrachera infantil`
+
+**Por claridad** (el menú original los lista sin prefijo dentro de la categoría "Papas asadas"; se agregó "Papa" para que no se confundan con otros platillos al buscar por nombre):
+
+- "Natural" → `Papa Natural`
+- "Elote" → `Papa con Elote`
+- "Champiñón" → `Papa con Champiñón`
+- "Chorizo" → `Papa con Chorizo`
+- "Tocino" → `Papa con Tocino`
+- "Arrachera" → `Papa con Arrachera`
+
 ## Cómo probar
 
 Comandos del CLI que **no necesitan Docker** (se corren desde la raíz del repo con `pnpm dlx supabase`, sin instalar nada):
@@ -53,10 +72,11 @@ pnpm db:reset:personal                                    # recrea todo desde ce
 - **`serviceagent-dev` nunca se resetea** (D16): prohibido `db reset --linked` enlazado a él. Solo Omar, o quien él autorice, hace `db push` a `serviceagent-dev`, y solo después de que apruebe la salida del `--dry-run`.
 - Para probar que la base se recrea desde cero (criterio de US-02-P1), usa el script `pnpm db:reset:personal` (equivale a `supabase db reset --linked`), enlazado a tu **proyecto personal** de Supabase. No lo uses enlazado al compartido.
 - Necesitan Docker, y **no** los usamos: `supabase start`, `db pull`, `db diff`.
-- Verificar: en el dashboard (Table Editor) debe verse `empleados` con 3 filas, el menú con sus categorías y platillos, `platillo_extra` con 5 filas (espuelas), y `POST /auth/login` con los PIN de arriba debe responder 200.
+- Verificar: en el dashboard (Table Editor) debe verse `empleados` con 3 filas, el menú con sus categorías y platillos, `platillo_extra` con 5 filas (espuelas), ningún `platillo` con `tiempo_estimado_min` en `NULL`, y `POST /auth/login` con los PIN de arriba debe responder 200.
+- `apps/api/test/menu.seed.test.ts` valida los archivos del seed como texto (sin conectarse a Supabase): conteos, nombres únicos, y que los tiempos sean múltiplos de 5.
 
 ## Reglas que aplican
 
 - [docs/negocio.md](../docs/negocio.md): autenticación, estados del pedido con su hora, pagos, inventario y recetas.
-- [docs/decisiones.md](../docs/decisiones.md): D2, D3, D7, D12, D13, D14, D15, D16 y pendiente de embeddings (US-16).
+- [docs/decisiones.md](../docs/decisiones.md): D2, D3, D7, D12, D13, D14, D15, D16, D18 y pendiente de embeddings (US-16).
 - [docs/despliegue.md](../docs/despliegue.md): variables `SUPABASE_*`; la llave de servicio solo en la API.
