@@ -35,7 +35,8 @@ Firma los JWT del login por PIN (docs/negocio.md → Autenticación). Si falta o
 Secreto que se mezcla con cada PIN (HMAC) antes del hash (D13). No vive en la base: si alguien roba la tabla `empleados`, sin el pepper no puede probar los 10 000 PIN posibles. Si falta o tiene menos de 32 caracteres, `POST /auth/login` responde 500 sin tocar los intentos.
 
 - **Desarrollo:** un solo valor para todo el equipo, porque todos usan el mismo proyecto de Supabase y el seed se genera con él. Quien lo crea (`openssl rand -base64 32`) lo comparte por un canal privado; cada quien lo pone en `apps/api/.dev.vars`.
-- **Producción:** uno distinto, con `cd apps/api && pnpm exec wrangler secret put PIN_PEPPER`. Los empleados de producción se crean con hashes generados con ese pepper, nunca con el seed de desarrollo.
+- **Ambiente desplegado:** mientras use la base `serviceagent-dev` (ver [Ambiente desplegado](#ambiente-desplegado)), lleva **el mismo** pepper de desarrollo; si no, los PIN del seed no coinciden.
+- **Producción (base propia):** uno distinto, con `cd apps/api && pnpm exec wrangler secret put PIN_PEPPER`. Los empleados de producción se crean con hashes generados con ese pepper, nunca con el seed de desarrollo.
 - **Cambiarlo invalida todos los PIN guardados.** Hay que regenerar los hashes (`pnpm --filter @serviceagent/api hash-pin <PIN>`).
 
 ### Frontends (web y simuladores)
@@ -52,7 +53,21 @@ Secreto que se mezcla con cada PIN (HMAC) antes del hash (D13). No vive en la ba
 | `CLOUDFLARE_ACCOUNT_ID` | Secreto  | Cuenta de Cloudflare donde se despliega               |
 | `VITE_API_URL`          | Variable | URL pública de la API usada al compilar los frontends |
 
-Se configuran en Settings → Secrets and variables → Actions. Si los secretos no existen, el workflow de deploy **se salta con un aviso** en lugar de fallar.
+Se configuran en Settings → Secrets and variables → Actions. Si los secretos no existen, el workflow de deploy **se salta con un aviso** en lugar de fallar. `CLOUDFLARE_ACCOUNT_ID` son 32 caracteres hexadecimales (Workers & Pages → columna derecha); si el valor no es ese, wrangler falla con `code: 7003`.
+
+## Ambiente desplegado
+
+| Servicio            | URL                                                |
+| ------------------- | -------------------------------------------------- |
+| API (Worker)        | https://serviceagent-api.omarblancom03.workers.dev |
+| Web (Pages)         | https://serviceagent-web.pages.dev                 |
+| Simuladores (Pages) | https://serviceagent-simuladores.pages.dev         |
+
+- Usa la **misma base de Supabase `serviceagent-dev`** que el desarrollo local: lo que se cree en local se ve en el desplegado y al revés.
+- El Worker tiene cargados `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `JWT_SECRET` (distinto al de local), `PIN_PEPPER` (el de desarrollo) y `CORS_ORIGINS`.
+- `CORS_ORIGINS` es la lista, separada por comas, de orígenes exactos: `https://serviceagent-web.pages.dev`, sin `/` final. Las URLs de vista previa con prefijo (`<hash>.serviceagent-web.pages.dev`) no están incluidas, así que ahí el navegador bloquea las llamadas a la API.
+- Solo el PO (Omar) tiene acceso a Cloudflare y carga los secretos del Worker. **Si una historia agrega una variable a la API:** va a `.env.example` en el mismo PR y se avisa al PO antes de fusionar, para cargarla con `wrangler secret put`. Un secreto se aplica al guardarlo, sin redesplegar.
+- Revisar qué secretos tiene el Worker (solo nombres): `cd apps/api && pnpm exec wrangler secret list`.
 
 ## CI/CD
 
