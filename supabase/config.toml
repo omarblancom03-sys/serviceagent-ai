@@ -1,6 +1,11 @@
-# Configuración del CLI de Supabase. Por ahora solo declara el seed (US-04);
-# el resto de la configuración se agrega en US-02-P1. Ver supabase/CLAUDE.md.
+# Configuración del CLI de Supabase (US-02-P1).
+# El orden importa: el menú debe cargar antes que platillo_extra (depende
+# de sus ids), y empleados es independiente de ambos.
 
 [db.seed]
 enabled = true
-sql_paths = ["./seed/*.sql"]
+sql_paths = [
+  "./seed/01_menu_el_granero.sql",
+  "./seed/02_platillo_extra.sql",
+  "./seed/empleados.sql",
+]
