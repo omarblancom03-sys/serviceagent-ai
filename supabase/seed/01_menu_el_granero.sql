@@ -1,9 +1,46 @@
 -- Seed del menu real de El Granero (US-02-P2)
+-- Fuente: ProductosRestaurante.MD
+-- Requiere que ya corriera 20260929100000_crear_esquema_menu.sql
+--
+-- Notas de transcripcion:
+--   - tiempo_estimado_min no se carga aqui: el menu fuente no trae ese dato
+--     y lo llena 03_tiempos_preparacion_menu.sql (fijo por categoria, D18).
+--   - "platillo" no tiene precio propio (ver migracion): todo platillo
+--     recibe al menos una variante. Los que no tienen opciones reales en
+--     el menu llevan una sola variante llamada 'Unico'.
+--   - Las 5 taquizas SI llevan 2 variantes (charros/refritos) aunque no
+--     cambien de precio, porque el menu dice explicitamente "preguntar si
+--     desea frijoles charros o refritos".
+--   - 3 nombres se desambiguaron por colision entre categorias distintas,
+--     usando los sinonimos que ya trae el propio menu:
+--       * "Luiggi Especial" (papa asada, $204) -> 'Papa Luiggi Especial'
+--       * "Fajitas de pollo" (infantil, $123)  -> 'Fajitas de pollo infantil'
+--       * "Fajitas de arrachera" (infantil, $159) -> 'Fajitas de arrachera infantil'
+--   - Otros 6 nombres de "Papas asadas" llevan el prefijo "Papa" (el menu
+--     original los lista sin prefijo), para que no queden ambiguos frente
+--     a otros platillos al buscar por nombre:
+--       * "Natural" -> 'Papa Natural'        * "Elote" -> 'Papa con Elote'
+--       * "Champiñón" -> 'Papa con Champiñón' * "Chorizo" -> 'Papa con Chorizo'
+--       * "Tocino" -> 'Papa con Tocino'      * "Arrachera" -> 'Papa con Arrachera'
+--   - Otros 7 nombres se ajustaron por decision del PO para que no se lean
+--     ambiguos en cocina; el nombre original queda como sinonimo:
+--       * "Pollo" -> 'Hamburguesa de Pollo'  * "Granero" -> 'Hamburguesa Granero'
+--       * "Delicias" -> 'Hamburguesa Delicias'
+--       * "Delicias Tocino" -> 'Hamburguesa Delicias Tocino'
+--       * "Algodoneros" -> 'Hamburguesa Algodoneros'
+--       * "Hawaiana" -> 'Hamburguesa Hawaiana'
+--       * "Filete de pescado" (infantil) -> 'Filete de pescado infantil'
+--   - Idempotente: cada insert usa "on conflict" sobre un indice unico, asi
+--     que correr este archivo mas de una vez no duplica filas. Requiere la
+--     migracion 20260929140000_restricciones_unicas_menu.sql (unicos en
+--     categoria_producto.nombre, platillo.nombre, variante_producto
+--     (id_platillo, nombre) y extra.nombre).
+--   - El cargo "con espuelas" (+$55 en varios cortes) se modela como un
+--     extra, no como variante. Los platillos donde aplica se relacionan
+--     en platillo_extra (seed 02_platillo_extra.sql, US-02-P1).
 
-
--- =====================================================================
 -- 1) CATEGORIAS
--- =====================================================================
+
 insert into categoria_producto (nombre) values
   ('De entradas al rancho'),
   ('Papas asadas'),
@@ -20,11 +57,11 @@ insert into categoria_producto (nombre) values
   ('Niños granjeros'),
   ('Bebidas'),
   ('Cervezas'),
-  ('Postres');
+  ('Postres')
+on conflict (nombre) do nothing;
 
--- =====================================================================
 -- 2) PLATILLOS (categoria por nombre, para no depender de ids fijos)
--- =====================================================================
+
 insert into platillo (id_categoria, nombre, descripcion)
 select c.id_categoria, v.nombre, v.descripcion
 from (values
@@ -70,12 +107,12 @@ from (values
   ('Más con carnita', 'Fajitas de pollo', 'Fajitas de pollo. Acompañadas de arroz, papas a la francesa y verduras.'),
   ('Más con carnita', 'Tiras de pollo', 'Pechuga de pollo con empanizado de la casa. Acompañada de vegetales y aderezo de la casa.'),
   -- Hamburguesas (todas acompañadas de papas)
-  ('Hamburguesas', 'Delicias', 'Hamburguesa sencilla con lechuga fresca, tomate y queso. Acompañada de papas.'),
-  ('Hamburguesas', 'Delicias Tocino', 'Hamburguesa sencilla con tocino, lechuga fresca y queso. Acompañada de papas.'),
-  ('Hamburguesas', 'Granero', 'Hamburguesa bañada en salsa BBQ con tocino. Acompañada de papas.'),
-  ('Hamburguesas', 'Pollo', 'Hamburguesa con pechuga de pollo a la parrilla y verduras. Acompañada de papas.'),
-  ('Hamburguesas', 'Algodoneros', 'Hamburguesa de doble carne con lechuga fresca, tomate y queso. Acompañada de papas.'),
-  ('Hamburguesas', 'Hawaiana', 'Hamburguesa sencilla con lechuga fresca y piña. Acompañada de papas.'),
+  ('Hamburguesas', 'Hamburguesa Delicias', 'Hamburguesa sencilla con lechuga fresca, tomate y queso. Acompañada de papas.'),
+  ('Hamburguesas', 'Hamburguesa Delicias Tocino', 'Hamburguesa sencilla con tocino, lechuga fresca y queso. Acompañada de papas.'),
+  ('Hamburguesas', 'Hamburguesa Granero', 'Hamburguesa bañada en salsa BBQ con tocino. Acompañada de papas.'),
+  ('Hamburguesas', 'Hamburguesa de Pollo', 'Hamburguesa con pechuga de pollo a la parrilla y verduras. Acompañada de papas.'),
+  ('Hamburguesas', 'Hamburguesa Algodoneros', 'Hamburguesa de doble carne con lechuga fresca, tomate y queso. Acompañada de papas.'),
+  ('Hamburguesas', 'Hamburguesa Hawaiana', 'Hamburguesa sencilla con lechuga fresca y piña. Acompañada de papas.'),
   -- De nuestras mejores vacas
   ('De nuestras mejores vacas', 'Parrillada Familiar', 'Parrillada para compartir con costilla, sirloin, arrachera, dos salchichas asadas, tiras de pollo y fajitas de pollo. Incluye frijoles charros, arroz y elote.'),
   ('De nuestras mejores vacas', 'Parrillada Mar y Tierra', 'Parrillada para aproximadamente seis personas con costilla, sirloin, arrachera, dos salchichas asadas, dos filetes de pescado empanizado, dos brochetas de camarón, tiras de pollo y fajitas de pollo. Incluye frijoles charros, arroz, elote, ensalada y papas francesas.'),
@@ -120,7 +157,7 @@ from (values
   ('Camarones', 'Camarones al Coco', 'Camarones empanizados al coco. Acompañados de arroz blanco y ensalada con aderezo de frutos rojos al chipotle.'),
   -- Niños granjeros
   ('Niños granjeros', 'Fajitas de pollo infantil', 'Pechuga de pollo en fajitas a la parrilla. Acompañada de papas a la francesa y arroz.'),
-  ('Niños granjeros', 'Filete de pescado', 'Filete de pescado empanizado. Acompañado de papas a la francesa y arroz.'),
+  ('Niños granjeros', 'Filete de pescado infantil', 'Filete de pescado empanizado. Acompañado de papas a la francesa y arroz.'),
   ('Niños granjeros', 'Fajitas de arrachera infantil', 'Fajitas de arrachera. Acompañadas de papas a la francesa y arroz.'),
   ('Niños granjeros', 'Caldito Granero', 'Caldo infantil con pechuga de pollo, arroz norteño, asadero y aguacate. No incluye acompañamientos adicionales.'),
   ('Niños granjeros', 'Boneless', 'Boneless de pollo. Acompañados con papas a la francesa.'),
@@ -140,11 +177,13 @@ from (values
   ('Postres', 'Brownies con nieve', 'Brownie acompañado con nieve. No incluye acompañamientos adicionales.'),
   ('Postres', 'Cheesecake con nieve', 'Cheesecake acompañado con nieve. No incluye acompañamientos adicionales.')
 ) as v(categoria, nombre, descripcion)
-join categoria_producto c on c.nombre = v.categoria;
+join categoria_producto c on c.nombre = v.categoria
+on conflict (nombre) do update set
+  id_categoria = excluded.id_categoria,
+  descripcion = excluded.descripcion;
 
--- =====================================================================
 -- 3) VARIANTES (todo platillo tiene al menos una; ver nota al inicio)
--- =====================================================================
+
 insert into variante_producto (id_platillo, nombre, precio_centavos)
 select p.id_platillo, v.nombre_variante, v.precio_centavos
 from (values
@@ -199,12 +238,12 @@ from (values
   ('Tiras de pollo', 'Salsa Búfalo', 18600),
   ('Tiras de pollo', 'Salsa BBQ', 18600),
 
-  ('Delicias', 'Único', 12900),
-  ('Delicias Tocino', 'Único', 14400),
-  ('Granero', 'Único', 14900),
-  ('Pollo', 'Único', 12400),
-  ('Algodoneros', 'Único', 16900),
-  ('Hawaiana', 'Único', 14900),
+  ('Hamburguesa Delicias', 'Único', 12900),
+  ('Hamburguesa Delicias Tocino', 'Único', 14400),
+  ('Hamburguesa Granero', 'Único', 14900),
+  ('Hamburguesa de Pollo', 'Único', 12400),
+  ('Hamburguesa Algodoneros', 'Único', 16900),
+  ('Hamburguesa Hawaiana', 'Único', 14900),
 
   ('Parrillada Familiar', 'Único', 104900),
   ('Parrillada Mar y Tierra', 'Único', 123800),
@@ -252,7 +291,7 @@ from (values
   ('Camarones al Coco', 'Único', 31200),
 
   ('Fajitas de pollo infantil', 'Único', 12300),
-  ('Filete de pescado', 'Único', 14900),
+  ('Filete de pescado infantil', 'Único', 14900),
   ('Fajitas de arrachera infantil', 'Único', 15900),
   ('Caldito Granero', 'Único', 7400),
   ('Boneless', 'Único', 15400),
@@ -282,11 +321,12 @@ from (values
   ('Brownies con nieve', 'Único', 9800),
   ('Cheesecake con nieve', 'Único', 9800)
 ) as v(platillo, nombre_variante, precio_centavos)
-join platillo p on p.nombre = v.platillo;
+join platillo p on p.nombre = v.platillo
+on conflict (id_platillo, nombre) do update set
+  precio_centavos = excluded.precio_centavos;
 
--- =====================================================================
 -- 4) SINONIMOS
--- =====================================================================
+
 insert into sinonimo_producto (id_platillo, frase)
 select p.id_platillo, v.frase
 from (values
@@ -331,12 +371,14 @@ from (values
   ('Fajitas de pollo', 'fajitas de pollo'),
   ('Tiras de pollo', 'tiras de pollo'), ('Tiras de pollo', 'pollo empanizado'),
 
-  ('Delicias', 'hamburguesa delicias'), ('Delicias', 'delicias'),
-  ('Delicias Tocino', 'delicias tocino'), ('Delicias Tocino', 'hamburguesa con tocino'),
-  ('Granero', 'hamburguesa granero'), ('Granero', 'granero'),
-  ('Pollo', 'hamburguesa de pollo'),
-  ('Algodoneros', 'algodoneros'), ('Algodoneros', 'hamburguesa doble'),
-  ('Hawaiana', 'hawaiana'), ('Hawaiana', 'hamburguesa hawaiana'),
+  ('Hamburguesa Delicias', 'hamburguesa delicias'), ('Hamburguesa Delicias', 'delicias'),
+  ('Hamburguesa Delicias Tocino', 'delicias tocino'), ('Hamburguesa Delicias Tocino', 'hamburguesa con tocino'),
+  ('Hamburguesa Granero', 'hamburguesa granero'), ('Hamburguesa Granero', 'granero'),
+  ('Hamburguesa Granero', 'la granero'),
+  ('Hamburguesa de Pollo', 'hamburguesa de pollo'), ('Hamburguesa de Pollo', 'pollo'),
+  ('Hamburguesa de Pollo', 'una de pollo'),
+  ('Hamburguesa Algodoneros', 'algodoneros'), ('Hamburguesa Algodoneros', 'hamburguesa doble'),
+  ('Hamburguesa Hawaiana', 'hawaiana'), ('Hamburguesa Hawaiana', 'hamburguesa hawaiana'),
 
   ('Parrillada Familiar', 'parrillada familiar'),
   ('Parrillada Mar y Tierra', 'parrillada mar y tierra'), ('Parrillada Mar y Tierra', 'mar y tierra'),
@@ -381,7 +423,8 @@ from (values
   ('Camarones al Coco', 'camarones coco'),
 
   ('Fajitas de pollo infantil', 'fajitas niño'), ('Fajitas de pollo infantil', 'fajitas de pollo infantil'),
-  ('Filete de pescado', 'filete niño'), ('Filete de pescado', 'pescado infantil'),
+  ('Filete de pescado infantil', 'filete niño'), ('Filete de pescado infantil', 'pescado infantil'),
+  ('Filete de pescado infantil', 'filete de pescado'),
   ('Fajitas de arrachera infantil', 'fajitas arrachera niño'),
   ('Caldito Granero', 'caldito granero'), ('Caldito Granero', 'caldo niño'),
   ('Boneless', 'boneless'),
@@ -401,14 +444,17 @@ from (values
   ('Brownies con nieve', 'brownie'), ('Brownies con nieve', 'brownies con nieve'),
   ('Cheesecake con nieve', 'cheesecake')
 ) as v(platillo, frase)
-join platillo p on p.nombre = v.platillo;
+join platillo p on p.nombre = v.platillo
+on conflict (id_platillo, frase) do nothing;
 
--- =====================================================================
 -- 5) EXTRAS
--- =====================================================================
+
 insert into extra (nombre, precio_centavos, descripcion) values
   ('Totopos', 2000, 'Porción extra de totopos.'),
   ('BBQ', 1500, 'Porción extra de salsa BBQ.'),
   ('Aguacate', 2500, 'Porción extra de aguacate.'),
   ('Toreados', 2100, 'Porción extra de chiles toreados.'),
-  ('Espuelas (camarones)', 5500, 'Cargo adicional por camarones. Según el menú, solo aplica en T-Bone, Arrachera, Arrachera al Chipotle, Sirloin y Rib Eye; esa restricción no está en la base de datos y debe validarla el agente antes de confirmar.');
+  ('Espuelas (camarones)', 5500, 'Cargo adicional por camarones, disponible únicamente en los cortes que lo permiten (T-Bone, Arrachera, Arrachera al Chipotle, Sirloin y Rib Eye), validado mediante la tabla platillo_extra.')
+on conflict (nombre) do update set
+  precio_centavos = excluded.precio_centavos,
+  descripcion = excluded.descripcion;

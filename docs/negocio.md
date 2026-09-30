@@ -61,6 +61,7 @@ confirmado → (esperando_pago) → en_cola → preparando → listo → entrega
 
 ## Tiempo estimado
 
+- Tiempo base: `tiempo_estimado_min` del platillo, fijo por categoría (D18). Ejemplos: bebidas y cervezas 5 min, postres 10, Taquizas 35. Los valores viven en `supabase/seed/03_tiempos_preparacion_menu.sql`.
 - v1: tiempo base del platillo más tardado del pedido + carga actual de la cocina.
 - v2: el tiempo base se ajusta con el promedio real (Empezar → Terminado) de los últimos pedidos.
 - El tiempo prometido se guarda en el pedido y se muestra en el ticket de cocina.
