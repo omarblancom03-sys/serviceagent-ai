@@ -9,7 +9,7 @@ Paquete `@serviceagent/shared`: esquemas zod, tipos y constantes que usan la API
 - `src/index.ts`: reexporta todo (`export * from './<archivo>'`). Es la única entrada del paquete.
 - `src/health.ts`: `HealthResponseSchema` y `HealthResponse`, la respuesta de `GET /health`.
 - `src/auth.ts`: roles, PIN, login, sesión, errores de autenticación, `TokenPayloadSchema` (estricto: solo `sub`, `rol`, `exp`) y `SesionActualSchema` (respuesta de `GET /auth/sesion`: `{ empleado, exp }`).
-- Esquemas del menú: pendiente: se define en US-03-P1.
+- `src/menu.ts`: contrato del menú público. `CategoriaSchema`, `VarianteSchema` (con el precio), `PlatilloSchema` (al menos una variante y sus `extrasPermitidos`), `ExtraSchema` (extras sueltos), `CategoriaMenuSchema`, `RespuestaMenuSchema` (`GET /menu`), `ParamsProductoSchema` y `RespuestaProductoDetalleSchema` (`GET /menu/productos/{id}`) y `ErrorMenuSchema`. `activo` y `disponible` se separan (D20) y los extras siguen D19.
 
 Se consume como **código TypeScript fuente, sin paso de build** (D9): `package.json` apunta `exports` a `./src/index.ts` y Vite y Wrangler lo compilan.
 
@@ -27,10 +27,10 @@ Se consume como **código TypeScript fuente, sin paso de build** (D9): `package.
 pnpm --filter @serviceagent/shared typecheck
 ```
 
-Los esquemas se prueban desde quien los usa (por ejemplo, `apps/api/test/health.test.ts` valida la respuesta con `HealthResponseSchema.parse`). Tests propios del paquete: pendiente: se define en US-03-P1.
+Los esquemas se prueban desde quien los usa (por ejemplo, `apps/api/test/health.test.ts` valida la respuesta con `HealthResponseSchema.parse` y `apps/api/test/menu.contract.test.ts` prueba los esquemas del menú). El paquete no tiene tests propios.
 
 ## Reglas que aplican
 
 - [Reglas de oro](../../CLAUDE.md#reglas-de-oro) del raíz (zod para toda entrada externa, centavos).
 - [docs/negocio.md](../../docs/negocio.md): estados y reglas que los esquemas deben reflejar.
-- [docs/decisiones.md](../../docs/decisiones.md): D7, D9.
+- [docs/decisiones.md](../../docs/decisiones.md): D7, D9, D19, D20.

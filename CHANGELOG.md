@@ -18,3 +18,4 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). *
 - US-02-P1: tabla `platillo_extra` (qué extras aplican a qué platillo), comando `pnpm db:reset:personal` (contra un proyecto personal de Supabase, sin Docker) y diagrama entidad-relación del menú en `supabase/README.md`.
 - US-02-P2: menú real completo de El Granero en el seed (16 categorías, 95 platillos, 118 variantes, sinónimos y 5 extras), idempotente con `on conflict`.
 - US-02-P2: tiempo estimado de preparación por categoría en el seed (`03_tiempos_preparacion_menu.sql`), restricciones únicas para que el seed del menú sea idempotente, y test estático de los archivos del seed.
+- US-03-P1: contrato del menú público con esquemas zod en `packages/shared` (`activo` separado de `disponible`, extras ligados y sueltos) y `GET /menu` y `GET /menu/productos/{id}` documentados en Swagger (sin implementar todavía).
