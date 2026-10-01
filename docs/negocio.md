@@ -25,6 +25,11 @@ Fuera de alcance: delivery a domicilio.
 - **El modelo de IA NUNCA calcula ni inventa precios, totales ni descuentos.** Todo monto lo calcula el backend con precios de la base de datos.
 - Montos en centavos (`integer`) en base de datos y API. Se formatean a pesos solo al mostrar.
 
+## Extras
+
+- **Espuelas (camarones, $55):** solo se agrega a los 5 cortes de 450 gr ligados en `platillo_extra` (T-Bone, Arrachera, Arrachera al Chipotle, Sirloin y Rib Eye).
+- **Totopos ($20), BBQ ($15), Aguacate ($25) y Toreados ($21):** se piden sueltos y se cobran aparte. El agente no los recomienda; el cliente los agrega si quiere ([D19](decisiones.md)).
+
 ## Estados del pedido
 
 ```
