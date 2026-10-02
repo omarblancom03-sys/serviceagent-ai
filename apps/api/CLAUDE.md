@@ -9,7 +9,7 @@ API del sistema: la usan el agente de Retell (custom functions), los frontends y
 | Ruta                     | Qué hay                                                                                                                  |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
 | `src/index.ts`           | `crearApp(dependencias)`: CORS (`CORS_ORIGINS`), rutas, `/openapi.json` y Swagger en `/docs`. Exporta `app` (tests) y por defecto (Worker). |
-| `src/routes/`            | Un archivo por recurso; cada uno exporta `registrarX(app, deps)`. Hoy: `health.ts`, `auth.ts` (`/auth/empleados`, `/auth/login`, `/auth/sesion`). |
+| `src/routes/`            | Un archivo por recurso; cada uno exporta `registrarX(app, deps)`. Hoy: `health.ts`, `auth.ts` (`/auth/empleados`, `/auth/login`, `/auth/sesion`) y `menu.ts` (`GET /menu`, `GET /menu/productos/{id}`: públicas y solo documentadas con `openAPIRegistry.registerPath`, sin handler; la lectura se implementa en US-03-P2). |
 | `src/services/`          | Lógica de negocio sin HTTP. Hoy: `sesion.ts` (login por PIN y bloqueo). Define las interfaces de datos que usa (`EmpleadosRepo`). |
 | `src/lib/env.ts`         | Tipos de las variables de entorno (`Bindings`) y del contexto (`AppEnv`).                                                |
 | `src/lib/auth.ts`        | JWT propio (HS256, `JWT_SECRET`) y middleware `requiereRol(...)`.                                                        |
@@ -48,4 +48,4 @@ Los tests usan `crearApp({ ... })` con repos en memoria y `app.request(ruta, ini
 - [docs/negocio.md](../../docs/negocio.md): estados del pedido, pagos, inventario, tiempo estimado, auth y roles.
 - [docs/agente.md](../../docs/agente.md): endpoints de las custom functions y verificación de `X-Retell-Signature`.
 - [docs/despliegue.md](../../docs/despliegue.md): secretos del Worker (`JWT_SECRET`, `PIN_PEPPER`, `SUPABASE_*`) y despliegue.
-- [docs/decisiones.md](../../docs/decisiones.md): D2, D7, D8, D9, D12, D13, D14.
+- [docs/decisiones.md](../../docs/decisiones.md): D2, D7, D8, D9, D12, D13, D14, D19, D20.

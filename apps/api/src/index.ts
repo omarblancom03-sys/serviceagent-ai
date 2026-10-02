@@ -7,6 +7,7 @@ import { crearRepoEmpleados } from './lib/repoEmpleados';
 import { crearClienteSupabase } from './lib/supabase';
 import { registrarAuth, type DependenciasAuth } from './routes/auth';
 import { registrarHealth } from './routes/health';
+import { registrarMenu } from './routes/menu';
 
 /** Servicios externos que usa la API. Los tests los reemplazan por versiones en memoria. */
 export type Dependencias = DependenciasAuth;
@@ -34,6 +35,7 @@ export function crearApp(dependencias: Dependencias = dependenciasReales) {
 
   registrarHealth(app);
   registrarAuth(app, dependencias);
+  registrarMenu(app);
 
   // Documentación OpenAPI (JSON) y Swagger UI.
   app.openAPIRegistry.registerComponent('securitySchemes', 'Bearer', {
