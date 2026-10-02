@@ -9,7 +9,7 @@ Paquete `@serviceagent/shared`: esquemas zod, tipos y constantes que usan la API
 - `src/index.ts`: reexporta todo (`export * from './<archivo>'`). Es la única entrada del paquete.
 - `src/health.ts`: `HealthResponseSchema` y `HealthResponse`, la respuesta de `GET /health`.
 - `src/auth.ts`: roles, PIN, login, sesión, errores de autenticación, `TokenPayloadSchema` (estricto: solo `sub`, `rol`, `exp`) y `SesionActualSchema` (respuesta de `GET /auth/sesion`: `{ empleado, exp }`).
-- `src/menu.ts`: contrato del menú público. `CategoriaSchema`, `VarianteSchema` (con el precio), `PlatilloSchema` (al menos una variante y sus `extrasPermitidos`), `ExtraSchema` (extras sueltos), `CategoriaMenuSchema`, `RespuestaMenuSchema` (`GET /menu`), `ParamsProductoSchema` y `RespuestaProductoDetalleSchema` (`GET /menu/productos/{id}`) y `ErrorMenuSchema`. `activo` y `disponible` se separan (D20) y los extras siguen D19.
+- `src/menu.ts`: contrato del menú público. `CategoriaSchema`, `VarianteSchema` (con el precio), `PlatilloSchema` (al menos una variante, sus `extrasPermitidos` e `ingredientesRemovibles`; `tiempoEstimadoMin` puede ser `null`), `IngredienteRemovibleSchema`, `ExtraSchema` (extras sueltos), `CategoriaMenuSchema`, `RespuestaMenuSchema` (`GET /menu`), `ParamsProductoSchema` (solo dígitos, hasta `MAX_ID` = máximo `integer` de Postgres) y `RespuestaProductoDetalleSchema` (`GET /menu/productos/{id}`) y `ErrorMenuSchema`. `activo` y `disponible` se separan (D20) y los extras siguen D19.
 
 Se consume como **código TypeScript fuente, sin paso de build** (D9): `package.json` apunta `exports` a `./src/index.ts` y Vite y Wrangler lo compilan.
 
