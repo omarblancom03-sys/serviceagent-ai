@@ -9,15 +9,15 @@ API del sistema: la usan el agente de Retell (custom functions), los frontends y
 | Ruta                     | Qué hay                                                                                                                  |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
 | `src/index.ts`           | `crearApp(dependencias)`: CORS (`CORS_ORIGINS`), rutas, `/openapi.json` y Swagger en `/docs`. Exporta `app` (tests) y por defecto (Worker). |
-| `src/routes/`            | Un archivo por recurso; cada uno exporta `registrarX(app, deps)`. Hoy: `health.ts`, `auth.ts` (`/auth/empleados`, `/auth/login`, `/auth/sesion`) y `menu.ts` (`GET /menu`, `GET /menu/productos/{id}`: públicas y solo documentadas con `openAPIRegistry.registerPath`, sin handler; la lectura se implementa en US-03-P2). |
-| `src/services/`          | Lógica de negocio sin HTTP. Hoy: `sesion.ts` (login por PIN y bloqueo). Define las interfaces de datos que usa (`EmpleadosRepo`). |
+| `src/routes/`            | Un archivo por recurso; cada uno exporta `registrarX(app, deps)`. Hoy: `health.ts`, `auth.ts` (`/auth/empleados`, `/auth/login`, `/auth/sesion`) y `menu.ts` (`GET /menu`, `GET /menu/productos/{id}`: públicas; 400 si el id no es entero positivo, 404 si no está visible, 500 si falla la lectura). |
+| `src/services/`          | Lógica de negocio sin HTTP. Hoy: `sesion.ts` (login por PIN y bloqueo) y `menu.ts` (`armarMenu`: filtra lo inactivo y separa extras ligados de sueltos, D19). Define las interfaces de datos que usa (`EmpleadosRepo`, `MenuRepo`). |
 | `src/lib/env.ts`         | Tipos de las variables de entorno (`Bindings`) y del contexto (`AppEnv`).                                                |
 | `src/lib/auth.ts`        | JWT propio (HS256, `JWT_SECRET`) y middleware `requiereRol(...)`.                                                        |
 | `src/lib/pin.ts`         | Hash y verificación del PIN (HMAC con `PIN_PEPPER` + PBKDF2, D13).                                                       |
 | `src/lib/supabase.ts`    | `crearClienteSupabase(env)`: cliente con la llave de servicio, uno por petición. Lo reutilizan todas las historias.      |
-| `src/lib/repo*.ts`       | Implementación sobre Supabase de las interfaces de `services/`. Hoy: `repoEmpleados.ts`.                                 |
+| `src/lib/repo*.ts`       | Implementación sobre Supabase de las interfaces de `services/`. Hoy: `repoEmpleados.ts` y `repoMenu.ts` (lee las 6 tablas del menú en paralelo). |
 | `scripts/hashPin.ts`     | `pnpm --filter @serviceagent/api hash-pin <PIN>`: hash para el seed (lee `PIN_PEPPER` de `.dev.vars`).                                                   |
-| `test/`                  | Tests de Vitest (`*.test.ts`) y `repoEnMemoria.ts` (datos falsos para tests).                                            |
+| `test/`                  | Tests de Vitest (`*.test.ts`) y repos en memoria con datos falsos: `repoEnMemoria.ts` (empleados) y `menuEnMemoria.ts` (menú). |
 
 Pendiente en `src/lib/`: firma de Retell en US-06, límites de uso en US-19, notificador de WhatsApp en US-28.
 

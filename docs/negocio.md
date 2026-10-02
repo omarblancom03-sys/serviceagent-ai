@@ -27,8 +27,9 @@ Fuera de alcance: delivery a domicilio.
 
 ## Extras
 
-- **Espuelas (camarones, $55):** solo se agrega a los 5 cortes de 450 gr ligados en `platillo_extra` (T-Bone, Arrachera, Arrachera al Chipotle, Sirloin y Rib Eye).
-- **Totopos ($20), BBQ ($15), Aguacate ($25) y Toreados ($21):** se piden sueltos y se cobran aparte. El agente no los recomienda; el cliente los agrega si quiere ([D19](decisiones.md)).
+- **Ligados:** un extra con filas en `platillo_extra` solo se puede agregar a esos platillos.
+- **Sueltos:** un extra sin filas en `platillo_extra` se pide aparte y se cobra aparte.
+- El agente no recomienda extras; los agrega solo si el cliente los pide. Cuáles extras son de cada tipo: [D19](decisiones.md). Sus precios viven en la base, no en los docs.
 
 ## Estados del pedido
 
