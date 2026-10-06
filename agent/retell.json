@@ -2,14 +2,14 @@
   "chat_agent": {
     "agent_name": "El Granero - chat",
     "language": "es-419",
-    "timezone": "pendiente (decide Omar)",
-    "end_chat_after_silence_ms": "pendiente (decide Omar)",
+    "timezone": "America/Chihuahua",
+    "end_chat_after_silence_ms": 600000,
     "auto_close_message": "Cerramos este chat por inactividad. Si necesitas algo de El Granero, escríbenos de nuevo. ¡Gracias!",
     "webhook_url": null
   },
   "retell_llm": {
-    "model": "pendiente (decide Omar)",
-    "model_temperature": "pendiente (decide Omar)",
+    "model": "pendiente (ver retell.md, Modelo)",
+    "model_temperature": 0.2,
     "start_speaker": "agent",
     "begin_message": "¡Hola! Soy el asistente virtual de El Granero. ¿En qué te puedo ayudar?",
     "general_prompt": "agent/prompt.md",

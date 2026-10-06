@@ -18,21 +18,28 @@ Usa los nombres de campo de la API de Retell, para que no haya duda de a qué aj
 
 ## Valores
 
-| Campo                                 | Para qué sirve                                                                                              |
-| ------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `agent_name`                          | Nombre interno del agente; el cliente no lo ve.                                                             |
-| `language`                            | Retell ofrece `es-ES` y `es-419` (español de Latinoamérica); no existe una opción para México.              |
-| `timezone`                            | Zona horaria del agente. El valor por defecto de Retell es `America/Los_Angeles`.                           |
-| `end_chat_after_silence_ms`           | Cierra el chat si el cliente deja de responder. Acepta de 2 minutos a 72 horas (1 hora si no se configura). |
-| `auto_close_message`                  | Mensaje que ve el cliente cuando el chat se cierra solo.                                                    |
-| `webhook_url`                         | Sin webhook: todavía no hay un endpoint que lo reciba.                                                      |
-| `model`, `model_temperature`          | Modelo de lenguaje y qué tan variable es su respuesta (0 a 1).                                              |
-| `start_speaker`, `begin_message`      | El agente habla primero con un saludo fijo, igual para todos los clientes.                                  |
-| `general_tools`, `knowledge_base_ids` | Vacíos: las custom functions llegan con su historia y el menú se consulta con RAG propio (D3).              |
+| Campo                                 | Para qué sirve                                                                                                                    |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `agent_name`                          | Nombre interno del agente; el cliente no lo ve.                                                                                   |
+| `language`                            | Retell ofrece `es-ES` y `es-419` (español de Latinoamérica); no existe una opción para México.                                    |
+| `timezone`                            | Zona horaria del restaurante. Si no se configura, Retell usa `America/Los_Angeles`.                                               |
+| `end_chat_after_silence_ms`           | Cierra el chat si el cliente deja de responder. Va en milisegundos: 600000 son 10 minutos. Retell acepta de 2 minutos a 72 horas. |
+| `auto_close_message`                  | Mensaje que ve el cliente cuando el chat se cierra solo.                                                                          |
+| `webhook_url`                         | Sin webhook: todavía no hay un endpoint que lo reciba.                                                                            |
+| `model`                               | Modelo de lenguaje. Se elige con la regla de [Modelo](#modelo).                                                                   |
+| `model_temperature`                   | Qué tan variable es la respuesta, de 0 a 1. Un valor bajo da respuestas más parejas entre clientes.                               |
+| `start_speaker`, `begin_message`      | El agente habla primero con un saludo fijo, igual para todos los clientes.                                                        |
+| `general_tools`, `knowledge_base_ids` | Vacíos: las custom functions llegan con su historia y el menú se consulta con RAG propio (D3).                                    |
+
+## Modelo
+
+Regla: el modelo más barato de Retell que pase los 11 casos; si falla, se sube de nivel y se anota.
+
+El modelo elegido se escribe en `model` de `retell.json`, y el modelo con el que se probó queda en [tests/corrida.md](./tests/corrida.md).
 
 ## Límite de mensajes por conversación
 
-Retell no tiene un ajuste de máximo de mensajes ni de turnos por conversación. Lo único configurable es el cierre por inactividad (`end_chat_after_silence_ms`), que no limita cuántos mensajes se envían. El límite real se aplica fuera de la IA ([docs/agente.md → Seguridad](../docs/agente.md#seguridad-prioridad-del-po)).
+No se configura en Retell: el cierre por inactividad (`end_chat_after_silence_ms`) no limita cuántos mensajes se envían. Dónde se aplica el límite: [D21](../docs/decisiones.md).
 
 ## Pasos en el dashboard
 

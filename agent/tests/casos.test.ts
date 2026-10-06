@@ -59,6 +59,16 @@ describe('formato de los casos (agent/tests/casos)', () => {
   });
 });
 
+describe('registro de la corrida manual (agent/tests/corrida.md)', () => {
+  const corrida = readFileSync(path.join(directorioDeEsteArchivo, 'corrida.md'), 'utf-8');
+  const casosEnCorrida = [...corrida.matchAll(/^\| `([^`]+)`/gm)].map((m) => m[1]);
+
+  it('tiene una fila por cada caso, ni mas ni menos', () => {
+    const ids = archivosCasos.map((archivo) => leerCaso(archivo).id);
+    expect([...casosEnCorrida].sort()).toEqual([...ids].sort());
+  });
+});
+
 describe('cobertura de US-06', () => {
   const casosUs06 = archivosCasos.map(leerCaso).filter((caso) => caso.historia === 'US-06');
 
