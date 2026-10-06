@@ -31,7 +31,7 @@ apps/web/            React: /pedir, /cocina, /caja, /admin, /login
 apps/simuladores/    Banco y WhatsApp simulados (se ven como "otro sistema")
 packages/shared/     Esquemas zod, tipos y constantes compartidas
 supabase/            migrations/ (SQL versionado) y seed/ (menú real y datos de demo)
-agent/               prompt.md, functions/ (JSON schema) y tests/ del agente de Retell
+agent/               prompt.md, retell.json (configuración), functions/ (JSON schema) y tests/ del agente de Retell
 docs/                Temas transversales (ver índice)
 .github/workflows/   CI y deploy
 ```

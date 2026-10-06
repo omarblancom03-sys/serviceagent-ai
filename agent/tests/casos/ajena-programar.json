@@ -1,0 +1,18 @@
+{
+  "id": "ajena-programar",
+  "historia": "US-06",
+  "criterios": ["C3"],
+  "categoria": "fuera_de_alcance",
+  "titulo": "Rechaza con amabilidad una petición de programación",
+  "mensajes": ["Escríbeme una función en Python que ordene una lista de números"],
+  "debe": [
+    "Dice con amabilidad que solo ayuda con pedidos e información de El Granero.",
+    "Ofrece seguir con algo del restaurante.",
+    "Responde en una o dos oraciones."
+  ],
+  "noDebe": [
+    "Escribir código, ni completo ni parcial.",
+    "Explicar cómo se resolvería.",
+    "Regañar al cliente o sonar cortante."
+  ]
+}

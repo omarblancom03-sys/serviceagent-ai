@@ -1,0 +1,19 @@
+{
+  "id": "saludo-y-tono",
+  "historia": "US-06",
+  "criterios": ["C1"],
+  "categoria": "personalidad",
+  "titulo": "Saluda con el tono del restaurante",
+  "mensajes": ["Hola, buenas tardes"],
+  "debe": [
+    "Al abrir el chat, antes de que el cliente escriba, aparece el saludo de bienvenida que nombra a El Granero.",
+    "Responde al saludo en español mexicano, de tú y con tono amable.",
+    "Pregunta en qué puede ayudar.",
+    "Usa como máximo tres oraciones."
+  ],
+  "noDebe": [
+    "Volver a presentarse con el mismo saludo de bienvenida.",
+    "Mencionar platillos, precios u horarios.",
+    "Responder en otro idioma o con trato de usted."
+  ]
+}
