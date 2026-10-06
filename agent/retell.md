@@ -1,6 +1,6 @@
 # Configuración del agente en Retell
 
-El prompt vive en [prompt.md](./prompt.md). Todo lo demás que se configura en el dashboard de Retell vive en [retell.json](./retell.json). El dashboard es una copia: si un valor cambia allá, se cambia aquí en un PR.
+El prompt vive en [prompt.md](./prompt.md). Todo lo demás que se configura en el dashboard de Retell y afecta el comportamiento o el costo vive en [retell.json](./retell.json). El dashboard es una copia: si un valor cambia allá, se cambia aquí en un PR.
 
 ## Cómo leer `retell.json`
 
@@ -13,23 +13,40 @@ Usa los nombres de campo de la API de Retell, para que no haya duda de a qué aj
 
 - Lo que no aparece en el archivo se deja con el valor por defecto de Retell.
 - `general_prompt` no trae el texto: apunta a `prompt.md`, que se copia completo.
-- Un valor que empieza con `pendiente` todavía no está decidido; no se configura hasta que se reemplace aquí.
+- Un valor que empieza con `pendiente` todavía no está decidido; en el dashboard queda el valor por defecto de Retell hasta que se reemplace aquí.
 - El archivo nunca lleva identificadores de la cuenta (id del agente, id del motor) ni llaves.
 
-## Valores
+## Valores y dónde se configuran
 
-| Campo                                 | Para qué sirve                                                                                                                    |
-| ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `agent_name`                          | Nombre interno del agente; el cliente no lo ve.                                                                                   |
-| `language`                            | Retell ofrece `es-ES` y `es-419` (español de Latinoamérica); no existe una opción para México.                                    |
-| `timezone`                            | Zona horaria del restaurante. Si no se configura, Retell usa `America/Los_Angeles`.                                               |
-| `end_chat_after_silence_ms`           | Cierra el chat si el cliente deja de responder. Va en milisegundos: 600000 son 10 minutos. Retell acepta de 2 minutos a 72 horas. |
-| `auto_close_message`                  | Mensaje que ve el cliente cuando el chat se cierra solo.                                                                          |
-| `webhook_url`                         | Sin webhook: todavía no hay un endpoint que lo reciba.                                                                            |
-| `model`                               | Modelo de lenguaje. Se elige con la regla de [Modelo](#modelo).                                                                   |
-| `model_temperature`                   | Qué tan variable es la respuesta, de 0 a 1. Un valor bajo da respuestas más parejas entre clientes.                               |
-| `start_speaker`, `begin_message`      | El agente habla primero con un saludo fijo, igual para todos los clientes.                                                        |
-| `general_tools`, `knowledge_base_ids` | Vacíos: las custom functions llegan con su historia y el menú se consulta con RAG propio (D3).                                    |
+| Campo                            | Dónde está en el dashboard                              | Notas                                                                                                                                                                        |
+| -------------------------------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `agent_name`                     | Nombre del agente                                       | Nombre interno; el cliente no lo ve.                                                                                                                                         |
+| `language`                       | Selector de idioma                                      | Retell ofrece `es-ES` y `es-419` (español de Latinoamérica); no existe una opción para México.                                                                               |
+| `model`                          | Selector de modelo                                      | Se elige con la regla de [Modelo](#modelo).                                                                                                                                  |
+| `model_temperature`              | Engrane del modelo                                      | Solo aparece con algunos modelos: con `gpt-4.1-nano` sí, con `gpt-5-nano` no (su engrane solo muestra "Structured Output"). El valor acordado es 0.2.                        |
+| `start_speaker`, `begin_message` | Welcome Message → "AI speaks first" + "Dynamic message" | `begin_message` en `null`: el saludo lo redacta el modelo con la sección "Tu primer mensaje" del prompt. Un saludo fijo solo se puede poner por API.                         |
+| `handbook_config`                | Botón "Agent Handbook", debajo del selector de modelo   | Preajustes de Retell que agregan texto propio al prompt. Apagados: el comportamiento se define solo en `prompt.md`.                                                          |
+| `general_tools`                  | Lista de funciones del agente                           | Vacía. Retell agrega `end_call` por defecto y se quita: el prompt atiende al cliente si escribe después de la despedida.                                                     |
+| `knowledge_base_ids`             | Knowledge base                                          | Vacía: el menú se consulta con RAG propio (D3).                                                                                                                              |
+| `end_chat_after_silence_ms`      | Chat settings → Auto-Close Inactive Chats               | Va en milisegundos. El control solo avanza por saltos (6, 12, 30 minutos…). 360000 son 6 minutos y es provisional: el valor acordado es 10 minutos.                          |
+| `auto_close_message`             | Chat settings                                           | Sin mensaje de cierre.                                                                                                                                                       |
+| `timezone`                       | No aparece en el dashboard                              | Queda en `America/Los_Angeles`, el valor por defecto. El valor acordado es `America/Chihuahua`. Solo afecta a las variables de fecha y hora de Retell, que el prompt no usa. |
+| `post_chat_analysis_model`       | Ajustes de análisis posterior al chat                   | Queda en el valor por defecto de Retell (`gpt-5.6-terra`). Retell resume cada chat al terminar; el costo se ve en el desglose de cada chat.                                  |
+| `data_storage_setting`           | Security & fallback settings → Data Storage Settings    | Queda en `everything`, el valor por defecto: guarda las transcripciones sin fecha de borrado.                                                                                |
+| `contact_memory_config`          | Ajustes de memoria de contacto                          | Valores por defecto. Según la documentación solo aplica a llamadas y SMS identificados por teléfono, no a chats web.                                                         |
+| `webhook_url`                    | Webhook                                                 | Sin webhook: todavía no hay un endpoint que lo reciba.                                                                                                                       |
+
+### Solo por API (decide Omar)
+
+Tres valores acordados no se pueden fijar desde el dashboard. Se fijan con la API de Retell, que necesita la llave de la cuenta; usarla o no es decisión de Omar.
+
+| Valor acordado                       | Campo y endpoint                                                              |
+| ------------------------------------ | ----------------------------------------------------------------------------- |
+| Saludo fijo, igual para todos        | `begin_message` en `PATCH /update-retell-llm/{llm_id}`                        |
+| Zona horaria `America/Chihuahua`     | `timezone` en `PATCH /update-chat-agent/{agent_id}`                           |
+| Cierre por inactividad de 10 minutos | `end_chat_after_silence_ms` = 600000 en `PATCH /update-chat-agent/{agent_id}` |
+
+El dashboard también tiene "Import" (en la lista de agentes), pero la documentación de Retell no describe qué campos respeta al importar un agente, así que no se usa.
 
 ## Modelo
 
@@ -43,23 +60,30 @@ No se configura en Retell: el cierre por inactividad (`end_chat_after_silence_ms
 
 ## Pasos en el dashboard
 
-Los nombres de botones pueden variar; los campos son los de `retell.json`.
-
 1. **Agents → Create an Agent → Chat Agent**, tipo **Single prompt**.
 2. Nombre del agente: `agent_name`.
 3. Prompt: copiar el contenido completo de `prompt.md`, sin quitar ni agregar nada.
-4. Mensaje de bienvenida: el agente habla primero con el texto de `begin_message`.
-5. Modelo y temperatura: `model` y `model_temperature`.
-6. Idioma: `language`. Zona horaria: `timezone`.
-7. Cierre por inactividad: `end_chat_after_silence_ms` y `auto_close_message`.
-8. No agregar functions, knowledge base ni webhook.
-9. Verificar en el dashboard si existe una herramienta para terminar el chat. La documentación solo describe `end_call` para llamadas de voz. Si existe, no se activa: primero se anota aquí y en `retell.json` por PR.
-10. Correr los casos de [tests/casos/](./tests/casos) en el chat de prueba ([CLAUDE.md → Cómo probar](./CLAUDE.md#cómo-probar)).
-11. **Publish** para fijar la versión. Una versión publicada no se edita: para cambiarla se crea un borrador nuevo.
+4. Modelo: `model`. Si el engrane del modelo muestra la temperatura, poner 0.2.
+5. **Agent Handbook** (debajo del selector de modelo): apagar "Default Tone — Professional" y "AI Disclosure When Asked". Los demás quedan apagados.
+6. **Welcome Message:** "AI speaks first" con "Dynamic message".
+7. Idioma: `language`.
+8. Funciones: quitar `end_call`, que viene agregada por defecto. No agregar functions, knowledge base ni webhook.
+9. **Chat settings → Auto-Close Inactive Chats:** el valor de `end_chat_after_silence_ms`.
+10. Correr los casos de [tests/casos/](./tests/casos) en el chat de prueba ([CLAUDE.md → Cómo probar](./CLAUDE.md#cómo-probar)). El chat de prueba se cobra por mensaje, igual que un chat real.
+11. Comparar contra el export (siguiente sección).
+12. **Publish** para fijar la versión. Una versión publicada no se edita: para cambiarla se crea un borrador nuevo.
+
+## Export del agente
+
+"Export" está en el menú ··· del agente y descarga su configuración completa como JSON.
+
+- **El export nunca entra al repo**: trae el id del motor de respuesta de la cuenta y una copia entera del prompt, que ya vive en `prompt.md`. Se guarda fuera de la carpeta del proyecto.
+- Sirve para comprobar que el dashboard coincide con el repo: `retellLlmData.general_prompt` debe ser igual a `prompt.md`, y los demás campos, iguales a `retell.json`.
+- Si algo no coincide, se corrige el dashboard. Si lo correcto es lo del dashboard, se cambia el repo en un PR.
 
 ## Cuando cambia el prompt o la configuración
 
 1. El cambio se hace en `prompt.md` o `retell.json` y entra por PR.
 2. Se copia a un borrador del agente en el dashboard.
-3. Se corren todos los casos de `tests/casos/`.
+3. Se corren todos los casos de `tests/casos/` y se actualiza `tests/corrida.md`.
 4. Con el PR fusionado, se publica la versión.

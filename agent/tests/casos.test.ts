@@ -97,10 +97,12 @@ describe('prompt (agent/prompt.md)', () => {
 });
 
 describe('configuracion (agent/retell.json)', () => {
+  // begin_message en null = "Dynamic message": el saludo lo redacta el modelo.
   const esquemaConfiguracion = z.object({
     chat_agent: z.record(z.string(), z.unknown()),
     retell_llm: z.looseObject({
-      begin_message: textoNoVacio,
+      start_speaker: z.enum(['agent', 'user']),
+      begin_message: textoNoVacio.nullable(),
       general_prompt: z.literal('agent/prompt.md'),
     }),
   });
@@ -111,8 +113,31 @@ describe('configuracion (agent/retell.json)', () => {
     expect(resultado.error?.issues ?? []).toEqual([]);
   });
 
-  it('no guarda identificadores de la cuenta ni llaves', () => {
-    expect(contenido).not.toMatch(/"(agent_id|llm_id|api_key|public_key)"/);
-    expect(contenido).not.toMatch(/key_[a-z0-9]{8,}/i);
+  it('si no hay saludo fijo, el prompt dice como es el primer mensaje', () => {
+    const configuracion = esquemaConfiguracion.parse(JSON.parse(contenido));
+    if (configuracion.retell_llm.begin_message === null) {
+      const prompt = readFileSync(path.join(raizAgente, 'prompt.md'), 'utf-8');
+      expect(prompt).toContain('## Tu primer mensaje');
+    }
+  });
+});
+
+describe('identificadores de la cuenta y llaves', () => {
+  // Rutas relativas a agent/. El export de Retell trae estos datos y nunca
+  // entra al repo (ver agent/retell.md, "Export del agente").
+  const archivos = [
+    'retell.json',
+    'retell.md',
+    'prompt.md',
+    'tests/corrida.md',
+    ...archivosCasos.map((archivo) => `tests/casos/${archivo}`),
+  ];
+
+  it.each(archivos)('%s no trae ids ni llaves', (archivo) => {
+    const texto = readFileSync(path.join(raizAgente, archivo), 'utf-8');
+    // Campos con valor: en la documentacion pueden nombrarse, pero no llenarse.
+    expect(texto).not.toMatch(/"(agent_id|llm_id|api_key|public_key)"\s*:\s*"[^"]+"/);
+    // Valores con la forma de los ids y llaves de Retell: llm_..., agent_..., key_...
+    expect(texto).not.toMatch(/\b(llm|agent|key)_[0-9a-f]{12,}/i);
   });
 });

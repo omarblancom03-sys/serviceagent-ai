@@ -2,16 +2,26 @@
   "chat_agent": {
     "agent_name": "El Granero - chat",
     "language": "es-419",
-    "timezone": "America/Chihuahua",
-    "end_chat_after_silence_ms": 600000,
-    "auto_close_message": "Cerramos este chat por inactividad. Si necesitas algo de El Granero, escríbenos de nuevo. ¡Gracias!",
-    "webhook_url": null
+    "timezone": "pendiente (decide Omar)",
+    "end_chat_after_silence_ms": 360000,
+    "auto_close_message": null,
+    "webhook_url": null,
+    "handbook_config": {
+      "default_personality": false,
+      "ai_disclosure": false
+    },
+    "post_chat_analysis_model": "pendiente (decide Omar)",
+    "data_storage_setting": "pendiente (decide Omar)",
+    "contact_memory_config": {
+      "enable_read": true,
+      "enable_update": false
+    }
   },
   "retell_llm": {
-    "model": "pendiente (ver retell.md, Modelo)",
-    "model_temperature": 0.2,
+    "model": "gpt-5-nano",
+    "model_temperature": "no aplica (gpt-5-nano no la muestra en el dashboard; 0.2 si el modelo la admite)",
     "start_speaker": "agent",
-    "begin_message": "¡Hola! Soy el asistente virtual de El Granero. ¿En qué te puedo ayudar?",
+    "begin_message": null,
     "general_prompt": "agent/prompt.md",
     "general_tools": [],
     "knowledge_base_ids": []

@@ -6,13 +6,13 @@
   "titulo": "Saluda con el tono del restaurante",
   "mensajes": ["Hola, buenas tardes"],
   "debe": [
-    "Al abrir el chat, antes de que el cliente escriba, aparece el saludo de bienvenida que nombra a El Granero.",
+    "Al abrir el chat, antes de que el cliente escriba, el agente saluda en una o dos oraciones: dice que es el asistente virtual de El Granero y pregunta en qué puede ayudar.",
     "Responde al saludo en español mexicano, de tú y con tono amable.",
     "Pregunta en qué puede ayudar.",
     "Usa como máximo tres oraciones."
   ],
   "noDebe": [
-    "Volver a presentarse con el mismo saludo de bienvenida.",
+    "Volver a presentarse al responder el saludo del cliente.",
     "Mencionar platillos, precios u horarios.",
     "Responder en otro idioma o con trato de usted."
   ]

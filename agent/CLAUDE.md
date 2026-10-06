@@ -14,7 +14,7 @@ Todo lo del agente de Retell, **versionado en Git** y no solo en el dashboard de
 | `functions/`          | Un archivo JSON (JSON Schema) por custom function (`buscar_menu`, `cotizar_pedido`, `crear_pedido`…). Hoy vacía; se define en la historia de cada función.            |
 | `tests/casos/`        | Un caso de conversación por archivo JSON: personalidad, peticiones ajenas, despedida y "no inventar". La batería completa de manipulación se define en US-48.         |
 | `tests/corrida.md`    | Resultado de la última corrida manual de todos los casos: fecha, modelo y, por caso, si pasó o falló con un resumen de una línea.                                     |
-| `tests/casos.test.ts` | Vitest: valida el formato de los casos, la cobertura por historia, que `corrida.md` tenga una fila por caso, que el prompt no tenga montos y que `retell.json` no guarde identificadores ni llaves. |
+| `tests/casos.test.ts` | Vitest: valida el formato de los casos, la cobertura por historia, que `corrida.md` tenga una fila por caso, que el prompt no tenga montos y que ningún archivo de `agent/` guarde ids de la cuenta ni llaves. |
 
 `agent/` es un paquete del workspace (`@serviceagent/agent`) solo para que `pnpm lint`, `pnpm typecheck` y `pnpm test` lo cubran; no se despliega ni lo importa otro paquete.
 
@@ -24,6 +24,7 @@ Todo lo del agente de Retell, **versionado en Git** y no solo en el dashboard de
 - El menú completo **no** va en el prompt: se consulta con `buscar_menu`.
 - El prompt nunca pide al modelo calcular montos; los montos vienen de `cotizar_pedido`.
 - La sección "Lo que puedes hacer hoy" del prompt dice qué hace el agente con lo que aún no tiene herramienta. La historia que agrega una custom function reemplaza ahí su línea y ajusta los casos `sin_inventar` que correspondan.
+- El archivo que descarga "Export" en Retell **nunca entra al repo**: trae ids de la cuenta y una copia del prompt. Se guarda fuera del proyecto y solo se usa para comparar ([retell.md → Export del agente](./retell.md#export-del-agente)).
 - `retell.json` no lleva ids de la cuenta ni llaves. Un valor `pendiente (…)` no se configura en el dashboard hasta decidirse. El modelo se elige con la regla de [retell.md → Modelo](./retell.md#modelo).
 
 ### Formato de un caso (`tests/casos/<id>.json`)
