@@ -4,19 +4,23 @@ import { cors } from 'hono/cors';
 import pkg from '../package.json';
 import type { AppEnv } from './lib/env';
 import { crearRepoEmpleados } from './lib/repoEmpleados';
+import { crearRepoMenu } from './lib/repoMenu';
 import { crearClienteSupabase } from './lib/supabase';
 import { registrarAuth, type DependenciasAuth } from './routes/auth';
 import { registrarHealth } from './routes/health';
-import { registrarMenu } from './routes/menu';
+import { registrarMenu, type DependenciasMenu } from './routes/menu';
 
 /** Servicios externos que usa la API. Los tests los reemplazan por versiones en memoria. */
-export type Dependencias = DependenciasAuth;
+export type Dependencias = DependenciasAuth & DependenciasMenu;
 
 const dependenciasReales: Dependencias = {
   crearRepoEmpleados: (env) => crearRepoEmpleados(crearClienteSupabase(env)),
+  crearRepoMenu: (env) => crearRepoMenu(crearClienteSupabase(env)),
 };
 
-export function crearApp(dependencias: Dependencias = dependenciasReales) {
+/** Cada test pasa solo las dependencias que usa; las demás son las reales. */
+export function crearApp(reemplazos: Partial<Dependencias> = {}) {
+  const dependencias: Dependencias = { ...dependenciasReales, ...reemplazos };
   const app = new OpenAPIHono<AppEnv>();
 
   app.use(
@@ -35,7 +39,7 @@ export function crearApp(dependencias: Dependencias = dependenciasReales) {
 
   registrarHealth(app);
   registrarAuth(app, dependencias);
-  registrarMenu(app);
+  registrarMenu(app, dependencias);
 
   // Documentación OpenAPI (JSON) y Swagger UI.
   app.openAPIRegistry.registerComponent('securitySchemes', 'Bearer', {
