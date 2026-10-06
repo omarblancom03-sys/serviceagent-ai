@@ -48,7 +48,7 @@ Reglas:
 Una historia está terminada solo si:
 
 1. Cumple **todos** sus criterios de aceptación.
-2. El código entró a `main` por PR aprobado por otro developer y fusionado por el PO ([D17](decisiones.md)).
+2. El código entró a `main` por PR con 1 aprobación de alguien que no sea autor ni coautor, CI en verde y **Squash and merge**, fusionado por cualquier developer, idealmente el Revisor 2 al aprobar ([D21](decisiones.md)).
 3. CI en verde (lint, tipos, tests).
 4. Está desplegada en el ambiente de desarrollo y funciona ahí.
 5. Swagger/documentación actualizada si cambió la API.

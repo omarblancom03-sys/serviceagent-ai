@@ -71,7 +71,7 @@ pnpm --filter @serviceagent/api test   # un script en un solo paquete
 - Conventional Commits con la historia: `feat(US-07): calcular total con extras en backend`.
 - PR pequeños (idealmente < 400 líneas) con la plantilla: historia (`US-XX`) y enlace a Trello, criterios de aceptación que cubre y cómo probarlo.
 - **Cada PR necesita 1 aprobación de otro developer** que no sea autor ni coautor; las revisiones se rotan entre los 4. CI en verde antes de fusionar.
-- **Solo Omar (PO) fusiona a `main`**, con **Squash and merge** y borrando la rama después ([D17](docs/decisiones.md)).
+- **Cualquier developer puede fusionar a `main`** con esa aprobación y CI en verde, solo con **Squash and merge** (GitHub solo permite squash); lo ideal es que fusione el Revisor 2 al aprobar ([D21](docs/decisiones.md)).
 - Versiones por sprint y Definition of Done: [docs/proceso.md](docs/proceso.md).
 
 ## Documentación
