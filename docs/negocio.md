@@ -25,6 +25,12 @@ Fuera de alcance: delivery a domicilio.
 - **El modelo de IA NUNCA calcula ni inventa precios, totales ni descuentos.** Todo monto lo calcula el backend con precios de la base de datos.
 - Montos en centavos (`integer`) en base de datos y API. Se formatean a pesos solo al mostrar.
 
+## Menú
+
+- El menú solo muestra lo **activo**: una categoría, un platillo, una variante o un extra con `activo = false` no aparece.
+- Un platillo sin ninguna variante activa no aparece, y una categoría sin platillos visibles tampoco.
+- Inactivo no es lo mismo que agotado: lo inactivo se oculta, lo agotado sigue visible con `disponible = false` (hoy siempre `true` hasta que exista inventario, [D20](decisiones.md)).
+
 ## Extras
 
 - **Ligados:** un extra con filas en `platillo_extra` solo se puede agregar a esos platillos.
