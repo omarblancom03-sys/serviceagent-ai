@@ -91,7 +91,7 @@ Reglas completas en [docs/documentacion.md](docs/documentacion.md):
 3. Limítate al alcance de esa historia. Nada de refactors ni cambios en otras áreas sin avisar.
 4. Antes de escribir código, propón un plan corto (archivos, enfoque) y espera confirmación en cambios grandes.
 5. Respeta las [reglas de negocio](docs/negocio.md), en especial: **el dinero lo calcula el backend**.
-6. Escribe tests (Vitest) para lo que implementes. Para cambios del agente, agrega casos en `agent/tests/`.
+6. Escribe tests (Vitest) para lo que implementes. Para cambios del agente, agrega casos en `agent/tests/casos/`.
 7. No agregues dependencias sin explicar por qué y qué alternativas consideraste.
 8. No inventes APIs de Retell, Supabase, Cloudflare o Hono: consulta la documentación oficial o di que no estás seguro.
 9. Nunca escribas secretos en el código ni en commits.
@@ -104,7 +104,7 @@ Reglas completas en [docs/documentacion.md](docs/documentacion.md):
 | Archivo                                                      | Qué contiene                                                            |
 | ------------------------------------------------------------ | ----------------------------------------------------------------------- |
 | [docs/negocio.md](docs/negocio.md)                           | Flujo, dinero, estados del pedido, pagos, inventario, tiempo estimado, auth y roles |
-| [docs/agente.md](docs/agente.md)                             | Custom functions de Retell, comportamiento y seguridad del agente       |
+| [docs/agente.md](docs/agente.md)                             | Custom functions, comportamiento, seguridad y costo del agente          |
 | [docs/decisiones.md](docs/decisiones.md)                     | Registro de decisiones (D1…) y decisiones pendientes                    |
 | [docs/proceso.md](docs/proceso.md)                           | Equipo, Scrum, versiones por sprint, Definition of Done, glosario       |
 | [docs/despliegue.md](docs/despliegue.md)                     | Variables de entorno, secretos, CI/CD y despliegue a Cloudflare         |
@@ -114,4 +114,4 @@ Reglas completas en [docs/documentacion.md](docs/documentacion.md):
 | [apps/simuladores/CLAUDE.md](apps/simuladores/CLAUDE.md)     | Banco y WhatsApp simulados                                              |
 | [packages/shared/CLAUDE.md](packages/shared/CLAUDE.md)       | Esquemas zod y tipos compartidos                                        |
 | [supabase/CLAUDE.md](supabase/CLAUDE.md)                     | Migraciones y seed de la base de datos                                  |
-| [agent/CLAUDE.md](agent/CLAUDE.md)                           | Prompt, custom functions y casos de prueba del agente                   |
+| [agent/CLAUDE.md](agent/CLAUDE.md)                           | Prompt, configuración de Retell, custom functions y casos de prueba     |
