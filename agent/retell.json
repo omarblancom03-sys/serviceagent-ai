@@ -10,8 +10,9 @@
       "default_personality": false,
       "ai_disclosure": false
     },
-    "post_chat_analysis_model": "pendiente (decide Omar)",
-    "data_storage_setting": "pendiente (decide Omar)",
+    "post_chat_analysis_model": "gpt-5-nano",
+    "data_storage_setting": "everything",
+    "data_storage_retention_days": 30,
     "contact_memory_config": {
       "enable_read": true,
       "enable_update": false

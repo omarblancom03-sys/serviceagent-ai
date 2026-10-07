@@ -51,7 +51,7 @@ El caso **pasa** si se cumple todo `debe` y nada de `noDebe`. No se compara text
    - Revisar las respuestas contra `debe` y `noDebe`.
 3. Si un caso falla, se corrige el prompt y se corren **todos** los casos otra vez: un arreglo puede romper otro caso.
 4. El resultado se anota en `tests/corrida.md`, que se reemplaza completo en cada corrida (guarda la última, no un historial). Se actualiza en el mismo PR cada vez que cambia `prompt.md`, `retell.json` o un caso. Un caso nuevo agrega su fila.
-5. No se usan las simulaciones de Retell: cobran por mensaje.
+5. No se usan las simulaciones de Retell: cobran por mensaje. Quién prueba en Retell, cuándo y cómo se anotan los mensajes usados: [D22](../docs/decisiones.md).
 
 Todo cambio al prompt debe pasar todos los casos antes de fusionarse (Definition of Done).
 
@@ -60,4 +60,4 @@ Todo cambio al prompt debe pasar todos los casos antes de fusionarse (Definition
 - [docs/agente.md](../docs/agente.md): custom functions, comportamiento y seguridad del agente.
 - [docs/negocio.md](../docs/negocio.md): dinero, estados del pedido y cancelación.
 - [docs/proceso.md → Definition of Done](../docs/proceso.md#definition-of-done) (punto 6).
-- [docs/decisiones.md](../docs/decisiones.md): D3, D4, D21.
+- [docs/decisiones.md](../docs/decisiones.md): D3, D4, D21, D22.

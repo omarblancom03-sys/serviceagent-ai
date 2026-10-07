@@ -29,6 +29,16 @@ Los nombres exactos de rutas pueden ajustarse en su historia; si cambian, se act
 - Si no puede resolver algo, usa `transferir_a_empleado`.
 - El menú completo **no** va en el prompt: se consulta con `buscar_menu` (ahorro de tokens).
 
+## Modelo y costo en Retell
+
+- Modelo del agente de chat: `gpt-6-luna`, a $0.001 por mensaje. Por qué ese modelo y el resto de la configuración: [agent/retell.md](../agent/retell.md#modelo).
+- Reglas para cuidar el saldo (qué modelo, quién prueba en Retell y cuándo): [D22](decisiones.md).
+- Mensajes usados en Retell por historia. Son estimados: el panel de prueba no guarda historial.
+
+| Historia | Mensajes | Costo aproximado | Detalle                                                    |
+| -------- | -------- | ---------------- | ---------------------------------------------------------- |
+| US-06    | ~128     | unos $0.10       | 4 corridas de 31 mensajes del agente, más pruebas sueltas. |
+
 ## Seguridad (prioridad del PO)
 
 - Solo atiende temas del restaurante. Rechaza con amabilidad cualquier otra cosa (programar, tareas, otros temas) y regresa al pedido.
