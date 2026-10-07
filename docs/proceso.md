@@ -48,7 +48,7 @@ Reglas:
 Una historia está terminada solo si:
 
 1. Cumple **todos** sus criterios de aceptación.
-2. El código entró a `main` por PR con 1 aprobación de alguien que no sea autor ni coautor, CI en verde y **Squash and merge**, fusionado por cualquier developer, idealmente el Revisor 2 al aprobar ([D21](decisiones.md)).
+2. El código entró a `main` por PR según las reglas de revisión y fusión de [D21](decisiones.md).
 3. CI en verde (lint, tipos, tests).
 4. Está desplegada en el ambiente de desarrollo y funciona ahí.
 5. Swagger/documentación actualizada si cambió la API.
@@ -65,3 +65,4 @@ Antes de abrir el PR, la historia se cierra con `/cerrar-historia` ([documentaci
 - **Conciliación:** emparejar una transferencia recibida con su pedido (referencia + monto).
 - **Custom function:** herramienta que el agente de Retell llama en nuestra API.
 - **US-XX:** historia de usuario del tablero de Trello.
+- **Revisor 1 / Revisor 2:** el Revisor 1 revisa el PR en rondas con el autor; el Revisor 2 hace la revisión final y su aprobación es la que habilita el merge.

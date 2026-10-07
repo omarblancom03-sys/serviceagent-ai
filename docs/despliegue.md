@@ -66,7 +66,7 @@ Se configuran en Settings → Secrets and variables → Actions. Si los secretos
 - Usa la **misma base de Supabase `serviceagent-dev`** que el desarrollo local: lo que se cree en local se ve en el desplegado y al revés.
 - El Worker tiene cargados `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `JWT_SECRET` (distinto al de local), `PIN_PEPPER` (el de desarrollo) y `CORS_ORIGINS`.
 - `CORS_ORIGINS` es la lista, separada por comas, de orígenes exactos: `https://serviceagent-web.pages.dev`, sin `/` final. Las URLs de vista previa con prefijo (`<hash>.serviceagent-web.pages.dev`) no están incluidas, así que ahí el navegador bloquea las llamadas a la API.
-- Solo el PO (Omar) tiene acceso a Cloudflare y carga los secretos del Worker. **Si una historia agrega una variable a la API:** va a `.env.example` en el mismo PR y se avisa al PO antes de fusionar, para cargarla con `wrangler secret put`. Un secreto se aplica al guardarlo, sin redesplegar.
+- Solo el PO (Omar) tiene acceso a Cloudflare y carga los secretos del Worker. **Si una historia agrega una variable a la API:** va a `.env.example` en el mismo PR, se avisa al PO para que la cargue con `wrangler secret put` y el PR no se fusiona hasta que el PO confirme que la cargó ([D21](decisiones.md)). Un secreto se aplica al guardarlo, sin redesplegar.
 - Revisar qué secretos tiene el Worker (solo nombres): `cd apps/api && pnpm exec wrangler secret list`.
 
 ## CI/CD
