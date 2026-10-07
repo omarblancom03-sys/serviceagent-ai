@@ -31,13 +31,9 @@ Los nombres exactos de rutas pueden ajustarse en su historia; si cambian, se act
 
 ## Modelo y costo en Retell
 
-- Modelo del agente de chat: `gpt-6-luna`, a $0.001 por mensaje. Por qué ese modelo y el resto de la configuración: [agent/retell.md](../agent/retell.md#modelo).
+- Modelo del agente de chat, por qué se eligió y el resto de la configuración: [agent/retell.md → Modelo](../agent/retell.md#modelo).
 - Reglas para cuidar el saldo (qué modelo, quién prueba en Retell y cuándo): [D22](decisiones.md).
-- Mensajes usados en Retell por historia. Son estimados: el panel de prueba no guarda historial.
-
-| Historia | Mensajes | Costo aproximado | Detalle                                                                                                                                                   |
-| -------- | -------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| US-06    | ~128     | unos $0.10       | 4 corridas de 31 mensajes del agente: 62 con `gpt-5-nano` a $0.0005 (unos $0.03) y 62 con `gpt-6-luna` a $0.001 (unos $0.06), más unas 4 pruebas sueltas. |
+- Cada PR anota los mensajes que usó en Retell ([D22](decisiones.md), punto 5).
 
 ## Seguridad (prioridad del PO)
 
