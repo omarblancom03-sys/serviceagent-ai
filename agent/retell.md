@@ -31,7 +31,7 @@ Usa los nombres de campo de la API de Retell, para que no haya duda de a qué aj
 | `end_chat_after_silence_ms`      | Chat settings → Auto-Close Inactive Chats               | Va en milisegundos: 360000 son 6 minutos. El control solo avanza por saltos (6, 12, 30 minutos…).                                                                                                        |
 | `auto_close_message`             | Chat settings                                           | Sin mensaje de cierre.                                                                                                                                                                                   |
 | `timezone`                       | No aparece en el dashboard                              | Queda en `America/Los_Angeles`, el valor por defecto. El valor acordado es `America/Chihuahua`. Solo afecta a las variables de fecha y hora de Retell, que el prompt no usa.                             |
-| `post_chat_analysis_model`       | Ajustes de análisis posterior al chat                   | Retell resume cada chat al terminar y no se puede apagar. Se usa `gpt-5-nano`, que el dashboard muestra como gratuito ([D22](../docs/decisiones.md)). El valor por defecto de Retell es `gpt-5.6-terra`. |
+| `post_chat_analysis_model`       | Post chat extraction (panel derecho del agente)         | Retell resume cada chat al terminar y no se puede apagar. Se usa `gpt-5-nano`, que el dashboard muestra como gratuito ([D22](../docs/decisiones.md)). El valor por defecto de Retell es `gpt-5.6-terra`. |
 | `data_storage_setting`           | Security & fallback settings → Data Storage Settings    | `everything`, el valor por defecto: guarda las transcripciones completas.                                                                                                                                |
 | `data_storage_retention_days`    | Security & fallback settings → Data Storage Settings    | Retell borra los datos de cada chat a los 30 días. El valor por defecto es "Keep forever".                                                                                                               |
 | `contact_memory_config`          | Ajustes de memoria de contacto                          | Valores por defecto. Según la documentación solo aplica a llamadas y SMS identificados por teléfono, no a chats web.                                                                                     |
@@ -78,7 +78,7 @@ No se configura en Retell: el cierre por inactividad (`end_chat_after_silence_ms
 7. Idioma: `language`.
 8. Funciones: quitar `end_call`, que viene agregada por defecto. No agregar functions, knowledge base ni webhook.
 9. **Chat settings → Auto-Close Inactive Chats:** el valor de `end_chat_after_silence_ms`.
-10. Modelo del análisis posterior al chat: `post_chat_analysis_model`.
+10. **Post chat extraction** (panel derecho del agente): en el selector de modelo, que queda debajo de los campos Chat Summary, Chat Successful y User Sentiment, elegir `post_chat_analysis_model`.
 11. **Security & fallback settings → Data Storage Settings:** retención de `data_storage_retention_days` días.
 12. Correr los casos de [tests/casos/](./tests/casos) en el chat de prueba ([CLAUDE.md → Cómo probar](./CLAUDE.md#cómo-probar)). El chat de prueba se cobra por mensaje, igual que un chat real.
 13. Comparar contra el export (siguiente sección).

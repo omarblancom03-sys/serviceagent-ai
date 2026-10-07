@@ -35,9 +35,9 @@ Los nombres exactos de rutas pueden ajustarse en su historia; si cambian, se act
 - Reglas para cuidar el saldo (qué modelo, quién prueba en Retell y cuándo): [D22](decisiones.md).
 - Mensajes usados en Retell por historia. Son estimados: el panel de prueba no guarda historial.
 
-| Historia | Mensajes | Costo aproximado | Detalle                                                    |
-| -------- | -------- | ---------------- | ---------------------------------------------------------- |
-| US-06    | ~128     | unos $0.10       | 4 corridas de 31 mensajes del agente, más pruebas sueltas. |
+| Historia | Mensajes | Costo aproximado | Detalle                                                                                                                                                   |
+| -------- | -------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| US-06    | ~128     | unos $0.10       | 4 corridas de 31 mensajes del agente: 62 con `gpt-5-nano` a $0.0005 (unos $0.03) y 62 con `gpt-6-luna` a $0.001 (unos $0.06), más unas 4 pruebas sueltas. |
 
 ## Seguridad (prioridad del PO)
 
