@@ -174,8 +174,13 @@ function TarjetaPlatillo({ platillo }: { platillo: Platillo }) {
         <h3 className="text-lg font-semibold">
           {platillo.nombre} {!platillo.disponible && <EtiquetaAgotado />}
         </h3>
-        <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs whitespace-nowrap text-stone-600">
-          {platillo.tiempoEstimadoMin === null ? 'Sin tiempo' : `${platillo.tiempoEstimadoMin} min`}
+        <span
+          title="Tiempo base de preparación de la categoría"
+          className="rounded-full bg-stone-100 px-2 py-0.5 text-xs whitespace-nowrap text-stone-600"
+        >
+          {platillo.tiempoEstimadoMin === null
+            ? 'Sin tiempo de prep.'
+            : `Prep. ${platillo.tiempoEstimadoMin} min`}
         </span>
       </div>
       {platillo.descripcion && (

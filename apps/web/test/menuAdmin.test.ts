@@ -153,6 +153,13 @@ describe('filtrarMenu', () => {
     expect(resultado.extras.map((e) => e.nombre)).toEqual(['Aguacate']);
   });
 
+  it('conserva lo agotado: un extra con disponible false sigue en la lista (D20)', () => {
+    const resultado = filtrarMenu(menu, { busqueda: 'totopos', idCategoria: null });
+    expect(resultado.extras).toEqual([
+      expect.objectContaining({ nombre: 'Totopos', disponible: false }),
+    ]);
+  });
+
   it('sin coincidencias no deja categorías ni extras', () => {
     expect(filtrarMenu(menu, { busqueda: 'sushi', idCategoria: null })).toEqual({
       categorias: [],
