@@ -48,7 +48,7 @@ Reglas:
 Una historia está terminada solo si:
 
 1. Cumple **todos** sus criterios de aceptación.
-2. El código entró a `main` por PR según las reglas de revisión y fusión de [D21](decisiones.md).
+2. El código entró a `main` por PR según las reglas de revisión y fusión de [D24](decisiones.md).
 3. CI en verde (lint, tipos, tests).
 4. Está desplegada en el ambiente de desarrollo y funciona ahí.
 5. Swagger/documentación actualizada si cambió la API.
