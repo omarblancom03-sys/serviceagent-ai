@@ -54,7 +54,17 @@ const MontoTextoSchema = z.string();
 
 // ─── Petición ───────────────────────────────────────────────────────────────
 
-export const ExtraPedidoSchema = z.object({
+/*
+ * Los objetos de la petición son estrictos (`z.strictObject`): una llave mal
+ * escrita (p. ej. `extrasSuelto`) es un cuerpo mal formado y responde 400, en
+ * lugar de descartarse en silencio y cotizar un pedido incompleto.
+ */
+
+/**
+ * Extra pedido para un platillo. Si no existe o no está ligado a ese platillo
+ * en platillo_extra → aclaración `extra_no_permitido` con `detalle` = el extra.
+ */
+export const ExtraPedidoSchema = z.strictObject({
   extra: TextoClienteSchema,
   /**
    * Cantidad POR UNIDAD del platillo. "Dos T-Bone con espuelas"
@@ -63,8 +73,16 @@ export const ExtraPedidoSchema = z.object({
   cantidad: CantidadClienteSchema,
 });
 
-export const ProductoPedidoSchema = z.object({
+export const ProductoPedidoSchema = z.strictObject({
+  /**
+   * El agente manda el producto en singular ("t-bone", no "dos t-bones"); la
+   * cantidad va en `cantidad`.
+   */
   producto: TextoClienteSchema,
+  /**
+   * Si falta y el platillo tiene varias, o si la pedida no existe →
+   * `falta_variante` (ver AclaracionSchema).
+   */
   variante: TextoClienteSchema.optional(),
   cantidad: CantidadClienteSchema,
   /** Solo se aceptan los de ingrediente_removible de ese platillo. */
@@ -76,13 +94,14 @@ export const ProductoPedidoSchema = z.object({
 /**
  * Extras que se piden solos (Totopos, BBQ, Aguacate, Toreados): un extra es
  * "suelto" cuando no tiene filas en platillo_extra (D19). Espuelas aquí se
- * rechaza con `extra_no_permitido`.
+ * rechaza con `extra_no_permitido`; un extra suelto que no existe, con
+ * `no_existe` y origen `extraSuelto`.
  */
 export const ExtraSueltoPedidoSchema = ExtraPedidoSchema;
 
 /** Argumentos de la función `cotizar_pedido`, tal como los arma el agente. */
 export const CotizarPedidoArgsSchema = z
-  .object({
+  .strictObject({
     productos: z.array(ProductoPedidoSchema).max(30).default([]),
     extrasSueltos: z.array(ExtraSueltoPedidoSchema).max(10).default([]),
   })
@@ -93,7 +112,8 @@ export const CotizarPedidoArgsSchema = z
 /**
  * Sobre que manda Retell a una custom function con "Payload: args only"
  * apagado (valor por defecto): `{ name, call, args }`. Solo se usan `name` y
- * `args`; las llaves no declaradas (como `call`) zod las descarta.
+ * `args`; las llaves no declaradas (como `call`) zod las descarta. A propósito
+ * NO es estricto: Retell puede agregar campos al sobre sin romper la API.
  */
 export const CotizarPedidoPeticionSchema = z.object({
   name: z.literal('cotizar_pedido'),
@@ -109,6 +129,7 @@ export const ExtraAplicadoSchema = z.object({
   /** Por unidad del platillo (ver ExtraPedidoSchema). */
   cantidad: z.number().int().positive(),
   precioUnitarioCentavos: CentavosSchema,
+  precioUnitarioTexto: MontoTextoSchema,
 });
 
 /**
@@ -135,6 +156,7 @@ export const RenglonPlatilloSchema = z.object({
   extras: z.array(ExtraAplicadoSchema),
   /** Precio de la variante por unidad, SIN extras. */
   precioUnitarioCentavos: CentavosSchema,
+  precioUnitarioTexto: MontoTextoSchema,
   subtotalCentavos: CentavosSchema,
   subtotalTexto: MontoTextoSchema,
 });
@@ -147,6 +169,7 @@ export const RenglonExtraSueltoSchema = z.object({
   nombre: z.string(),
   cantidad: z.number().int().min(CANTIDAD_MINIMA).max(CANTIDAD_MAXIMA),
   precioUnitarioCentavos: CentavosSchema,
+  precioUnitarioTexto: MontoTextoSchema,
   subtotalCentavos: CentavosSchema,
   subtotalTexto: MontoTextoSchema,
 });
@@ -174,14 +197,17 @@ export const AclaracionSchema = z.object({
   /** Lo que dijo el cliente, tal cual. */
   producto: z.string(),
   /**
-   * Qué parte falló cuando no es el producto: el extra en `extra_no_permitido`,
-   * el ingrediente en `ingrediente_no_removible`, la variante si no existe.
+   * Qué parte falló cuando no es el producto:
+   * - `extra_no_permitido`: el extra pedido (no existe o no está ligado al platillo).
+   * - `ingrediente_no_removible`: el ingrediente.
+   * - `falta_variante`: la variante pedida, si se pidió una que no existe.
+   * - `cantidad_invalida`: la regla, p. ej. "La cantidad debe ser de 1 a 20.".
    */
   detalle: z.string().optional(),
   /**
    * Nombres oficiales que el agente puede ofrecer: platillos en `ambiguo`,
-   * variantes en `falta_variante`. Sin precios: si el cliente pregunta, el
-   * agente vuelve a cotizar.
+   * variantes reales del platillo en `falta_variante` (falte o no exista la
+   * pedida). Sin precios: si el cliente pregunta, el agente vuelve a cotizar.
    */
   opciones: z.array(z.string()).optional(),
 });
