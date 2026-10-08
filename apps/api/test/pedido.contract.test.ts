@@ -10,7 +10,7 @@ const args = {
     {
       producto: 't bone',
       cantidad: 2,
-      extras: [{ extra: 'Espuelas (camarones)', cantidad: 1 }],
+      extras: [{ extra: 'Espuelas', cantidad: 1 }],
     },
   ],
   extrasSueltos: [{ extra: 'Totopos', cantidad: 1 }],
@@ -126,8 +126,8 @@ describe('Contrato de cotizar pedido: respuesta', () => {
           tipo: 'ambiguo',
           origen: 'producto',
           indice: 0,
-          producto: 'arrachera',
-          opciones: ['Arrachera 450 gr', 'Arrachera al Chipotle 450 gr'],
+          producto: 'granero',
+          opciones: ['Hamburguesa Granero', 'Taquiza Granero', 'Tacos El Granero'],
         },
         {
           tipo: 'extra_no_permitido',
