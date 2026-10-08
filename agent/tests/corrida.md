@@ -20,3 +20,5 @@ Resultado de la última vez que se corrieron todos los casos de [casos/](./casos
 | `horario-sin-inventar`        | Pasó      | Sin horario ni ubicación; ante la alergia sugirió confirmar en el restaurante antes de pedir.        |
 
 **Resultado:** `Pasó`, `Falló` o `pendiente`. **Resumen:** una línea con lo que respondió el agente o por qué falló.
+
+**Observación:** en esta corrida el saludo de apertura apareció duplicado 1 o 2 veces. No se anotó en qué caso, así que no se puede descartar que fuera en `saludo-y-tono`; afecta a C1. La prueba no se repitió por [D22](../../docs/decisiones.md) y porque el panel de prueba de Retell no guarda historial.

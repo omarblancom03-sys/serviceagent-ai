@@ -13,7 +13,6 @@ Usa los nombres de campo de la API de Retell, para que no haya duda de a qué aj
 
 - Lo que no aparece en el archivo se deja con el valor por defecto de Retell.
 - `general_prompt` no trae el texto: apunta a `prompt.md`, que se copia completo.
-- Un valor que empieza con `pendiente` todavía no está decidido; en el dashboard queda el valor por defecto de Retell hasta que se reemplace aquí.
 - El archivo nunca lleva identificadores de la cuenta (id del agente, id del motor) ni llaves.
 
 ## Valores y dónde se configuran
@@ -63,7 +62,7 @@ Precio de `gpt-6-luna`: $0.001 por mensaje del agente, según el dashboard de Re
 
 ## Observaciones pendientes
 
-- Con "Dynamic message", el saludo apareció duplicado 2 o 3 veces en el chat de prueba, con `gpt-5-nano` y con `gpt-6-luna`. Causa sin confirmar.
+- Con "Dynamic message", el saludo de apertura apareció duplicado en el chat de prueba: 2 o 3 veces en las cuatro corridas, con `gpt-5-nano` y con `gpt-6-luna`; 1 o 2 en la corrida final. Causa sin confirmar. A qué caso afecta y por qué no se repitió la prueba: [tests/corrida.md](./tests/corrida.md).
 
 ## Límite de mensajes por conversación
 

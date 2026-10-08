@@ -25,7 +25,7 @@ Todo lo del agente de Retell, **versionado en Git** y no solo en el dashboard de
 - El prompt nunca pide al modelo calcular montos; los montos vienen de `cotizar_pedido`.
 - La sección "Lo que puedes hacer hoy" del prompt dice qué hace el agente con lo que aún no tiene herramienta. La historia que agrega una custom function reemplaza ahí su línea y ajusta los casos `sin_inventar` que correspondan.
 - El archivo que descarga "Export" en Retell **nunca entra al repo**: trae ids de la cuenta y una copia del prompt. Se guarda fuera del proyecto y solo se usa para comparar ([retell.md → Export del agente](./retell.md#export-del-agente)).
-- `retell.json` no lleva ids de la cuenta ni llaves. Un valor `pendiente (…)` no se configura en el dashboard hasta decidirse. El modelo se elige con la regla de [retell.md → Modelo](./retell.md#modelo).
+- `retell.json` no lleva ids de la cuenta ni llaves. El modelo se elige con la regla de [retell.md → Modelo](./retell.md#modelo).
 
 ### Formato de un caso (`tests/casos/<id>.json`)
 
