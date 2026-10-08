@@ -127,7 +127,15 @@ describe('Contrato de cotizar pedido: respuesta', () => {
           origen: 'producto',
           indice: 0,
           producto: 'granero',
-          opciones: ['Hamburguesa Granero', 'Taquiza Granero', 'Tacos El Granero'],
+          opciones: [
+            'Ensalada Granero',
+            'Taquiza Granero',
+            'Caldo Granero',
+            'Platillo Granero',
+            'Hamburguesa Granero',
+            'El Granero',
+            'Caldito Granero',
+          ],
         },
         {
           tipo: 'extra_no_permitido',
