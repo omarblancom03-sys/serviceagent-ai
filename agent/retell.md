@@ -45,6 +45,8 @@ Dos valores acordados no se pueden fijar desde el dashboard. Se fijan con la API
 | Saludo fijo, igual para todos    | `begin_message` en `PATCH /update-retell-llm/{llm_id}` |
 | Zona horaria `America/Chihuahua` | `timezone` en `PATCH /update-chat-agent/{agent_id}`    |
 
+Los dos se atenderán en [esta tarjeta de Trello](https://trello.com/c/Lc0BqqO4). El saludo fijo reemplaza al "Dynamic message", principal sospechoso del saludo duplicado.
+
 El dashboard también tiene "Import" (en la lista de agentes), pero la documentación de Retell no describe qué campos respeta al importar un agente, así que no se usa.
 
 ## Modelo
@@ -62,7 +64,7 @@ Precio de `gpt-6-luna`: $0.001 por mensaje del agente, según el dashboard de Re
 
 ## Observaciones pendientes
 
-- Con "Dynamic message", el saludo de apertura apareció duplicado en el chat de prueba: 2 o 3 veces en las cuatro corridas, con `gpt-5-nano` y con `gpt-6-luna`; 1 o 2 en la corrida final. Causa sin confirmar. A qué caso afecta y por qué no se repitió la prueba: [tests/corrida.md](./tests/corrida.md).
+- Con "Dynamic message", el saludo de apertura apareció duplicado en el chat de prueba: 2 o 3 veces en las cuatro corridas, con `gpt-5-nano` y con `gpt-6-luna`; 1 o 2 en la corrida final. Causa sin confirmar. A qué caso afecta y por qué no se repitió la prueba: [tests/corrida.md](./tests/corrida.md). Se atenderá en [la tarjeta de Trello](https://trello.com/c/Lc0BqqO4).
 
 ## Límite de mensajes por conversación
 
