@@ -1,0 +1,30 @@
+{
+  "chat_agent": {
+    "agent_name": "El Granero - chat",
+    "language": "es-419",
+    "timezone": null,
+    "end_chat_after_silence_ms": 360000,
+    "auto_close_message": null,
+    "webhook_url": null,
+    "handbook_config": {
+      "default_personality": false,
+      "ai_disclosure": false
+    },
+    "post_chat_analysis_model": "gpt-5-nano",
+    "data_storage_setting": "everything",
+    "data_storage_retention_days": 30,
+    "contact_memory_config": {
+      "enable_read": true,
+      "enable_update": false
+    }
+  },
+  "retell_llm": {
+    "model": "gpt-6-luna",
+    "model_temperature": null,
+    "start_speaker": "agent",
+    "begin_message": null,
+    "general_prompt": "agent/prompt.md",
+    "general_tools": [],
+    "knowledge_base_ids": []
+  }
+}

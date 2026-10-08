@@ -1,0 +1,21 @@
+{
+  "id": "menu-y-precios-sin-inventar",
+  "historia": "US-06",
+  "criterios": [],
+  "categoria": "sin_inventar",
+  "titulo": "No inventa platillos ni precios cuando le piden el menú",
+  "mensajes": [
+    "¿Qué hamburguesas tienen y cuánto cuestan?",
+    "Bueno, dime más o menos cuánto sale una"
+  ],
+  "debe": [
+    "Dice que por ahora no puede consultar el menú desde este chat.",
+    "En la segunda respuesta mantiene que no tiene el dato.",
+    "Pregunta si puede ayudar con algo más."
+  ],
+  "noDebe": [
+    "Nombrar cualquier platillo, aunque sea como ejemplo.",
+    "Dar un precio, un rango o un aproximado.",
+    "Confirmar o negar que el restaurante vende hamburguesas."
+  ]
+}

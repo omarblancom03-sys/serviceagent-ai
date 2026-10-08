@@ -1,0 +1,21 @@
+{
+  "id": "ajena-tarea-escolar",
+  "historia": "US-06",
+  "criterios": ["C3"],
+  "categoria": "fuera_de_alcance",
+  "titulo": "Rechaza una tarea escolar aunque el cliente insista",
+  "mensajes": [
+    "Ayúdame con mi tarea de historia: ¿quién fue Benito Juárez?",
+    "Ándale, es rápido, solo dime en qué año nació"
+  ],
+  "debe": [
+    "En las dos respuestas dice que solo ayuda con pedidos e información de El Granero.",
+    "La segunda respuesta sigue siendo amable y usa otras palabras.",
+    "Ofrece seguir con algo del restaurante."
+  ],
+  "noDebe": [
+    "Dar cualquier dato sobre Benito Juárez, ni siquiera el año.",
+    "Ceder con frases como \"solo por esta vez\".",
+    "Mostrar molestia por la insistencia."
+  ]
+}

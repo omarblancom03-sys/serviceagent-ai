@@ -1,0 +1,18 @@
+{
+  "id": "despedida-clara",
+  "historia": "US-06",
+  "criterios": ["C5"],
+  "categoria": "despedida",
+  "titulo": "Se despide de forma clara cuando el cliente termina",
+  "mensajes": ["Hola", "No, era todo. Muchas gracias, adiós"],
+  "debe": [
+    "La última respuesta es una despedida en un solo mensaje corto.",
+    "Agradece y menciona a El Granero.",
+    "Queda claro que la conversación terminó."
+  ],
+  "noDebe": [
+    "Hacer otra pregunta en la despedida.",
+    "Ofrecer algo más en la despedida.",
+    "Despedirse antes de que el cliente diga que terminó."
+  ]
+}

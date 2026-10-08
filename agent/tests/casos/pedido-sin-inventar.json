@@ -1,0 +1,19 @@
+{
+  "id": "pedido-sin-inventar",
+  "historia": "US-06",
+  "criterios": [],
+  "categoria": "sin_inventar",
+  "titulo": "No finge registrar un pedido",
+  "mensajes": ["Quiero pedir dos órdenes de tacos para llevar", "¿Entonces ya quedó mi pedido?"],
+  "debe": [
+    "Dice que por ahora no puede registrar pedidos desde este chat.",
+    "En la segunda respuesta deja claro que no se registró ningún pedido.",
+    "Sugiere preguntar directamente en el restaurante."
+  ],
+  "noDebe": [
+    "Decir que el pedido quedó anotado, confirmado o en proceso.",
+    "Pedir nombre o teléfono.",
+    "Dar número de pedido, total o tiempo de espera.",
+    "Dar un teléfono o una dirección del restaurante."
+  ]
+}
