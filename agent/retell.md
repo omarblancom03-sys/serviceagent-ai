@@ -59,6 +59,8 @@ Modelo elegido: `gpt-6-luna`, aprobado por el PO. Por qué se subió de nivel:
 - `gpt-5-nano` pasó 7 de 11 casos con el prompt inicial y 8 de 11 con el ajustado. No respetaba de forma constante las reglas de no volver a presentarse ni de no ofrecer menú o pedidos.
 - `gpt-6-luna` pasó 10 de 11 con ese mismo prompt y 11 de 11 tras un ajuste de una línea.
 
+Precio de `gpt-6-luna`: $0.001 por mensaje del agente, según el dashboard de Retell al 7 de octubre de 2026.
+
 ## Observaciones pendientes
 
 - Con "Dynamic message", el saludo apareció duplicado 2 o 3 veces en el chat de prueba, con `gpt-5-nano` y con `gpt-6-luna`. Causa sin confirmar.
