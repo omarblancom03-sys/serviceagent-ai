@@ -9,7 +9,7 @@ import { z } from 'zod';
 /** Mayor valor de una columna `integer` de Postgres: los ids del menú son identity int. */
 export const MAX_ID = 2_147_483_647;
 
-const IdSchema = z.number().int().positive().max(MAX_ID);
+export const IdSchema = z.number().int().positive().max(MAX_ID);
 
 /** Monto en centavos (D7): entero y nunca negativo. */
 export const CentavosSchema = z.number().int().nonnegative();
