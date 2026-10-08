@@ -25,7 +25,7 @@ Usa los nombres de campo de la API de Retell, para que no haya duda de a qué aj
 | `model_temperature`              | Engrane del modelo                                      | Solo aparece con algunos modelos: con `gpt-4.1-nano` sí; con `gpt-6-luna` y `gpt-5-nano` no (su engrane solo muestra "Structured Output"). Acordado: 0.2 si el modelo la admite (`gpt-6-luna` no).       |
 | `start_speaker`, `begin_message` | Welcome Message → "AI speaks first" + "Dynamic message" | `begin_message` en `null`: el saludo lo redacta el modelo con la sección "Tu primer mensaje" del prompt. Un saludo fijo solo se puede poner por API.                                                     |
 | `handbook_config`                | Botón "Agent Handbook", debajo del selector de modelo   | Preajustes de Retell que agregan texto propio al prompt. Apagados: el comportamiento se define solo en `prompt.md`.                                                                                      |
-| `general_tools`                  | Lista de funciones del agente                           | Vacía. Retell agrega `end_call` por defecto y se quita: el prompt atiende al cliente si escribe después de la despedida.                                                                                 |
+| `general_tools`                  | Lista de funciones del agente                           | Una custom function por herramienta ([Custom functions](#custom-functions)). Retell agrega `end_call` por defecto y se quita: el prompt atiende al cliente si escribe después de la despedida.           |
 | `knowledge_base_ids`             | Knowledge base                                          | Vacía: el menú se consulta con RAG propio (D3).                                                                                                                                                          |
 | `end_chat_after_silence_ms`      | Chat settings → Auto-Close Inactive Chats               | Va en milisegundos: 360000 son 6 minutos. El control solo avanza por saltos (6, 12, 30 minutos…).                                                                                                        |
 | `auto_close_message`             | Chat settings                                           | Sin mensaje de cierre.                                                                                                                                                                                   |
@@ -48,6 +48,26 @@ Dos valores acordados no se pueden fijar desde el dashboard. Se fijan con la API
 Los dos se atenderán en [esta tarjeta de Trello](https://trello.com/c/Lc0BqqO4). El saludo fijo reemplaza al "Dynamic message", principal sospechoso del saludo duplicado.
 
 El dashboard también tiene "Import" (en la lista de agentes), pero la documentación de Retell no describe qué campos respeta al importar un agente, así que no se usa.
+
+## Custom functions
+
+Cada entrada de `general_tools` es una custom function ([documentación oficial](https://docs.retellai.com/build/single-multi-prompt/custom-function.md)). Hoy: `cotizar_pedido`.
+
+| Campo                    | Dónde está en el dashboard  | Notas                                                                                                                                                                                |
+| ------------------------ | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `name`, `description`    | Name, Description           | Se copian tal cual. El modelo lee la descripción para decidir cuándo llamar.                                                                                                         |
+| `url`                    | API Endpoint URL            | El archivo lleva solo la ruta. En el dashboard va completa: la URL de la API de [despliegue.md → Ambiente desplegado](../docs/despliegue.md#ambiente-desplegado) seguida de la ruta. |
+| `method`                 | Method                      | `POST`.                                                                                                                                                                              |
+| `parameters`             | Parameters (JSON)           | Apunta al archivo de [functions/](./functions), que se pega completo. Un test lo compara con el contrato de `packages/shared`.                                                       |
+| `args_at_root`           | Payload: args only          | **Apagado.** La API espera el sobre `{ name, call, args }`; encendido, Retell manda solo los args y la API responde 400.                                                             |
+| `timeout_ms`             | Timeout (ms)                | 10 segundos. El valor por defecto de Retell son 2 minutos, demasiado para un chat.                                                                                                   |
+| `max_retry`              | Sin ubicar en el dashboard  | 0, el valor por defecto: Retell reintenta también los 4xx, y un 400 no se arregla reintentando.                                                                                      |
+| `speak_during_execution` | Talk While Waiting          | Apagado. La documentación solo lo describe para voz.                                                                                                                                 |
+| `speak_after_execution`  | Talk After Action Completed | Encendido: el agente responde con el resultado.                                                                                                                                      |
+
+- Retell firma cada petición con `X-Retell-Signature` y la API la verifica ([docs/agente.md](../docs/agente.md#custom-functions)).
+- Si la API responde con error o no contesta a tiempo, el agente recibe un mensaje de error; el prompt le dice qué contestar.
+- Sin confirmar en la documentación: cómo se comportan "Talk While Waiting" y "Talk After Action Completed" en un agente de chat, y qué cambia `tool_call_strict_mode` (ajuste del motor que no se toca).
 
 ## Modelo
 
@@ -79,7 +99,7 @@ No se configura en Retell: el cierre por inactividad (`end_chat_after_silence_ms
 5. **Agent Handbook** (debajo del selector de modelo): apagar "Default Tone — Professional" y "AI Disclosure When Asked". Los demás quedan apagados.
 6. **Welcome Message:** "AI speaks first" con "Dynamic message".
 7. Idioma: `language`.
-8. Funciones: quitar `end_call`, que viene agregada por defecto. No agregar functions, knowledge base ni webhook.
+8. Funciones: quitar `end_call`, que viene agregada por defecto. Por cada entrada de `general_tools`, **Add → Custom Function** con los valores de [Custom functions](#custom-functions); en Parameters, pegar el archivo de `functions/` completo y dejar **"Payload: args only" apagado**. No agregar knowledge base ni webhook.
 9. **Chat settings → Auto-Close Inactive Chats:** el valor de `end_chat_after_silence_ms`.
 10. **Post chat extraction** (panel derecho del agente): en el selector de modelo, que queda debajo de los campos Chat Summary, Chat Successful y User Sentiment, elegir `post_chat_analysis_model`.
 11. **Security & fallback settings → Data Storage Settings:** retención de `data_storage_retention_days` días.

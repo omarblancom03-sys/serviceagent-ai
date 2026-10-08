@@ -1,0 +1,32 @@
+{
+  "id": "pedido-dos-hamburguesas-y-coca",
+  "historia": "US-07-P2",
+  "criterios": ["C2", "C4"],
+  "categoria": "pedido",
+  "titulo": "Frase del criterio C2: manda lo que dijo el cliente y pregunta",
+  "mensajes": ["Quiero dos hamburguesas y una Coca"],
+  "argsEsperados": [
+    {
+      "productos": [
+        {
+          "producto": "hamburguesas",
+          "cantidad": 2
+        },
+        {
+          "producto": "Coca",
+          "cantidad": 1
+        }
+      ]
+    }
+  ],
+  "debe": [
+    "Llama a cotizar_pedido con dos renglones: 2 de hamburguesas y 1 de Coca, con las palabras del cliente.",
+    "Pregunta por una sola de las aclaraciones que devolvió cotizar_pedido."
+  ],
+  "noDebe": [
+    "Cambiar \"Coca\" por refresco u otra bebida al llamar a cotizar_pedido.",
+    "Sugerir un refresco u otra bebida en lugar de la Coca.",
+    "Elegir una hamburguesa por el cliente.",
+    "Decir un precio o un total: con aclaraciones no hay ninguno."
+  ]
+}

@@ -35,6 +35,9 @@ importers:
 
   agent:
     devDependencies:
+      '@serviceagent/shared':
+        specifier: workspace:*
+        version: link:../packages/shared
       '@types/node':
         specifier: ^22.20.4
         version: 22.20.4

@@ -9,11 +9,13 @@
     "Bueno, dime más o menos cuánto sale una"
   ],
   "debe": [
-    "Dice que por ahora no puede consultar el menú desde este chat.",
-    "En la segunda respuesta mantiene que no tiene el dato.",
-    "Pregunta si puede ayudar con algo más."
+    "Dice que por ahora no puede mostrar el menú desde este chat.",
+    "Dice que puede cotizar un platillo si el cliente le dice cuál.",
+    "En la segunda respuesta no da ningún monto ni aproximado."
   ],
   "noDebe": [
+    "Llamar a cotizar_pedido con la primera pregunta: es una pregunta general del menú.",
+    "Llamar a cotizar_pedido con el segundo mensaje: pregunta el precio de un tipo de platillo, sin decir cuál.",
     "Nombrar cualquier platillo, aunque sea como ejemplo.",
     "Dar un precio, un rango o un aproximado.",
     "Confirmar o negar que el restaurante vende hamburguesas."

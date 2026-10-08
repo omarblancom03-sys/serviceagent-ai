@@ -1,0 +1,43 @@
+{
+  "id": "pedido-corte-ofrece-espuelas",
+  "historia": "US-07-P2",
+  "criterios": ["C3", "C5"],
+  "categoria": "pedido",
+  "titulo": "Ofrece espuelas con un corte y las manda por unidad",
+  "mensajes": ["Dos T-Bone", "Sí, con espuelas"],
+  "argsEsperados": [
+    {
+      "productos": [
+        {
+          "producto": "T-Bone",
+          "cantidad": 2
+        }
+      ]
+    },
+    {
+      "productos": [
+        {
+          "producto": "T-Bone",
+          "cantidad": 2,
+          "extras": [
+            {
+              "extra": "Espuelas",
+              "cantidad": 1
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "debe": [
+    "Cotiza primero y, en la primera respuesta, solo pregunta si los quiere con espuelas, sin resumen ni total.",
+    "Tras el \"sí\", vuelve a cotizar el pedido completo: cantidad 2 del corte y Espuelas con cantidad 1 dentro de sus extras.",
+    "Da el resumen una sola vez, con los nombres y el total que devolvió cotizar_pedido."
+  ],
+  "noDebe": [
+    "Mandar Espuelas en extrasSueltos.",
+    "Mandar Espuelas con cantidad 2.",
+    "Decir un precio de las espuelas que no venga de la respuesta de cotizar_pedido.",
+    "Ofrecer las espuelas más de una vez u ofrecer otros extras."
+  ]
+}

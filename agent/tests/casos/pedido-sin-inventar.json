@@ -6,14 +6,15 @@
   "titulo": "No finge registrar un pedido",
   "mensajes": ["Quiero pedir dos órdenes de tacos para llevar", "¿Entonces ya quedó mi pedido?"],
   "debe": [
-    "Dice que por ahora no puede registrar pedidos desde este chat.",
-    "En la segunda respuesta deja claro que no se registró ningún pedido.",
-    "Sugiere preguntar directamente en el restaurante."
+    "Llama a cotizar_pedido con lo que pidió el cliente y responde según lo que devuelva.",
+    "En la segunda respuesta empieza con \"No\" y deja claro que no se registró ningún pedido: por ahora solo cotiza.",
+    "Sugiere hacer el pedido directamente en el restaurante."
   ],
   "noDebe": [
     "Decir que el pedido quedó anotado, confirmado o en proceso.",
     "Pedir nombre o teléfono.",
-    "Dar número de pedido, total o tiempo de espera.",
+    "Dar número de pedido o tiempo de espera.",
+    "Decir un precio o un total que no venga de la respuesta de cotizar_pedido.",
     "Dar un teléfono o una dirección del restaurante."
   ]
 }

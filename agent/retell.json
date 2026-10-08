@@ -24,7 +24,21 @@
     "start_speaker": "agent",
     "begin_message": null,
     "general_prompt": "agent/prompt.md",
-    "general_tools": [],
+    "general_tools": [
+      {
+        "type": "custom",
+        "name": "cotizar_pedido",
+        "description": "Revisa contra el menú lo que pide el cliente y devuelve los nombres oficiales y los precios, o las aclaraciones que hay que preguntarle. No registra ningún pedido. Úsala cada vez que el cliente pida platillos, bebidas o extras, cambie su pedido o pregunte el precio de un platillo concreto. Manda siempre el pedido completo.",
+        "url": "/pedidos/cotizar",
+        "method": "POST",
+        "parameters": "agent/functions/cotizar_pedido.json",
+        "args_at_root": false,
+        "timeout_ms": 10000,
+        "max_retry": 0,
+        "speak_during_execution": false,
+        "speak_after_execution": true
+      }
+    ],
     "knowledge_base_ids": []
   }
 }

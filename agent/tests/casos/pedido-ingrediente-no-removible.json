@@ -1,0 +1,29 @@
+{
+  "id": "pedido-ingrediente-no-removible",
+  "historia": "US-07-P2",
+  "criterios": ["C2", "C4"],
+  "categoria": "pedido",
+  "titulo": "Avisa que un ingrediente no se puede quitar",
+  "mensajes": ["Una hamburguesa Delicias sin tomate"],
+  "argsEsperados": [
+    {
+      "productos": [
+        {
+          "producto": "hamburguesa Delicias",
+          "cantidad": 1,
+          "sinIngredientes": ["tomate"]
+        }
+      ]
+    }
+  ],
+  "debe": [
+    "Manda \"tomate\" en sinIngredientes de la hamburguesa.",
+    "Dice que el tomate no se puede quitar de esa hamburguesa.",
+    "Pregunta si la quiere como viene."
+  ],
+  "noDebe": [
+    "Decir que la hamburguesa irá sin tomate.",
+    "Cotizarla completa sin preguntar.",
+    "Decir un precio o un total: con aclaraciones no hay ninguno."
+  ]
+}

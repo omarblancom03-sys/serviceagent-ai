@@ -1,0 +1,33 @@
+{
+  "id": "pedido-simple-total",
+  "historia": "US-07-P2",
+  "criterios": ["C2", "C5"],
+  "categoria": "pedido",
+  "titulo": "Pedido simple: cotiza y lee el total",
+  "mensajes": ["Una hamburguesa Granero y un refresco"],
+  "argsEsperados": [
+    {
+      "productos": [
+        {
+          "producto": "hamburguesa Granero",
+          "cantidad": 1
+        },
+        {
+          "producto": "refresco",
+          "cantidad": 1
+        }
+      ]
+    }
+  ],
+  "debe": [
+    "Llama a cotizar_pedido una vez, con los dos renglones.",
+    "Da el resumen una sola vez, con los nombres que devolvió cotizar_pedido.",
+    "Dice el total que devolvió cotizar_pedido.",
+    "Pregunta si quiere cambiar algo."
+  ],
+  "noDebe": [
+    "Decir un total o un precio distinto al de la respuesta, o calculado por el agente.",
+    "Ofrecer espuelas u otro extra.",
+    "Decir que el pedido quedó registrado, o dar número de pedido o tiempo de espera."
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "id": "pedido-falta-variante",
+  "historia": "US-07-P2",
+  "criterios": ["C4"],
+  "categoria": "pedido",
+  "titulo": "Pregunta la presentación cuando falta la variante",
+  "mensajes": ["Una limonada natural"],
+  "argsEsperados": [
+    {
+      "productos": [
+        {
+          "producto": "limonada natural",
+          "cantidad": 1
+        }
+      ]
+    }
+  ],
+  "debe": [
+    "Llama a cotizar_pedido sin variante: el cliente no dijo ninguna.",
+    "Pregunta cuál presentación quiere, nombrando las opciones que devolvió cotizar_pedido."
+  ],
+  "noDebe": [
+    "Elegir una presentación por el cliente.",
+    "Nombrar presentaciones que no vengan en la respuesta.",
+    "Decir un precio o un total: con aclaraciones no hay ninguno."
+  ]
+}

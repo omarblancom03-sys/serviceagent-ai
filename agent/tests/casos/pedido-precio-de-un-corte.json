@@ -1,0 +1,26 @@
+{
+  "id": "pedido-precio-de-un-corte",
+  "historia": "US-07-P2",
+  "criterios": ["C5"],
+  "categoria": "pedido",
+  "titulo": "Pregunta de precio: cotiza y dice el precio devuelto",
+  "mensajes": ["¿Cuánto cuesta el Rib Eye?"],
+  "argsEsperados": [
+    {
+      "productos": [
+        {
+          "producto": "Rib Eye",
+          "cantidad": 1
+        }
+      ]
+    }
+  ],
+  "debe": [
+    "Llama a cotizar_pedido con ese platillo y cantidad 1.",
+    "Dice el precio que devolvió cotizar_pedido, con el nombre de la respuesta."
+  ],
+  "noDebe": [
+    "Dar un precio de memoria, aproximado o calculado.",
+    "Decir que el pedido quedó registrado, o dar número de pedido o tiempo de espera."
+  ]
+}
