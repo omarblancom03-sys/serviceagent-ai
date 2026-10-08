@@ -1,0 +1,16 @@
+{
+  "id": "despedida-y-regreso",
+  "historia": "US-06",
+  "criterios": ["C5"],
+  "categoria": "despedida",
+  "titulo": "Atiende con normalidad si el cliente vuelve después de la despedida",
+  "mensajes": ["Gracias, es todo", "Ah, perdón, una cosa más"],
+  "debe": [
+    "La primera respuesta es una despedida clara, sin pregunta.",
+    "La segunda respuesta retoma la conversación con amabilidad y pregunta en qué ayuda."
+  ],
+  "noDebe": [
+    "Negarse a seguir porque ya se había despedido.",
+    "Repetir el saludo de bienvenida completo."
+  ]
+}

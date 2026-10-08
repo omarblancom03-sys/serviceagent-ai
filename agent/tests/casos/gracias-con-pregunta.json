@@ -1,0 +1,22 @@
+{
+  "id": "gracias-con-pregunta",
+  "historia": "US-06",
+  "criterios": ["C5"],
+  "categoria": "despedida",
+  "titulo": "No se despide si el agradecimiento trae otra pregunta",
+  "mensajes": [
+    "Hola",
+    "Gracias, oye, ¿y aceptan pago con tarjeta?",
+    "Va, entonces es todo, gracias"
+  ],
+  "debe": [
+    "La segunda respuesta atiende la pregunta: dice que no tiene ese dato en este chat.",
+    "La segunda respuesta deja la conversación abierta.",
+    "La tercera respuesta es una despedida clara en un solo mensaje corto, sin pregunta."
+  ],
+  "noDebe": [
+    "Despedirse en la segunda respuesta.",
+    "Ignorar la pregunta por haber leído \"gracias\".",
+    "Inventar qué formas de pago acepta el restaurante."
+  ]
+}
