@@ -101,6 +101,55 @@ describe('Contrato de cotizar pedido: petición', () => {
     ).toThrow();
   });
 
+  it.each([
+    ['variante: null', { variante: null }],
+    ['variante: ""', { variante: '' }],
+    ['variante: "   "', { variante: '   ' }],
+    ['sinIngredientes: null', { sinIngredientes: null }],
+    ['extras: null', { extras: null }],
+  ])('toma %s como si el campo opcional no hubiera venido', (_caso, campo) => {
+    const pedido = CotizarPedidoArgsSchema.parse({
+      productos: [{ producto: 'Guacamole', cantidad: 1, ...campo }],
+    });
+    const [producto] = pedido.productos;
+    expect(producto?.variante).toBeUndefined();
+    expect(producto?.sinIngredientes).toBeUndefined();
+    expect(producto?.extras).toBeUndefined();
+  });
+
+  it('toma extrasSueltos: null como lista vacía', () => {
+    const pedido = CotizarPedidoArgsSchema.parse({
+      productos: args.productos,
+      extrasSueltos: null,
+    });
+    expect(pedido.extrasSueltos).toEqual([]);
+  });
+
+  it('toma productos: null como lista vacía si hay extras sueltos', () => {
+    const pedido = CotizarPedidoArgsSchema.parse({
+      productos: null,
+      extrasSueltos: args.extrasSueltos,
+    });
+    expect(pedido.productos).toEqual([]);
+    expect(pedido.extrasSueltos).toHaveLength(1);
+  });
+
+  it('sigue rechazando args con productos y extrasSueltos en null', () => {
+    expect(() => CotizarPedidoArgsSchema.parse({ productos: null, extrasSueltos: null })).toThrow();
+  });
+
+  it.each([
+    ['producto: null', { producto: null }],
+    ['producto: ""', { producto: '' }],
+    ['cantidad: null', { cantidad: null }],
+  ])('rechaza %s (los campos obligatorios no aceptan null ni vacío)', (_caso, campo) => {
+    expect(() =>
+      CotizarPedidoArgsSchema.parse({
+        productos: [{ producto: 'Guacamole', cantidad: 1, ...campo }],
+      }),
+    ).toThrow();
+  });
+
   it('acepta solo extras sueltos (productos vale [] por defecto)', () => {
     const soloExtras = CotizarPedidoArgsSchema.parse({ extrasSueltos: args.extrasSueltos });
     expect(soloExtras.productos).toEqual([]);

@@ -7,9 +7,10 @@
  * Reglas que respeta:
  * - Todo monto va en centavos (integer). El agente nunca calcula ni convierte:
  *   recibe los textos ya formateados (`...Texto`) y solo los lee.
- * - Los nombres de la petición llegan tal como los dijo el cliente; resolverlos
- *   contra el menú (platillo, variante_producto, sinonimo_producto, extra) es
- *   trabajo del servicio, no del esquema.
+ * - Los nombres de la petición llegan tal como los dijo el cliente. El SERVICIO
+ *   los normaliza (mayúsculas, acentos, plurales y palabras de relleno como
+ *   "la de" o "una orden de") y los resuelve contra el menú (platillo,
+ *   variante_producto, sinonimo_producto, extra); el esquema no lo hace.
  * - Solo depende de zod (regla de packages/shared): nada de Hono aquí.
  */
 import { z } from 'zod';
@@ -52,6 +53,20 @@ const CantidadClienteSchema = z.number();
 /** Monto ya formateado por el backend, p. ej. "$1,234.00". */
 const MontoTextoSchema = z.string();
 
+/**
+ * `null` y un texto vacío o de solo espacios valen como "no vino": el modelo a
+ * veces los manda en lugar de omitir el campo, y no son un cuerpo mal formado.
+ */
+const comoAusente = (valor: unknown) =>
+  valor === null || (typeof valor === 'string' && valor.trim() === '') ? undefined : valor;
+
+/** Campo opcional de la petición que acepta `null` y `""` como si no hubiera venido. */
+const opcional = <T extends z.ZodType>(schema: T) => z.preprocess(comoAusente, schema.optional());
+
+/** Lista opcional de la petición: si no vino (o vino `null` o `""`), vale `[]`. */
+const listaOpcional = <T extends z.ZodType>(item: T, maximo: number) =>
+  z.preprocess(comoAusente, z.array(item).max(maximo).default([]));
+
 // ─── Petición ───────────────────────────────────────────────────────────────
 
 /*
@@ -75,20 +90,21 @@ export const ExtraPedidoSchema = z.strictObject({
 
 export const ProductoPedidoSchema = z.strictObject({
   /**
-   * El agente manda el producto en singular ("t-bone", no "dos t-bones"); la
-   * cantidad va en `cantidad`.
+   * Lo ideal es que el agente mande solo las palabras del platillo ("t-bone",
+   * no "dos órdenes de t-bones"), pero el servicio tolera plurales y relleno.
+   * La cantidad va en `cantidad`.
    */
   producto: TextoClienteSchema,
   /**
    * Si falta y el platillo tiene varias, o si la pedida no existe →
    * `falta_variante` (ver AclaracionSchema).
    */
-  variante: TextoClienteSchema.optional(),
+  variante: opcional(TextoClienteSchema),
   cantidad: CantidadClienteSchema,
   /** Solo se aceptan los de ingrediente_removible de ese platillo. */
-  sinIngredientes: z.array(TextoClienteSchema).max(10).optional(),
+  sinIngredientes: opcional(z.array(TextoClienteSchema).max(10)),
   /** Solo extras ligados al platillo en platillo_extra (hoy: Espuelas en 5 cortes). */
-  extras: z.array(ExtraPedidoSchema).max(5).optional(),
+  extras: opcional(z.array(ExtraPedidoSchema).max(5)),
 });
 
 /**
@@ -102,8 +118,8 @@ export const ExtraSueltoPedidoSchema = ExtraPedidoSchema;
 /** Argumentos de la función `cotizar_pedido`, tal como los arma el agente. */
 export const CotizarPedidoArgsSchema = z
   .strictObject({
-    productos: z.array(ProductoPedidoSchema).max(30).default([]),
-    extrasSueltos: z.array(ExtraSueltoPedidoSchema).max(10).default([]),
+    productos: listaOpcional(ProductoPedidoSchema, 30),
+    extrasSueltos: listaOpcional(ExtraSueltoPedidoSchema, 10),
   })
   .refine((args) => args.productos.length + args.extrasSueltos.length > 0, {
     message: 'El pedido debe traer al menos un producto o un extra suelto.',
