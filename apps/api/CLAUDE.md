@@ -14,12 +14,15 @@ API del sistema: la usan el agente de Retell (custom functions), los frontends y
 | `src/lib/env.ts`         | Tipos de las variables de entorno (`Bindings`) y del contexto (`AppEnv`).                                                |
 | `src/lib/auth.ts`        | JWT propio (HS256, `JWT_SECRET`) y middleware `requiereRol(...)`.                                                        |
 | `src/lib/pin.ts`         | Hash y verificación del PIN (HMAC con `PIN_PEPPER` + PBKDF2, D13).                                                       |
+| `src/lib/firmaRetell.ts` | `verificarFirmaRetell` (HMAC-SHA256 del cuerpo crudo + timestamp con `RETELL_API_KEY`, ±5 min, tiempo constante) y middleware `requiereFirmaRetell()`: 401 si la firma no es válida, 500 si falta la llave. |
+| `src/lib/normalizar.ts`  | Llaves para comparar lo que dijo el cliente con nombres y sinónimos: `normalizarSuave` (minúsculas, sin acentos ni signos, plurales), `normalizarSinRelleno`, `palabras` y `normalizarExtra` (ignora paréntesis). |
+| `src/lib/pesos.ts`       | `formatearPesos(centavos)`: 40300 → `"$403.00"`. Solo formato; los montos siguen en centavos.                            |
 | `src/lib/supabase.ts`    | `crearClienteSupabase(env)`: cliente con la llave de servicio, uno por petición. Lo reutilizan todas las historias.      |
 | `src/lib/repo*.ts`       | Implementación sobre Supabase de las interfaces de `services/`. Hoy: `repoEmpleados.ts` y `repoMenu.ts` (lee las 6 tablas del menú en paralelo). |
 | `scripts/hashPin.ts`     | `pnpm --filter @serviceagent/api hash-pin <PIN>`: hash para el seed (lee `PIN_PEPPER` de `.dev.vars`).                                                   |
 | `test/`                  | Tests de Vitest (`*.test.ts`) y repos en memoria con datos falsos: `repoEnMemoria.ts` (empleados) y `menuEnMemoria.ts` (menú). |
 
-Pendiente en `src/lib/`: firma de Retell en US-06, límites de uso en US-19, notificador de WhatsApp en US-28.
+Pendiente en `src/lib/`: límites de uso en US-19, notificador de WhatsApp en US-28.
 
 ## Convenciones de esta área
 
@@ -47,5 +50,5 @@ Los tests usan `crearApp({ ... })` con repos en memoria y `app.request(ruta, ini
 - [Reglas de oro](../../CLAUDE.md#reglas-de-oro) del raíz (dinero en backend, centavos, zod, `services/`, secretos).
 - [docs/negocio.md](../../docs/negocio.md): estados del pedido, pagos, inventario, tiempo estimado, auth y roles.
 - [docs/agente.md](../../docs/agente.md): endpoints de las custom functions y verificación de `X-Retell-Signature`.
-- [docs/despliegue.md](../../docs/despliegue.md): secretos del Worker (`JWT_SECRET`, `PIN_PEPPER`, `SUPABASE_*`) y despliegue.
+- [docs/despliegue.md](../../docs/despliegue.md): secretos del Worker (`JWT_SECRET`, `PIN_PEPPER`, `RETELL_API_KEY`, `SUPABASE_*`) y despliegue.
 - [docs/decisiones.md](../../docs/decisiones.md): D2, D7, D8, D9, D12, D13, D14, D19, D20.

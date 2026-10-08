@@ -39,6 +39,13 @@ Secreto que se mezcla con cada PIN (HMAC) antes del hash (D13). No vive en la ba
 - **Producción (base propia):** uno distinto, con `cd apps/api && pnpm exec wrangler secret put PIN_PEPPER`. Los empleados de producción se crean con hashes generados con ese pepper, nunca con el seed de desarrollo.
 - **Cambiarlo invalida todos los PIN guardados.** Hay que regenerar los hashes (`pnpm --filter @serviceagent/api hash-pin <PIN>`).
 
+### `RETELL_API_KEY` (firma de Retell)
+
+Verifica `X-Retell-Signature` en las peticiones que manda Retell a la API (custom functions). Debe ser la API key de Retell que tiene el **badge de webhook**: con otra llave, ninguna firma coincide y la API responde 401. Si falta, esas rutas responden 500.
+
+- **Local:** en `apps/api/.dev.vars` (`RETELL_API_KEY=<valor>`), copiada del dashboard de Retell → API Keys.
+- **Ambiente desplegado:** la carga el PO con `cd apps/api && pnpm exec wrangler secret put RETELL_API_KEY`.
+
 ### Frontends (web y simuladores)
 
 - Vite solo expone variables con prefijo `VITE_`, y **terminan en el navegador**. Nunca pongas secretos ahí.
@@ -64,7 +71,7 @@ Se configuran en Settings → Secrets and variables → Actions. Si los secretos
 | Simuladores (Pages) | https://serviceagent-simuladores.pages.dev         |
 
 - Usa la **misma base de Supabase `serviceagent-dev`** que el desarrollo local: lo que se cree en local se ve en el desplegado y al revés.
-- El Worker tiene cargados `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `JWT_SECRET` (distinto al de local), `PIN_PEPPER` (el de desarrollo) y `CORS_ORIGINS`.
+- El Worker tiene cargados `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `JWT_SECRET` (distinto al de local), `PIN_PEPPER` (el de desarrollo), `RETELL_API_KEY` y `CORS_ORIGINS`.
 - `CORS_ORIGINS` es la lista, separada por comas, de orígenes exactos: `https://serviceagent-web.pages.dev`, sin `/` final. Las URLs de vista previa con prefijo (`<hash>.serviceagent-web.pages.dev`) no están incluidas, así que ahí el navegador bloquea las llamadas a la API.
 - Solo el PO (Omar) tiene acceso a Cloudflare y carga los secretos del Worker. **Si una historia agrega una variable a la API:** va a `.env.example` en el mismo PR, se avisa al PO para que la cargue con `wrangler secret put` y el PR no se fusiona hasta que el PO confirme que la cargó ([D24](decisiones.md)). Un secreto se aplica al guardarlo, sin redesplegar.
 - Revisar qué secretos tiene el Worker (solo nombres): `cd apps/api && pnpm exec wrangler secret list`.
