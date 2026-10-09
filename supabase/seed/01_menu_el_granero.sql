@@ -23,7 +23,9 @@
 --       * "Champiñón" -> 'Papa con Champiñón' * "Chorizo" -> 'Papa con Chorizo'
 --       * "Tocino" -> 'Papa con Tocino'      * "Arrachera" -> 'Papa con Arrachera'
 --   - Otros 7 nombres se ajustaron por decision del PO para que no se lean
---     ambiguos en cocina; el nombre original queda como sinonimo:
+--     ambiguos en cocina; el nombre original queda como sinonimo, salvo
+--     "Pollo", "Granero", "Delicias" y "Filete de pescado", que se retiraron
+--     por genericos (seccion 6, D27):
 --       * "Pollo" -> 'Hamburguesa de Pollo'  * "Granero" -> 'Hamburguesa Granero'
 --       * "Delicias" -> 'Hamburguesa Delicias'
 --       * "Delicias Tocino" -> 'Hamburguesa Delicias Tocino'
@@ -332,12 +334,12 @@ select p.id_platillo, v.frase
 from (values
   ('Rajas con queso', 'rajas'), ('Rajas con queso', 'rajas con queso'),
   ('Guacamole', 'guacamole'), ('Guacamole', 'guacamole con totopos'),
-  ('Papas francesas', 'papas'), ('Papas francesas', 'papas fritas'), ('Papas francesas', 'papas francesas'),
+  ('Papas francesas', 'papas fritas'), ('Papas francesas', 'papas francesas'),
   ('Orden de salchichas', 'salchichas'), ('Orden de salchichas', 'orden de salchichas'),
   ('Frijoles charros', 'frijoles'), ('Frijoles charros', 'frijoles charros'),
   ('Elote amarillo', 'elote'), ('Elote amarillo', 'elote amarillo'),
-  ('Queso fundido', 'queso'), ('Queso fundido', 'queso fundido'),
-  ('Luiggi Especial', 'luiggi'), ('Luiggi Especial', 'luiggi especial'), ('Luiggi Especial', 'queso con camarones'),
+  ('Queso fundido', 'queso fundido'),
+  ('Luiggi Especial', 'luiggi especial'), ('Luiggi Especial', 'queso con camarones'),
   ('Orden de chiles', 'chiles'), ('Orden de chiles', 'orden de chiles'),
 
   ('Papa Natural', 'papa natural'), ('Papa Natural', 'papa asada natural'),
@@ -357,26 +359,24 @@ from (values
   ('Taquiza Granero', 'taquiza granero'),
   ('Taquiza del Mar', 'taquiza del mar'),
   ('Taquiza Ranchera', 'taquiza ranchera'),
-  ('Taquiza Alambre', 'taquiza alambre'), ('Taquiza Alambre', 'alambre'),
+  ('Taquiza Alambre', 'taquiza alambre'),
 
-  ('Caldo Granero', 'caldo granero'), ('Caldo Granero', 'caldo de pollo'),
+  ('Caldo Granero', 'caldo granero'),
   ('Sartencito', 'sartencito'), ('Sartencito', 'sartén de sirloin'),
   ('Guisado Abigeo', 'abigeo'), ('Guisado Abigeo', 'guisado abigeo'),
   ('Platillo Granero', 'platillo granero'),
 
-  ('Costillas Chihuahua', 'costillas chihuahua'), ('Costillas Chihuahua', 'costillas'),
+  ('Costillas Chihuahua', 'costillas chihuahua'),
   ('Fajitas de arrachera', 'fajitas de arrachera'),
   ('Enchiladas Las Vírgenes', 'enchiladas'), ('Enchiladas Las Vírgenes', 'enchiladas las vírgenes'),
   ('Fajitas Trío', 'fajitas trío'), ('Fajitas Trío', 'fajitas mixtas'),
   ('Fajitas de pollo', 'fajitas de pollo'),
   ('Tiras de pollo', 'tiras de pollo'), ('Tiras de pollo', 'pollo empanizado'),
 
-  ('Hamburguesa Delicias', 'hamburguesa delicias'), ('Hamburguesa Delicias', 'delicias'),
-  ('Hamburguesa Delicias Tocino', 'delicias tocino'), ('Hamburguesa Delicias Tocino', 'hamburguesa con tocino'),
-  ('Hamburguesa Granero', 'hamburguesa granero'), ('Hamburguesa Granero', 'granero'),
-  ('Hamburguesa Granero', 'la granero'),
-  ('Hamburguesa de Pollo', 'hamburguesa de pollo'), ('Hamburguesa de Pollo', 'pollo'),
-  ('Hamburguesa de Pollo', 'una de pollo'),
+  ('Hamburguesa Delicias', 'hamburguesa delicias'),
+  ('Hamburguesa Delicias Tocino', 'delicias tocino'),
+  ('Hamburguesa Granero', 'hamburguesa granero'),
+  ('Hamburguesa de Pollo', 'hamburguesa de pollo'),
   ('Hamburguesa Algodoneros', 'algodoneros'), ('Hamburguesa Algodoneros', 'hamburguesa doble'),
   ('Hamburguesa Hawaiana', 'hawaiana'), ('Hamburguesa Hawaiana', 'hamburguesa hawaiana'),
 
@@ -422,9 +422,8 @@ from (values
   ('Camarones a la Crema', 'camarones crema'),
   ('Camarones al Coco', 'camarones coco'),
 
-  ('Fajitas de pollo infantil', 'fajitas niño'), ('Fajitas de pollo infantil', 'fajitas de pollo infantil'),
+  ('Fajitas de pollo infantil', 'fajitas de pollo infantil'),
   ('Filete de pescado infantil', 'filete niño'), ('Filete de pescado infantil', 'pescado infantil'),
-  ('Filete de pescado infantil', 'filete de pescado'),
   ('Fajitas de arrachera infantil', 'fajitas arrachera niño'),
   ('Caldito Granero', 'caldito granero'), ('Caldito Granero', 'caldo niño'),
   ('Boneless', 'boneless'),
@@ -439,7 +438,7 @@ from (values
   ('Cerveza nacional 355 ml', 'cerveza nacional'),
   ('Cubetas y cerveza importada', 'cerveza importada'), ('Cubetas y cerveza importada', 'cubeta'),
 
-  ('Postre del día', 'postre'), ('Postre del día', 'postre del día'),
+  ('Postre del día', 'postre del día'),
   ('Tarta de manzana con nieve', 'tarta de manzana'),
   ('Brownies con nieve', 'brownie'), ('Brownies con nieve', 'brownies con nieve'),
   ('Cheesecake con nieve', 'cheesecake')
@@ -458,3 +457,34 @@ insert into extra (nombre, precio_centavos, descripcion) values
 on conflict (nombre) do update set
   precio_centavos = excluded.precio_centavos,
   descripcion = excluded.descripcion;
+
+-- 6) SINONIMOS RETIRADOS (decision del PO, US-07-P1, D27)
+-- Palabras genericas que llevaban en silencio a un solo platillo aunque
+-- aparecen en varios ("granero" esta en 7). Ya no estan en el insert de la
+-- seccion 4; este delete las quita de las bases que ya las tenian (como
+-- serviceagent-dev). Idempotente: la segunda vez no borra nada y no falla.
+-- 'papa' no estaba cargado; queda en la lista para dejar escrita la decision.
+-- Se mantienen a proposito 'elote', 'agua', 'frijoles', 'arrachera' y
+-- 'sirloin' (los cortes se piden asi).
+-- Va al final para que los tests que leen la seccion 4 no la cuenten.
+delete from sinonimo_producto s
+using platillo p
+where s.id_platillo = p.id_platillo
+  and (p.nombre, s.frase) in (
+    ('Papas francesas', 'papas'),
+    ('Papas francesas', 'papa'),
+    ('Hamburguesa Granero', 'granero'),
+    ('Hamburguesa Granero', 'la granero'),
+    ('Hamburguesa de Pollo', 'pollo'),
+    ('Hamburguesa de Pollo', 'una de pollo'),
+    ('Queso fundido', 'queso'),
+    ('Luiggi Especial', 'luiggi'),
+    ('Taquiza Alambre', 'alambre'),
+    ('Caldo Granero', 'caldo de pollo'),
+    ('Costillas Chihuahua', 'costillas'),
+    ('Hamburguesa Delicias', 'delicias'),
+    ('Hamburguesa Delicias Tocino', 'hamburguesa con tocino'),
+    ('Fajitas de pollo infantil', 'fajitas niño'),
+    ('Filete de pescado infantil', 'filete de pescado'),
+    ('Postre del día', 'postre')
+  );

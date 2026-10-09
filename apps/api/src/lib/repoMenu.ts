@@ -49,6 +49,12 @@ const FilaPlatilloExtraSchema = z.object({
   id_extra: z.number().int(),
 });
 
+const FilaSinonimoSchema = z.object({
+  id_platillo: z.number().int(),
+  frase: z.string(),
+  activo: z.boolean(),
+});
+
 /**
  * Implementación de `MenuRepo` sobre Supabase. Lee las tablas completas en paralelo (el menú es
  * chico) y deja los filtros a `services/menu.ts`. Valida con zod lo que devuelve la base.
@@ -130,6 +136,19 @@ export function crearRepoMenu(cliente: SupabaseClient): MenuRepo {
           idExtra: pe.id_extra,
         })),
       };
+    },
+
+    async leerSinonimos() {
+      const sinonimos = await leer(
+        'sinonimo_producto',
+        'id_platillo, frase, activo',
+        FilaSinonimoSchema,
+      );
+      return sinonimos.map((s) => ({
+        idPlatillo: s.id_platillo,
+        frase: s.frase,
+        activo: s.activo,
+      }));
     },
   };
 }
