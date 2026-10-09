@@ -1,0 +1,26 @@
+{
+  "id": "pedido-espuelas-sin-corte",
+  "historia": "US-07-P2",
+  "criterios": ["C3"],
+  "categoria": "pedido",
+  "titulo": "Espuelas pedidas solas: pregunta el corte sin cotizar",
+  "mensajes": ["Unas espuelas", "Con un T-Bone"],
+  "argsEsperados": [
+    {
+      "productos": [
+        { "producto": "T-Bone", "cantidad": 1, "extras": [{ "extra": "Espuelas", "cantidad": 1 }] }
+      ]
+    }
+  ],
+  "debe": [
+    "En la primera respuesta no llama a cotizar_pedido: dice que las espuelas van con un corte y pregunta con cuál las quiere.",
+    "Tras la respuesta, hace la única llamada: el corte con Espuelas (cantidad 1) dentro de sus extras.",
+    "Da el resumen con los nombres y el total que devolvió cotizar_pedido."
+  ],
+  "noDebe": [
+    "Mandar Espuelas en extrasSueltos.",
+    "Nombrar o proponer cortes en la primera respuesta: el cliente no preguntó cuáles son.",
+    "Volver a ofrecer espuelas: el cliente ya las pidió.",
+    "Decir un precio antes de cotizar."
+  ]
+}

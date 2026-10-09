@@ -21,7 +21,7 @@
           },
           "variante": {
             "type": "string",
-            "description": "Presentación o tamaño que eligió el cliente. Se omite si el cliente no dijo ninguna."
+            "description": "Presentación o tamaño que eligió el cliente: solo sus palabras, sin \"en\" ni \"de\". Ejemplos: \"vaso\", \"jarra\", \"1 l\", \"grande\". Va aquí y no dentro de producto. Se omite si el cliente no dijo ninguna."
           },
           "sinIngredientes": {
             "type": "array",
@@ -33,7 +33,7 @@
           },
           "extras": {
             "type": "array",
-            "description": "Extras que el cliente pidió para este platillo. Espuelas va siempre aquí, dentro de su platillo. Se omite si no pidió extras para este platillo.",
+            "description": "Aquí va SOLO Espuelas, dentro del corte para el que se pidió. Cualquier otro extra (Totopos, BBQ, Aguacate, Toreados) va en extrasSueltos, aunque el cliente lo pida \"con\" este platillo. Se omite si el cliente no pidió espuelas para este platillo.",
             "items": {
               "type": "object",
               "additionalProperties": false,
@@ -41,7 +41,7 @@
               "properties": {
                 "extra": {
                   "type": "string",
-                  "description": "Nombre corto del extra. Ejemplo: \"Espuelas\"."
+                  "description": "Nombre corto del extra, sin palabras de más: \"Espuelas\"."
                 },
                 "cantidad": {
                   "type": "number",
@@ -55,7 +55,7 @@
     },
     "extrasSueltos": {
       "type": "array",
-      "description": "Extras que se piden solos y no pertenecen a un platillo: Totopos, BBQ, Aguacate y Toreados. Espuelas nunca va aquí. Se omite si el cliente no pidió ninguno.",
+      "description": "Extras que se cobran aparte y no pertenecen a un platillo: Totopos, BBQ, Aguacate y Toreados. Van aquí aunque el cliente los pida \"con\" un platillo (\"hamburguesa con aguacate\"). Espuelas nunca va aquí. Se omite si el cliente no pidió ninguno.",
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -63,7 +63,7 @@
         "properties": {
           "extra": {
             "type": "string",
-            "description": "Nombre corto del extra. Ejemplo: \"Totopos\"."
+            "description": "Nombre corto del extra, sin palabras de más: \"Totopos\", \"BBQ\", \"Aguacate\" o \"Toreados\". \"Salsa BBQ\" se manda como \"BBQ\"; \"chiles toreados\", como \"Toreados\". Un extra que no sea de esos se manda como lo dijo el cliente."
           },
           "cantidad": {
             "type": "number",

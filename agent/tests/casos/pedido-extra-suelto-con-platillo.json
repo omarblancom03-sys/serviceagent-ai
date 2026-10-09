@@ -1,0 +1,24 @@
+{
+  "id": "pedido-extra-suelto-con-platillo",
+  "historia": "US-07-P2",
+  "criterios": ["C2", "C3", "C5"],
+  "categoria": "pedido",
+  "titulo": "Un extra suelto pedido \"con\" un platillo va en extrasSueltos",
+  "mensajes": ["Una hamburguesa Hawaiana con aguacate"],
+  "argsEsperados": [
+    {
+      "productos": [{ "producto": "hamburguesa Hawaiana", "cantidad": 1 }],
+      "extrasSueltos": [{ "extra": "Aguacate", "cantidad": 1 }]
+    }
+  ],
+  "debe": [
+    "Manda Aguacate en extrasSueltos y la hamburguesa en productos, sin extras.",
+    "Da el resumen con los nombres que devolvió cotizar_pedido.",
+    "Dice el total que devolvió cotizar_pedido."
+  ],
+  "noDebe": [
+    "Mandar Aguacate dentro de los extras de la hamburguesa.",
+    "Decir que el aguacate no se puede agregar a la hamburguesa.",
+    "Ofrecer o mencionar otros extras."
+  ]
+}

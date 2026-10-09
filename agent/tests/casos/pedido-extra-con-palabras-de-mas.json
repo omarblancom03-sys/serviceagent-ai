@@ -1,0 +1,23 @@
+{
+  "id": "pedido-extra-con-palabras-de-mas",
+  "historia": "US-07-P2",
+  "criterios": ["C2", "C5"],
+  "categoria": "pedido",
+  "titulo": "Extra dicho con palabras de más: manda el nombre corto",
+  "mensajes": ["Una salsa BBQ"],
+  "argsEsperados": [
+    {
+      "extrasSueltos": [{ "extra": "BBQ", "cantidad": 1 }]
+    }
+  ],
+  "debe": [
+    "Manda el extra con su nombre corto, \"BBQ\", en extrasSueltos.",
+    "Da el resumen con el nombre que devolvió cotizar_pedido.",
+    "Dice el total que devolvió cotizar_pedido."
+  ],
+  "noDebe": [
+    "Mandar \"salsa BBQ\" como nombre del extra.",
+    "Mandarlo en productos.",
+    "Ofrecer o mencionar otros extras."
+  ]
+}
