@@ -88,12 +88,27 @@ describe('formatearPesos', () => {
   it('no mete espacios (ni normales ni NBSP) que dependan del locale', () => {
     expect(formatearPesos(104900)).not.toMatch(/\s/);
   });
+
+  // Los mismos casos que rechaza formatearPesos de la API (apps/api/src/lib/pesos.ts).
+  it.each([
+    ['un negativo', -5],
+    ['un decimal', 403.5],
+    ['NaN', Number.NaN],
+    ['Infinity', Number.POSITIVE_INFINITY],
+    ['un entero fuera del rango seguro', Number.MAX_SAFE_INTEGER + 1],
+  ])('lanza un error con %s', (_caso, centavos) => {
+    expect(() => formatearPesos(centavos)).toThrow('Monto inválido en centavos');
+  });
 });
 
 describe('normalizarTexto', () => {
   it('quita acentos, ñ y diéresis, pasa a minúsculas y compacta espacios', () => {
     expect(normalizarTexto('  Champiñón   AL  Ajillo ')).toBe('champinon al ajillo');
     expect(normalizarTexto('Pingüino Ácido')).toBe('pinguino acido');
+  });
+
+  it('borra los signos de puntuación sin dejar espacio', () => {
+    expect(normalizarTexto('T-Bone 450 gr.')).toBe('tbone 450 gr');
   });
 });
 
@@ -107,6 +122,28 @@ describe('coincideNombre', () => {
   it('una búsqueda vacía o de espacios encuentra todo', () => {
     expect(coincideNombre('Nachos', '')).toBe(true);
     expect(coincideNombre('Nachos', '   ')).toBe(true);
+  });
+
+  it('"tbone", "t-bone" y "t bone" encuentran "T-Bone 450 gr"', () => {
+    for (const busqueda of ['tbone', 't-bone', 't bone']) {
+      expect(coincideNombre('T-Bone 450 gr', busqueda)).toBe(true);
+    }
+  });
+
+  it('ignora una "s" final en las palabras de la búsqueda', () => {
+    expect(coincideNombre('Hamburguesa de Pollo', 'hamburguesas')).toBe(true);
+    expect(coincideNombre('Papa con Elote', 'papas')).toBe(true);
+  });
+
+  it('no recorta la "s" final en palabras de 3 letras o menos', () => {
+    // Recortada, "los" quedaría en "lo" y encontraría "Lomo".
+    expect(coincideNombre('Lomo de Res', 'los')).toBe(false);
+  });
+
+  it('"zzz" no encuentra nada', () => {
+    for (const nombre of ['T-Bone 450 gr', 'Hamburguesa de Pollo', 'Papa con Elote']) {
+      expect(coincideNombre(nombre, 'zzz')).toBe(false);
+    }
   });
 });
 

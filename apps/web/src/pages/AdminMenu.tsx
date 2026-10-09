@@ -113,6 +113,9 @@ export function AdminMenu() {
             <p className="text-sm text-stone-500">
               Mostrando {visibles.platillos} platillos y {visibles.extrasSueltos} extras sueltos.
             </p>
+            <p className="mt-1 text-xs text-stone-400">
+              Prep. = tiempo base de preparación, en minutos.
+            </p>
           </div>
 
           {filtrado.categorias.length === 0 && filtrado.extras.length === 0 && (

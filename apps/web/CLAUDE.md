@@ -23,7 +23,7 @@ SPA en React + Vite + Tailwind + React Router para clientes y empleados. Se desp
   - `permisos.ts`: `PANTALLAS_EMPLEADO` (ruta → roles), `puedeVer`, `pantallaInicial`, `destinoTrasLogin`.
   - `token.ts` y `mensajes.ts`: lógica pura (leer el JWT, guardar la sesión, textos de error del login).
 - `src/lib/api.ts`: `pedirApi(ruta, esquema, opciones)` llama a `VITE_API_URL`, valida la respuesta con zod y lanza `ErrorApi` si no es 2xx. Si el contrato no coincide, lanza el error de zod (se reconoce por `error.name === 'ZodError'`, porque zod no es dependencia directa de la web).
-- `src/lib/menuAdmin.ts`: lógica pura del menú de `/admin` (`formatearPesos` sin `Intl`, `normalizarTexto` sin acentos, búsqueda por palabras, `filtrarMenu`, `resumirMenu`, `formatearHora`).
+- `src/lib/menuAdmin.ts`: lógica pura del menú de `/admin` (`formatearPesos` sin `Intl` y con la validación de la API, `normalizarTexto` sin acentos ni puntuación, búsqueda por palabras que ignora una "s" final en las de más de 3 letras, `filtrarMenu`, `resumirMenu`, `formatearHora`).
 - `src/index.css`: solo `@import 'tailwindcss'` (Tailwind 4, sin archivo de configuración).
 
 ## Convenciones de esta área
