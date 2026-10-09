@@ -1,9 +1,16 @@
+import type { ReactNode } from 'react';
 import { Navigate, NavLink, Route, Routes, useNavigate } from 'react-router';
 import { NOMBRE_ROL, PANTALLAS_EMPLEADO, puedeVer } from './auth/permisos';
 import { RutaProtegida } from './auth/RutaProtegida';
 import { useSesion } from './auth/SesionContext';
+import { AdminMenu } from './pages/AdminMenu';
 import { Login } from './pages/Login';
 import { PaginaPlaceholder } from './pages/PaginaPlaceholder';
+
+/** Pantallas internas que ya tienen página real; las demás muestran el placeholder. */
+const PAGINA_EMPLEADO: Partial<Record<string, ReactNode>> = {
+  '/admin': <AdminMenu />,
+};
 
 const claseEnlace = ({ isActive }: { isActive: boolean }) =>
   isActive ? 'font-semibold text-orange-700' : 'text-stone-600 hover:text-orange-700';
@@ -68,7 +75,7 @@ export function App() {
               path={pantalla.path}
               element={
                 <RutaProtegida roles={pantalla.roles}>
-                  <PaginaPlaceholder titulo={pantalla.titulo} />
+                  {PAGINA_EMPLEADO[pantalla.path] ?? <PaginaPlaceholder titulo={pantalla.titulo} />}
                 </RutaProtegida>
               }
             />
