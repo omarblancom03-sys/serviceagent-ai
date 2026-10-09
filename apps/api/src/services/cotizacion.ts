@@ -97,13 +97,21 @@ export function resolverPlatillo(catalogo: Catalogo, texto: string): ResultadoPl
     return { tipo: 'ambiguo', opciones: nombresDe(platillos) };
   }
 
-  const candidatos = catalogo.platillos.filter((p) =>
+  const candidatos = buscarPorPalabras(catalogo, buscadas);
+  if (candidatos.length === 0) return { tipo: 'no_existe' };
+  return { tipo: 'ambiguo', opciones: nombresDe(candidatos) };
+}
+
+/**
+ * Paso 2: platillos con algún texto (nombre o sinónimo) que contiene todas las palabras, en el
+ * orden del menú y sin cortar en `MAX_OPCIONES`.
+ */
+export function buscarPorPalabras(catalogo: Catalogo, buscadas: string[]): Platillo[] {
+  return catalogo.platillos.filter((p) =>
     (catalogo.palabrasPorPlatillo.get(p.id) ?? []).some((conjunto) =>
       buscadas.every((palabra) => conjunto.has(palabra)),
     ),
   );
-  if (candidatos.length === 0) return { tipo: 'no_existe' };
-  return { tipo: 'ambiguo', opciones: nombresDe(candidatos) };
 }
 
 const nombresDe = (platillos: Platillo[]) => platillos.slice(0, MAX_OPCIONES).map((p) => p.nombre);

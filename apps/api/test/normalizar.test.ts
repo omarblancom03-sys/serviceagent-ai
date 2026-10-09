@@ -134,7 +134,7 @@ describe('normalización sobre el seed del menú', () => {
   });
 
   /*
-   * Sin los sinónimos genéricos retirados (D28) tampoco hay colisiones sin relleno. Aun así,
+   * Sin los sinónimos genéricos retirados (D27) tampoco hay colisiones sin relleno. Aun así,
    * "El Granero" sin relleno queda como "granero": la búsqueda no deja entrar esos textos al
    * nivel sin relleno (services/cotizacion.ts, probado en cotizacion.test.ts).
    */
@@ -142,7 +142,7 @@ describe('normalización sobre el seed del menú', () => {
     expect(colisiones(indice(normalizarSinRelleno))).toEqual([]);
   });
 
-  /* D28: se retiró el sinónimo 'papas'; "papa" y "papas" se preguntan entre las 8 papas. */
+  /* D27: se retiró el sinónimo 'papas'; "papa" y "papas" se preguntan entre las 8 papas. */
   it('"papa" y "papas" comparten llave y ya no coinciden exacto con ningún platillo', () => {
     expect(normalizarSuave('papa')).toBe(normalizarSuave('papas'));
     expect(indice(normalizarSuave).has(normalizarSuave('papa'))).toBe(false);

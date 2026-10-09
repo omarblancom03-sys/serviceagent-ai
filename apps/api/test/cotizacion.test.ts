@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { palabras } from '../src/lib/normalizar';
 import {
   armarCatalogo,
+  buscarPorPalabras,
   MAX_OPCIONES,
   resolverPlatillo,
   type ResultadoPlatillo,
@@ -36,9 +38,9 @@ const PAPAS = [
   'Papa con Arrachera',
   'Papa Luiggi Especial',
 ];
+// Caldo Granero ya no aparece: su "pollo" estaba en el sinónimo retirado "caldo de pollo" (D27).
 const POLLOS = [
   'Ensalada Granero',
-  'Caldo Granero',
   'Fajitas de pollo',
   'Tiras de pollo',
   'Hamburguesa de Pollo',
@@ -47,10 +49,19 @@ const POLLOS = [
 
 describe('resolverPlatillo sobre el seed real', () => {
   /*
-   * Palabras genéricas (D28): sin sinónimos sueltos, caen al paso 2 y se preguntan. "una" y "la"
-   * son relleno, así que "una granero" y "la granero" dan lo mismo que "granero".
+   * Sinónimos genéricos retirados (D27): caen al paso 2 y se preguntan. "una" y "la" son
+   * relleno, así que "una granero" y "la granero" dan lo mismo que "granero".
    */
   it.each([
+    ['alambre', ['Taquiza Alambre', 'Pizerola de Alambre']],
+    [
+      'costillas',
+      ['Costillas Chihuahua', 'Costillas 450 gr', 'Costillas BBQ 450 gr', 'Costillas a la Diabla'],
+    ],
+    ['queso', ['Rajas con queso', 'Queso fundido', 'Luiggi Especial']],
+    ['filete de pescado', ['Filete de pescado empanizado', 'Filete de pescado infantil']],
+    ['delicias', ['Hamburguesa Delicias', 'Hamburguesa Delicias Tocino', 'Taco Delicias']],
+    ['luiggi', ['Luiggi Especial', 'Papa Luiggi Especial']],
     ['granero', GRANEROS],
     ['una granero', GRANEROS],
     ['la granero', GRANEROS],
@@ -81,7 +92,13 @@ describe('resolverPlatillo sobre el seed real', () => {
     ['hamburguesa granero', 'Hamburguesa Granero'],
     ['papas francesas', 'Papas francesas'],
     ['Arrachera al Chipotle 450 gr', 'Arrachera al Chipotle 450 gr'],
+    // Excepciones de D27: el PO mantiene estos sinónimos de una palabra a propósito. "arrachera"
+    // y "sirloin" aparecen en otros platillos, pero los cortes se piden así.
     ['arrachera', 'Arrachera 450 gr'],
+    ['sirloin', 'Sirloin 450 gr'],
+    ['elote', 'Elote amarillo'],
+    ['agua', 'Agua natural 500 ml'],
+    ['frijoles', 'Frijoles charros'],
     ['t-bone', 'T-Bone 450 gr'],
     ['hamburguesas algodoneros', 'Hamburguesa Algodoneros'],
     // Nivel sin relleno: el relleno es del cliente, el texto de la base no tenía.
@@ -99,14 +116,24 @@ describe('resolverPlatillo sobre el seed real', () => {
     ['chipotle', 'Arrachera al Chipotle 450 gr'],
     // "La Boquilla" sin su artículo es una sola palabra: no entra al nivel sin relleno.
     ['boquilla', 'La Boquilla'],
+    // Sinónimos retirados (D27) que hoy solo encuentran un platillo con esas palabras: los otros
+    // postres no dicen "postre", el tocino de la Hamburguesa Granero está en la descripción y la
+    // única "fajitas … niño" que queda es la de arrachera.
+    ['postre', 'Postre del día'],
+    ['hamburguesa con tocino', 'Hamburguesa Delicias Tocino'],
+    ['fajitas niño', 'Fajitas de arrachera infantil'],
   ])('una coincidencia parcial se pregunta aunque sea una: "%s"', (texto, opcion) => {
     expect(buscar(texto)).toEqual({ tipo: 'ambiguo', opciones: [opcion] });
   });
 
   it.each([
     ['pizza de pepperoni'],
-    // D29: el menú no registra marcas.
+    // D28: el menú no registra marcas.
     ['coca'],
+    // Sinónimo retirado (D27): ningún nombre ni sinónimo que queda dice "caldo" y "pollo".
+    ['caldo de pollo'],
+    // Los números no son relleno (decisión del PO): la cantidad va aparte y la separa el agente.
+    ['dos tacos rancheros'],
     // Texto que queda vacío al normalizar: no se busca.
     ['???'],
     ['la de'],
@@ -119,6 +146,18 @@ describe('resolverPlatillo sobre el seed real', () => {
     expect(catalogo.platillos).toHaveLength(95);
     for (const platillo of catalogo.platillos) {
       expect(resumen(buscar(platillo.nombre)), platillo.nombre).toBe(platillo.nombre);
+    }
+  });
+
+  it(`ningún nombre ni sinónimo del seed da más de ${MAX_OPCIONES} opciones en el paso 2`, () => {
+    const textos = [
+      ...catalogo.platillos.map((p) => p.nombre),
+      ...seed.sinonimos.map((s) => s.frase),
+    ];
+    for (const texto of textos) {
+      expect(buscarPorPalabras(catalogo, palabras(texto)).length, texto).toBeLessThanOrEqual(
+        MAX_OPCIONES,
+      );
     }
   });
 
@@ -159,6 +198,25 @@ describe('resolverPlatillo con un menú de prueba', () => {
     for (const texto of ['aguacatito', 'dado de baja', 'ponchecito', 'Platillo dado de baja']) {
       expect(resolverPlatillo(dePrueba, texto), texto).toEqual({ tipo: 'no_existe' });
     }
+  });
+
+  it('una llave exacta que lleva a dos platillos da ambiguo con los dos, en el orden del menú', () => {
+    // El seed real no tiene este caso (lo cuida otro test); aquí se fuerza con un sinónimo repetido.
+    const dePrueba = armarCatalogo(armarMenu(filasMenuDePrueba()), [
+      sinonimo(3, 'tacos de la casa'),
+      sinonimo(1, 'tacos de la casa'),
+    ]);
+    expect(dePrueba.indiceSuave.get('taco de la casa')).toEqual([3, 1]);
+    expect(resolverPlatillo(dePrueba, 'tacos de la casa')).toEqual({
+      tipo: 'ambiguo',
+      opciones: ['Guacamole', 'Queso fundido'],
+    });
+    // Mismo resultado por el nivel sin relleno ("taco casa").
+    expect(dePrueba.indiceSinRelleno.get('taco casa')).toEqual([3, 1]);
+    expect(resolverPlatillo(dePrueba, 'unos tacos de la casa')).toEqual({
+      tipo: 'ambiguo',
+      opciones: ['Guacamole', 'Queso fundido'],
+    });
   });
 
   it(`corta las opciones en ${MAX_OPCIONES}, en el orden del menú`, () => {

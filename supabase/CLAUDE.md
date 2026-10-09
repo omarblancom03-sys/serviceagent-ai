@@ -7,7 +7,7 @@ Esquema y datos de la base de datos del proyecto (Supabase / PostgreSQL). Aquí 
 ## Cómo está organizado
 
 - `migrations/`: migraciones SQL versionadas. Hoy: `*_crear_empleados.sql` (US-04): tabla `empleados` y función `registrar_intento_fallido` (contador atómico de PIN incorrectos, D14). `*_crear_esquema_menu.sql` (US-02): tablas del menú. `*_cerrar_lectura_publica_menu.sql`: quita la lectura pública del menú (D15). `*_crear_platillo_extra.sql` (US-02-P1): tabla `platillo_extra` (qué extras aplican a qué platillo). `*_restricciones_unicas_menu.sql` (US-02-P2): restricciones únicas para que el seed del menú sea idempotente.
-- `seed/`: datos de desarrollo y demostración, se corren en el orden declarado en `config.toml`. Hoy: `01_menu_el_granero.sql` (menú real: 16 categorías, 95 platillos, variantes, sinónimos y extras, US-02-P2, idempotente con `on conflict`; su sección 6 borra con un `delete` idempotente los sinónimos retirados, D28), `02_platillo_extra.sql` (relación de "Espuelas" con los cortes que la permiten, US-02-P1), `03_tiempos_preparacion_menu.sql` (llena `platillo.tiempo_estimado_min` con un tiempo fijo por categoría, D18; datos simulados) y `empleados.sql` (un empleado por rol).
+- `seed/`: datos de desarrollo y demostración, se corren en el orden declarado en `config.toml`. Hoy: `01_menu_el_granero.sql` (menú real: 16 categorías, 95 platillos, variantes, sinónimos y extras, US-02-P2, idempotente con `on conflict`; su sección 6 borra con un `delete` idempotente los sinónimos retirados, D27), `02_platillo_extra.sql` (relación de "Espuelas" con los cortes que la permiten, US-02-P1), `03_tiempos_preparacion_menu.sql` (llena `platillo.tiempo_estimado_min` con un tiempo fijo por categoría, D18; datos simulados) y `empleados.sql` (un empleado por rol).
 - `config.toml`: configuración del CLI. Declara el orden de los seeds (`[db.seed] sql_paths`) y se usa junto con el script `pnpm db:reset:personal` de la raíz.
 - [`README.md`](./README.md): diagrama entidad-relación del menú (Mermaid), con las tablas reales y su explicación.
 
@@ -34,7 +34,7 @@ Estos PIN son públicos: **nunca** se usa este seed en un ambiente real. Los has
 - **RLS activo en toda tabla nueva** (el proyecto también lo activa solo). Sin políticas: `service_role` tiene `BYPASSRLS` y los permisos por rol viven en la API.
 - El seed se puede correr varias veces (`on conflict ... do nothing` o `do update`). Los datos simulados se marcan como tales.
 - El descuento y la reposición de inventario ocurren dentro de una transacción.
-- `platillo.nombre` es único: 16 nombres del menú fuente se ajustaron al cargarlos (3 por colisión entre categorías, 6 papas asadas con prefijo "Papa", y por decisión del PO 6 hamburguesas con prefijo "Hamburguesa" más "Filete de pescado infantil", para que no se lean ambiguos en cocina; el nombre original queda como sinónimo, salvo "Pollo" y "Granero", retirados por genéricos, D28). La lista está al inicio de `seed/01_menu_el_granero.sql`.
+- `platillo.nombre` es único: 16 nombres del menú fuente se ajustaron al cargarlos (3 por colisión entre categorías, 6 papas asadas con prefijo "Papa", y por decisión del PO 6 hamburguesas con prefijo "Hamburguesa" más "Filete de pescado infantil", para que no se lean ambiguos en cocina; el nombre original queda como sinónimo, salvo "Pollo", "Granero", "Delicias" y "Filete de pescado", retirados por genéricos, D27). La lista está al inicio de `seed/01_menu_el_granero.sql`.
 
 ## Cómo probar
 
