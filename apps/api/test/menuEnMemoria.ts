@@ -1,4 +1,4 @@
-import type { FilasMenu, MenuRepo } from '../src/services/menu';
+import type { FilasMenu, MenuRepo, Sinonimo } from '../src/services/menu';
 
 /**
  * Menú chico con un caso de cada regla (nombres y precios del seed real):
@@ -94,10 +94,16 @@ export function filasMenuDePrueba(): FilasMenu {
 }
 
 /** Repo en memoria. Cada lectura devuelve una copia para que nadie modifique los datos. */
-export function crearRepoMenuEnMemoria(filas: FilasMenu = filasMenuDePrueba()): MenuRepo {
+export function crearRepoMenuEnMemoria(
+  filas: FilasMenu = filasMenuDePrueba(),
+  sinonimos: Sinonimo[] = [],
+): MenuRepo {
   return {
     async leerTodo() {
       return structuredClone(filas);
+    },
+    async leerSinonimos() {
+      return structuredClone(sinonimos);
     },
   };
 }
@@ -105,6 +111,9 @@ export function crearRepoMenuEnMemoria(filas: FilasMenu = filasMenuDePrueba()): 
 /** Repo que siempre falla, para probar el 500. */
 export const repoMenuQueFalla: MenuRepo = {
   async leerTodo() {
+    throw new Error('Supabase no responde');
+  },
+  async leerSinonimos() {
     throw new Error('Supabase no responde');
   },
 };

@@ -9,20 +9,21 @@ SPA en React + Vite + Tailwind + React Router para clientes y empleados. Se desp
 | `/pedir`  | Cliente (chat) | Pendiente: se define en US-09   |
 | `/cocina` | Rol `cocina` (y `admin`) | Protegida en US-04; pantalla real en US-10 |
 | `/caja`   | Rol `caja` (y `admin`) | Protegida en US-04; pantalla real en US-20 |
-| `/admin`  | Rol `admin` | Protegida en US-04; pantalla real en US-05 |
+| `/admin`  | Rol `admin` | US-05: menú de solo lectura (`GET /menu`) con búsqueda y filtro por categoría |
 | `/login`  | Empleados | US-04: tarjeta de empleado + teclado de PIN |
 
 ## Cómo está organizado
 
 - `src/main.tsx`: monta `<App />` dentro de `BrowserRouter` y `SesionProvider`.
-- `src/App.tsx`: barra de navegación (solo pantallas permitidas, nombre del empleado y **Cerrar sesión**) y tabla de rutas (`/` redirige a `/pedir`).
-- `src/pages/`: una página por ruta. `Login.tsx` es real; las demás usan `PaginaPlaceholder` hasta que su historia las reemplace.
+- `src/App.tsx`: barra de navegación (solo pantallas permitidas, nombre del empleado y **Cerrar sesión**) y tabla de rutas (`/` redirige a `/pedir`). `PAGINA_EMPLEADO` dice qué pantalla interna ya tiene página real; las demás muestran `PaginaPlaceholder`.
+- `src/pages/`: una página por ruta. Reales: `Login.tsx` y `AdminMenu.tsx` (`/admin`); las demás usan `PaginaPlaceholder` hasta que su historia las reemplace.
 - `src/auth/`: sesión del empleado.
   - `SesionContext.tsx`: `useSesion()` con `sesion`, `iniciarSesion`, `cerrarSesion` y `pedirConSesion`.
   - `RutaProtegida.tsx`: guarda por rol de cada pantalla interna.
   - `permisos.ts`: `PANTALLAS_EMPLEADO` (ruta → roles), `puedeVer`, `pantallaInicial`, `destinoTrasLogin`.
   - `token.ts` y `mensajes.ts`: lógica pura (leer el JWT, guardar la sesión, textos de error del login).
-- `src/lib/api.ts`: `pedirApi(ruta, esquema, opciones)` llama a `VITE_API_URL`, valida la respuesta con zod y lanza `ErrorApi` si no es 2xx.
+- `src/lib/api.ts`: `pedirApi(ruta, esquema, opciones)` llama a `VITE_API_URL`, valida la respuesta con zod y lanza `ErrorApi` si no es 2xx. Si el contrato no coincide, lanza el error de zod (se reconoce por `error.name === 'ZodError'`, porque zod no es dependencia directa de la web).
+- `src/lib/menuAdmin.ts`: lógica pura del menú de `/admin` (`formatearPesos` sin `Intl` y con la validación de la API, `normalizarTexto` sin acentos ni puntuación, búsqueda por palabras que ignora una "s" final en las de más de 3 letras, `filtrarMenu`, `resumirMenu`, `formatearHora`).
 - `src/index.css`: solo `@import 'tailwindcss'` (Tailwind 4, sin archivo de configuración).
 
 ## Convenciones de esta área
@@ -47,7 +48,7 @@ pnpm --filter @serviceagent/web build
 pnpm --filter @serviceagent/web test        # Vitest (test/*.test.ts)
 ```
 
-- **Tests:** solo lógica pura en `test/` (token, permisos, mensajes), sin DOM ni dependencias extra.
+- **Tests:** solo lógica pura en `test/` (token, permisos, mensajes, menú de admin), sin DOM ni dependencias extra.
 - **Probar el login a mano:** levanta la API con su `.dev.vars` (ver [apps/api/CLAUDE.md](../api/CLAUDE.md)) y la web. Luego entra a `/login` con los empleados de prueba de [supabase/CLAUDE.md](../../supabase/CLAUDE.md#empleados-de-prueba-solo-desarrollo).
 
 ## Reglas que aplican
@@ -56,3 +57,4 @@ pnpm --filter @serviceagent/web test        # Vitest (test/*.test.ts)
 - [docs/negocio.md](../../docs/negocio.md): estados del pedido (botones de cocina y caja) y autenticación por PIN (roles, bloqueo, duración del JWT).
 - [docs/despliegue.md](../../docs/despliegue.md): variables `VITE_*` y despliegue en Pages.
 - [docs/decisiones.md](../../docs/decisiones.md): D9, D12 (JWT propio; Realtime solo como señal).
+- Menú de `/admin`: D18 (tiempo base), D19 (extras), D20 (agotado) y D23 (usa el `GET /menu` público) en [decisiones.md](../../docs/decisiones.md).

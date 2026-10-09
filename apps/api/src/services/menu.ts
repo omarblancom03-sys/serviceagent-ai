@@ -30,9 +30,18 @@ export interface FilasMenu {
   platilloExtra: { idPlatillo: number; idExtra: number }[];
 }
 
+/** Frase con la que el cliente puede pedir un platillo (tabla `sinonimo_producto`). */
+export interface Sinonimo {
+  idPlatillo: number;
+  frase: string;
+  activo: boolean;
+}
+
 /** Acceso a datos del menú. En producción es Supabase; en los tests, memoria. */
 export interface MenuRepo {
   leerTodo(): Promise<FilasMenu>;
+  /** Aparte de `leerTodo` porque solo los usa cotizar: `GET /menu` no hace esa consulta. */
+  leerSinonimos(): Promise<Sinonimo[]>;
 }
 
 /** D20: el contrato ya separa `disponible` de `activo`; en v8 aquí se consultará el inventario. */
