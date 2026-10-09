@@ -2,25 +2,11 @@ import { Hono } from 'hono';
 import { describe, expect, it } from 'vitest';
 import type { AppEnv, Bindings } from '../src/lib/env';
 import { requiereFirmaRetell, verificarFirmaRetell } from '../src/lib/firmaRetell';
+import { firmar } from './firmaDePrueba';
 
 const LLAVE = 'key_llave_de_prueba_con_badge_de_webhook';
 const AHORA = 1_790_000_000_000;
 const CUERPO = JSON.stringify({ name: 'cotizar_pedido', call: {}, args: { productos: [] } });
-
-/** Firma igual que Retell: HMAC-SHA256(cuerpo + timestamp, llave) en hex. */
-async function firmar(cuerpo: string, llave: string, timestamp: number): Promise<string> {
-  const codificador = new TextEncoder();
-  const clave = await crypto.subtle.importKey(
-    'raw',
-    codificador.encode(llave),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign'],
-  );
-  const firma = await crypto.subtle.sign('HMAC', clave, codificador.encode(cuerpo + timestamp));
-  const hex = [...new Uint8Array(firma)].map((b) => b.toString(16).padStart(2, '0')).join('');
-  return `v=${timestamp},d=${hex}`;
-}
 
 describe('verificarFirmaRetell', () => {
   it('acepta una firma válida y vigente', async () => {
