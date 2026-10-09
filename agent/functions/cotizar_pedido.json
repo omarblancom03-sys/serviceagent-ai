@@ -28,7 +28,7 @@
             "description": "Ingredientes que el cliente pidió quitar de este platillo. Se omite si no pidió quitar nada.",
             "items": {
               "type": "string",
-              "description": "Un ingrediente a quitar. Ejemplo: \"tomate\"."
+              "description": "Solo el nombre del ingrediente a quitar, sin artículo y sin \"sin\": \"tomate\", nunca \"el tomate\" ni \"sin tomate\"."
             }
           },
           "extras": {

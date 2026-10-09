@@ -1,0 +1,24 @@
+{
+  "id": "pedido-sin-ingrediente",
+  "historia": "US-07-P2",
+  "criterios": ["C2"],
+  "categoria": "pedido",
+  "titulo": "Quita un ingrediente removible y lo dice en el resumen",
+  "mensajes": ["Una hamburguesa Algodoneros sin tomate"],
+  "argsEsperados": [
+    {
+      "productos": [
+        { "producto": "hamburguesa Algodoneros", "cantidad": 1, "sinIngredientes": ["tomate"] }
+      ]
+    }
+  ],
+  "debe": [
+    "Manda \"tomate\" solo en sinIngredientes y cotiza sin aclaraciones.",
+    "Dice \"sin tomate\" en el resumen, con el nombre que devolvió cotizar_pedido.",
+    "Dice el total que devolvió cotizar_pedido."
+  ],
+  "noDebe": [
+    "Mandar \"sin tomate\" o \"el tomate\" en sinIngredientes.",
+    "Decir que el precio cambia por quitar el tomate."
+  ]
+}

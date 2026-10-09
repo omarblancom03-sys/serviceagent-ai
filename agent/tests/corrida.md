@@ -40,6 +40,7 @@ Ningún caso se ha corrido con el prompt actual, que ya usa `cotizar_pedido`: la
 | `pedido-extra-con-palabras-de-mas`    | pendiente | Sin correr |
 | `pedido-variante-con-palabras-de-mas` | pendiente | Sin correr |
 | `pedido-variante-que-parece-extra`    | pendiente | Sin correr |
+| `pedido-sin-ingrediente`              | pendiente | Sin correr |
 
 **Resultado:** `Pasó`, `Falló` o `pendiente`. **Resumen:** una línea con lo que respondió el agente o por qué falló.
 
