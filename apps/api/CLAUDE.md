@@ -8,8 +8,8 @@ API del sistema: la usan el agente de Retell (custom functions), los frontends y
 
 | Ruta                     | Qué hay                                                                                                                  |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
-| `src/index.ts`           | `crearApp(dependencias)`: CORS (`CORS_ORIGINS`), rutas, `/openapi.json` y Swagger en `/docs`. Exporta `app` (tests) y por defecto (Worker). |
-| `src/routes/`            | Un archivo por recurso; cada uno exporta `registrarX(app, deps)`. Hoy: `health.ts`, `auth.ts` (`/auth/empleados`, `/auth/login`, `/auth/sesion`) y `menu.ts` (`GET /menu`, `GET /menu/productos/{id}`: públicas; 400 si el id no es entero positivo, 404 si no está visible, 500 si falla la lectura). |
+| `src/index.ts`           | `crearApp(dependencias)`: CORS (`CORS_ORIGINS`), rutas, `/openapi.json` y Swagger en `/docs` (esquemas de seguridad `Bearer` y `FirmaRetell`). Exporta `app` (tests) y por defecto (Worker). |
+| `src/routes/`            | Un archivo por recurso; cada uno exporta `registrarX(app, deps)`. Hoy: `health.ts`, `auth.ts` (`/auth/empleados`, `/auth/login`, `/auth/sesion`), `menu.ts` (`GET /menu`, `GET /menu/productos/{id}`: públicas; 400 si el id no es entero positivo, 404 si no está visible, 500 si falla la lectura) y `pedidos.ts` (`POST /pedidos/cotizar`: solo Retell, con `requiereFirmaRetell`; 200 con la cotización o las aclaraciones, 400 que nombra los campos mal formados, 401 sin firma válida, 500 si falta la llave o falla el menú). |
 | `src/services/`          | Lógica de negocio sin HTTP. Hoy: `sesion.ts` (login por PIN y bloqueo), `menu.ts` (`armarMenu`: filtra lo inactivo y separa extras ligados de sueltos, D19) y `cotizacion.ts` (`armarCatalogo` y `resolverPlatillo`: búsqueda en dos pasos, D26; `cotizarPedido` y `obtenerCotizacion`: variantes, extras, ingredientes, cantidades de 1 a 20 y total en centavos, o todas las aclaraciones juntas, D29 y D30; extras e ingredientes con otras palabras, D31). Define las interfaces de datos que usa (`EmpleadosRepo`, `MenuRepo` con `leerTodo` y `leerSinonimos`). |
 | `src/lib/env.ts`         | Tipos de las variables de entorno (`Bindings`) y del contexto (`AppEnv`).                                                |
 | `src/lib/auth.ts`        | JWT propio (HS256, `JWT_SECRET`) y middleware `requiereRol(...)`.                                                        |
@@ -20,7 +20,7 @@ API del sistema: la usan el agente de Retell (custom functions), los frontends y
 | `src/lib/supabase.ts`    | `crearClienteSupabase(env)`: cliente con la llave de servicio, uno por petición. Lo reutilizan todas las historias.      |
 | `src/lib/repo*.ts`       | Implementación sobre Supabase de las interfaces de `services/`. Hoy: `repoEmpleados.ts` y `repoMenu.ts` (lee las 6 tablas del menú en paralelo). |
 | `scripts/hashPin.ts`     | `pnpm --filter @serviceagent/api hash-pin <PIN>`: hash para el seed (lee `PIN_PEPPER` de `.dev.vars`).                                                   |
-| `test/`                  | Tests de Vitest (`*.test.ts`) y repos en memoria con datos falsos: `repoEnMemoria.ts` (empleados), `menuEnMemoria.ts` (menú chico) y `seedEnMemoria.ts` (menú real leído de los seeds `01`, `02` y `04`). |
+| `test/`                  | Tests de Vitest (`*.test.ts`) y repos en memoria con datos falsos: `repoEnMemoria.ts` (empleados), `menuEnMemoria.ts` (menú chico) y `seedEnMemoria.ts` (menú real leído de los seeds `01`, `02` y `04`) y `firmaDePrueba.ts` (firma una petición igual que Retell). |
 
 Pendiente en `src/lib/`: límites de uso en US-19, notificador de WhatsApp en US-28.
 
@@ -29,6 +29,7 @@ Pendiente en `src/lib/`: límites de uso en US-19, notificador de WhatsApp en US
 - Cada endpoint se define con `createRoute` y esquemas de `@serviceagent/shared`: así queda validado y documentado en Swagger.
 - La ruta solo traduce HTTP; la lógica va en `src/services/`, que recibe sus datos por interfaz (repo) para probarse sin base.
 - **Todo endpoint interno lleva `middleware: [requiereRol(...)]` y `security: [{ Bearer: [] }]`.** `admin` siempre pasa. Endpoints que cambian precios o recetas: solo `requiereRol('admin')`.
+- **Toda ruta que llama Retell lleva `middleware: [requiereFirmaRetell()]` y `security: [{ FirmaRetell: [] }]`.** La firma se revisa antes que el cuerpo.
 - La ruta lee la sesión con `c.get('sesion')` (`sub`, `rol`, `exp`); nunca confía en datos del cuerpo para saber quién es el empleado.
 - Las filas de Supabase se validan con zod al leerlas (no hay tipos generados todavía).
 - Datos que varias peticiones cambian a la vez se actualizan con una función SQL vía `rpc()`, nunca con leer-calcular-guardar (D14). Ejemplo: `registrarIntentoFallido` en `repoEmpleados.ts`.
