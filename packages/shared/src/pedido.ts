@@ -217,7 +217,9 @@ export const AclaracionSchema = z.object({
    * - `extra_no_permitido`: el extra pedido (no existe o no está ligado al platillo).
    * - `ingrediente_no_removible`: el ingrediente.
    * - `falta_variante`: la variante pedida, si se pidió una que no existe.
-   * - `cantidad_invalida`: la regla, p. ej. "La cantidad debe ser de 1 a 20.".
+   * - `cantidad_invalida`: la regla, p. ej. "La cantidad debe ser de 1 a 20.". Si
+   *   falló un extra del platillo, la regla lo nombra: 'La cantidad de "espuelas"
+   *   debe ser de 1 a 20.'.
    */
   detalle: z.string().optional(),
   /**

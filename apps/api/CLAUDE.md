@@ -10,7 +10,7 @@ API del sistema: la usan el agente de Retell (custom functions), los frontends y
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
 | `src/index.ts`           | `crearApp(dependencias)`: CORS (`CORS_ORIGINS`), rutas, `/openapi.json` y Swagger en `/docs`. Exporta `app` (tests) y por defecto (Worker). |
 | `src/routes/`            | Un archivo por recurso; cada uno exporta `registrarX(app, deps)`. Hoy: `health.ts`, `auth.ts` (`/auth/empleados`, `/auth/login`, `/auth/sesion`) y `menu.ts` (`GET /menu`, `GET /menu/productos/{id}`: públicas; 400 si el id no es entero positivo, 404 si no está visible, 500 si falla la lectura). |
-| `src/services/`          | Lógica de negocio sin HTTP. Hoy: `sesion.ts` (login por PIN y bloqueo), `menu.ts` (`armarMenu`: filtra lo inactivo y separa extras ligados de sueltos, D19) y `cotizacion.ts` (`armarCatalogo` y `resolverPlatillo`: búsqueda en dos pasos, D26). Define las interfaces de datos que usa (`EmpleadosRepo`, `MenuRepo` con `leerTodo` y `leerSinonimos`). |
+| `src/services/`          | Lógica de negocio sin HTTP. Hoy: `sesion.ts` (login por PIN y bloqueo), `menu.ts` (`armarMenu`: filtra lo inactivo y separa extras ligados de sueltos, D19) y `cotizacion.ts` (`armarCatalogo` y `resolverPlatillo`: búsqueda en dos pasos, D26; `cotizarPedido` y `obtenerCotizacion`: variantes, extras, ingredientes, cantidades de 1 a 20 y total en centavos, o todas las aclaraciones juntas, D29 y D30). Define las interfaces de datos que usa (`EmpleadosRepo`, `MenuRepo` con `leerTodo` y `leerSinonimos`). |
 | `src/lib/env.ts`         | Tipos de las variables de entorno (`Bindings`) y del contexto (`AppEnv`).                                                |
 | `src/lib/auth.ts`        | JWT propio (HS256, `JWT_SECRET`) y middleware `requiereRol(...)`.                                                        |
 | `src/lib/pin.ts`         | Hash y verificación del PIN (HMAC con `PIN_PEPPER` + PBKDF2, D13).                                                       |
@@ -20,7 +20,7 @@ API del sistema: la usan el agente de Retell (custom functions), los frontends y
 | `src/lib/supabase.ts`    | `crearClienteSupabase(env)`: cliente con la llave de servicio, uno por petición. Lo reutilizan todas las historias.      |
 | `src/lib/repo*.ts`       | Implementación sobre Supabase de las interfaces de `services/`. Hoy: `repoEmpleados.ts` y `repoMenu.ts` (lee las 6 tablas del menú en paralelo). |
 | `scripts/hashPin.ts`     | `pnpm --filter @serviceagent/api hash-pin <PIN>`: hash para el seed (lee `PIN_PEPPER` de `.dev.vars`).                                                   |
-| `test/`                  | Tests de Vitest (`*.test.ts`) y repos en memoria con datos falsos: `repoEnMemoria.ts` (empleados), `menuEnMemoria.ts` (menú chico) y `seedEnMemoria.ts` (menú real leído de los seeds `01` y `02`). |
+| `test/`                  | Tests de Vitest (`*.test.ts`) y repos en memoria con datos falsos: `repoEnMemoria.ts` (empleados), `menuEnMemoria.ts` (menú chico) y `seedEnMemoria.ts` (menú real leído de los seeds `01` y `02`, con removibles de prueba opcionales). |
 
 Pendiente en `src/lib/`: límites de uso en US-19, notificador de WhatsApp en US-28.
 

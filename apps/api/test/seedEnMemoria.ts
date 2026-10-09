@@ -24,7 +24,16 @@ function bloque(contenido: string, inicio: string, fin?: string): string {
 const coincidencias = (texto: string, patron: RegExp) =>
   [...texto.matchAll(patron)].map((m) => m.slice(1).map((grupo) => grupo ?? ''));
 
-export function leerSeedMenu(): { filas: FilasMenu; sinonimos: Sinonimo[] } {
+/**
+ * `removibles`: ingredientes removibles DE PRUEBA. El seed todavía no trae ninguno (los aprueba el
+ * PO y se cargan en el PR B3, D29); sirven para probar la regla sin inventar datos del menú.
+ */
+export function leerSeedMenu({
+  removibles = [],
+}: { removibles?: { platillo: string; nombre: string }[] } = {}): {
+  filas: FilasMenu;
+  sinonimos: Sinonimo[];
+} {
   const menu = leerSeed('01_menu_el_granero.sql');
   const platilloExtra = leerSeed('02_platillo_extra.sql');
 
@@ -94,7 +103,12 @@ export function leerSeedMenu(): { filas: FilasMenu; sinonimos: Sinonimo[] } {
       categorias,
       platillos,
       variantes,
-      ingredientesRemovibles: [],
+      ingredientesRemovibles: removibles.map(({ platillo, nombre }, i) => ({
+        id: i + 1,
+        idPlatillo: idPlatillo(platillo),
+        nombre,
+        activo: true,
+      })),
       extras,
       platilloExtra: coincidencias(platilloExtra, /^\s*\('([^']+)'\),?$/gm).map(
         ([nombre = '']) => ({
