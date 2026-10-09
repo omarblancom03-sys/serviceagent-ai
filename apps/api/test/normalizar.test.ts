@@ -133,20 +133,18 @@ describe('normalización sobre el seed del menú', () => {
     expect(colisiones(indice(normalizarSuave))).toEqual([]);
   });
 
-  it('sin relleno, la única colisión es "granero" (por eso el paso 1 va primero en suave)', () => {
-    expect(colisiones(indice(normalizarSinRelleno))).toEqual(['granero']);
+  /*
+   * Sin los sinónimos genéricos retirados (D28) tampoco hay colisiones sin relleno. Aun así,
+   * "El Granero" sin relleno queda como "granero": la búsqueda no deja entrar esos textos al
+   * nivel sin relleno (services/cotizacion.ts, probado en cotizacion.test.ts).
+   */
+  it('no tiene colisiones en el nivel sin relleno', () => {
+    expect(colisiones(indice(normalizarSinRelleno))).toEqual([]);
   });
 
-  /*
-   * DECISIÓN DE DATOS PENDIENTE (PO): el sinónimo 'papas' es de Papas francesas, y "papa" y
-   * "papas" comparten llave. Con el seed actual, "papa" coincide exacto SOLO con Papas francesas,
-   * así que el paso 1 la resolvería sin preguntar, aunque hay 7 papas asadas. Si el PO cambia el
-   * sinónimo, este test cambia con él.
-   */
-  it('"papa" y "papas" comparten llave y hoy solo coinciden con Papas francesas', () => {
+  /* D28: se retiró el sinónimo 'papas'; "papa" y "papas" se preguntan entre las 8 papas. */
+  it('"papa" y "papas" comparten llave y ya no coinciden exacto con ningún platillo', () => {
     expect(normalizarSuave('papa')).toBe(normalizarSuave('papas'));
-    expect([...(indice(normalizarSuave).get(normalizarSuave('papa')) ?? [])]).toEqual([
-      'Papas francesas',
-    ]);
+    expect(indice(normalizarSuave).has(normalizarSuave('papa'))).toBe(false);
   });
 });

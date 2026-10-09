@@ -23,7 +23,8 @@
 --       * "Champiñón" -> 'Papa con Champiñón' * "Chorizo" -> 'Papa con Chorizo'
 --       * "Tocino" -> 'Papa con Tocino'      * "Arrachera" -> 'Papa con Arrachera'
 --   - Otros 7 nombres se ajustaron por decision del PO para que no se lean
---     ambiguos en cocina; el nombre original queda como sinonimo:
+--     ambiguos en cocina; el nombre original queda como sinonimo, salvo
+--     "Pollo" y "Granero", que se retiraron por genericos (seccion 6, D28):
 --       * "Pollo" -> 'Hamburguesa de Pollo'  * "Granero" -> 'Hamburguesa Granero'
 --       * "Delicias" -> 'Hamburguesa Delicias'
 --       * "Delicias Tocino" -> 'Hamburguesa Delicias Tocino'
@@ -332,7 +333,7 @@ select p.id_platillo, v.frase
 from (values
   ('Rajas con queso', 'rajas'), ('Rajas con queso', 'rajas con queso'),
   ('Guacamole', 'guacamole'), ('Guacamole', 'guacamole con totopos'),
-  ('Papas francesas', 'papas'), ('Papas francesas', 'papas fritas'), ('Papas francesas', 'papas francesas'),
+  ('Papas francesas', 'papas fritas'), ('Papas francesas', 'papas francesas'),
   ('Orden de salchichas', 'salchichas'), ('Orden de salchichas', 'orden de salchichas'),
   ('Frijoles charros', 'frijoles'), ('Frijoles charros', 'frijoles charros'),
   ('Elote amarillo', 'elote'), ('Elote amarillo', 'elote amarillo'),
@@ -373,10 +374,8 @@ from (values
 
   ('Hamburguesa Delicias', 'hamburguesa delicias'), ('Hamburguesa Delicias', 'delicias'),
   ('Hamburguesa Delicias Tocino', 'delicias tocino'), ('Hamburguesa Delicias Tocino', 'hamburguesa con tocino'),
-  ('Hamburguesa Granero', 'hamburguesa granero'), ('Hamburguesa Granero', 'granero'),
-  ('Hamburguesa Granero', 'la granero'),
-  ('Hamburguesa de Pollo', 'hamburguesa de pollo'), ('Hamburguesa de Pollo', 'pollo'),
-  ('Hamburguesa de Pollo', 'una de pollo'),
+  ('Hamburguesa Granero', 'hamburguesa granero'),
+  ('Hamburguesa de Pollo', 'hamburguesa de pollo'),
   ('Hamburguesa Algodoneros', 'algodoneros'), ('Hamburguesa Algodoneros', 'hamburguesa doble'),
   ('Hamburguesa Hawaiana', 'hawaiana'), ('Hamburguesa Hawaiana', 'hamburguesa hawaiana'),
 
@@ -458,3 +457,22 @@ insert into extra (nombre, precio_centavos, descripcion) values
 on conflict (nombre) do update set
   precio_centavos = excluded.precio_centavos,
   descripcion = excluded.descripcion;
+
+-- 6) SINONIMOS RETIRADOS (decision del PO, US-07-P1, D28)
+-- Palabras genericas que llevaban en silencio a un solo platillo aunque
+-- aparecen en varios ("granero" esta en 7). Ya no estan en el insert de la
+-- seccion 4; este delete las quita de las bases que ya las tenian (como
+-- serviceagent-dev). Idempotente: la segunda vez no borra nada y no falla.
+-- 'papa' no estaba cargado; queda en la lista para dejar escrita la decision.
+-- Va al final para que los tests que leen la seccion 4 no la cuenten.
+delete from sinonimo_producto s
+using platillo p
+where s.id_platillo = p.id_platillo
+  and (p.nombre, s.frase) in (
+    ('Papas francesas', 'papas'),
+    ('Papas francesas', 'papa'),
+    ('Hamburguesa Granero', 'granero'),
+    ('Hamburguesa Granero', 'la granero'),
+    ('Hamburguesa de Pollo', 'pollo'),
+    ('Hamburguesa de Pollo', 'una de pollo')
+  );

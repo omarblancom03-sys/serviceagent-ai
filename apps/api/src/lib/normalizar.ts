@@ -8,7 +8,7 @@
  *   llave común. Respeta todas las palabras que dijo el cliente.
  * - `normalizarSinRelleno`: lo mismo, pero además quita palabras de relleno ("la de", "una orden
  *   de"). Se usa solo si el nivel suave no encontró nada, para no perder el nombre exacto: con
- *   relleno quitado, "el granero" (tacos) y "granero" (hamburguesa) quedarían iguales.
+ *   relleno quitado, "el granero" (tacos) queda igual que "granero", que está en 7 platillos.
  *
  * El resultado es una LLAVE para comparar, no un texto para mostrar ("postres" → "postr").
  */
