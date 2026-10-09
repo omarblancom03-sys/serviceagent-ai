@@ -1,14 +1,20 @@
-import { ErrorPedidoSchema, RespuestaCotizarPedidoSchema } from '@serviceagent/shared';
+import {
+  ErrorPedidoSchema,
+  RespuestaCotizarPedidoSchema,
+  RespuestaCrearPedidoSchema,
+} from '@serviceagent/shared';
 import { describe, expect, it, vi } from 'vitest';
 import { crearApp } from '../src/index';
 import type { Bindings } from '../src/lib/env';
 import { firmar } from './firmaDePrueba';
 import { crearRepoMenuEnMemoria, repoMenuQueFalla } from './menuEnMemoria';
+import { crearRepoPedidosEnMemoria, repoPedidosQueFalla } from './pedidosEnMemoria';
 import { leerSeedMenu } from './seedEnMemoria';
 
 /*
- * POST /pedidos/cotizar con el menú real del seed y firmas como las de Retell. Los casos de negocio
- * (variantes, extras, aclaraciones) se prueban en cotizacion.test.ts; aquí, lo que agrega la ruta.
+ * POST /pedidos/cotizar y POST /pedidos con el menú real del seed y firmas como las de Retell. Los casos de negocio
+ * (variantes, extras, aclaraciones, duplicados) se prueban en cotizacion.test.ts y pedido.test.ts;
+ * aquí, lo que agrega la ruta.
  */
 
 const seed = leerSeedMenu();
@@ -19,8 +25,8 @@ const LLAVE = 'key_llave_de_prueba_con_badge_de_webhook';
 const env = { RETELL_API_KEY: LLAVE } as Bindings;
 
 /** Cuerpo como lo manda Retell con "Payload: args only" apagado: `{ name, call, args }`. */
-const sobre = (args: unknown) =>
-  JSON.stringify({ name: 'cotizar_pedido', call: { call_id: 'chat_123' }, args });
+const sobre = (args: unknown, name = 'cotizar_pedido') =>
+  JSON.stringify({ name, call: { call_id: 'chat_123' }, args });
 
 async function cotizar(
   cuerpo: string,
@@ -28,11 +34,12 @@ async function cotizar(
     firma,
     entorno = env,
     aplicacion = app,
-  }: { firma?: string | null; entorno?: Bindings; aplicacion?: typeof app } = {},
+    ruta = '/pedidos/cotizar',
+  }: { firma?: string | null; entorno?: Bindings; aplicacion?: typeof app; ruta?: string } = {},
 ) {
   const encabezado = firma === undefined ? await firmar(cuerpo, LLAVE, Date.now()) : firma;
   return aplicacion.request(
-    '/pedidos/cotizar',
+    ruta,
     {
       method: 'POST',
       headers: {
@@ -174,5 +181,110 @@ describe('POST /pedidos/cotizar', () => {
       in: 'header',
       name: 'X-Retell-Signature',
     });
+  });
+});
+
+describe('POST /pedidos', () => {
+  const repoMenu = () => crearRepoMenuEnMemoria(seed.filas, seed.sinonimos);
+  const nuevaApp = () => {
+    const repo = crearRepoPedidosEnMemoria();
+    return { repo, app: crearApp({ crearRepoMenu: repoMenu, crearRepoPedidos: () => repo }) };
+  };
+  const PEDIDO = {
+    productos: [{ producto: 't-bone', cantidad: 2, extras: [{ extra: 'espuelas', cantidad: 1 }] }],
+    nombre: 'María José',
+    telefono: '614 123 4567',
+  };
+  const crear = (cuerpo: string, opciones: Parameters<typeof cotizar>[1] = {}) =>
+    cotizar(cuerpo, { ruta: '/pedidos', ...opciones });
+
+  it('con firma válida guarda el pedido y responde folio y total en texto', async () => {
+    const { app: aplicacion, repo } = nuevaApp();
+    const res = await crear(sobre(PEDIDO, 'crear_pedido'), { aplicacion });
+
+    expect(res.status).toBe(200);
+    expect(RespuestaCrearPedidoSchema.parse(await res.json())).toMatchObject({
+      ok: true,
+      folio: 1001,
+      folioTexto: '#1001',
+      estado: 'confirmado',
+      yaExistia: false,
+      totalTexto: '$916.00',
+    });
+    expect(repo.pedidos).toHaveLength(1);
+  });
+
+  it('el mismo pedido otra vez devuelve el mismo folio con yaExistia', async () => {
+    const { app: aplicacion, repo } = nuevaApp();
+    await crear(sobre(PEDIDO, 'crear_pedido'), { aplicacion });
+    const res = await crear(sobre(PEDIDO, 'crear_pedido'), { aplicacion });
+
+    expect(await res.json()).toMatchObject({ ok: true, folio: 1001, yaExistia: true });
+    expect(repo.pedidos).toHaveLength(1);
+  });
+
+  it('con aclaraciones responde 200 con ok: false y no guarda nada', async () => {
+    const { app: aplicacion, repo } = nuevaApp();
+    const res = await crear(sobre({ ...PEDIDO, telefono: '123' }, 'crear_pedido'), { aplicacion });
+
+    expect(res.status).toBe(200);
+    expect(RespuestaCrearPedidoSchema.parse(await res.json())).toMatchObject({
+      ok: false,
+      datosCliente: [{ campo: 'telefono' }],
+    });
+    expect(repo.pedidos).toHaveLength(0);
+  });
+
+  it('rechaza con 401 sin firma y no guarda nada', async () => {
+    const { app: aplicacion, repo } = nuevaApp();
+    const res = await crear(sobre(PEDIDO, 'crear_pedido'), { aplicacion, firma: null });
+
+    expect(res.status).toBe(401);
+    expect(repo.pedidos).toHaveLength(0);
+  });
+
+  it('un total o precio que venga de afuera es un cuerpo mal formado → 400', async () => {
+    const { app: aplicacion, repo } = nuevaApp();
+    const res = await crear(sobre({ ...PEDIDO, totalCentavos: 100 }, 'crear_pedido'), {
+      aplicacion,
+    });
+
+    expect(res.status).toBe(400);
+    expect(ErrorPedidoSchema.parse(await res.json()).error).toBe(
+      'La petición de crear_pedido no tiene el formato esperado. Revisa: args.',
+    );
+    expect(repo.pedidos).toHaveLength(0);
+  });
+
+  it('con el name de otra función → 400', async () => {
+    const { app: aplicacion } = nuevaApp();
+    expect((await crear(sobre(PEDIDO, 'cotizar_pedido'), { aplicacion })).status).toBe(400);
+  });
+
+  it('responde 500 en español si falla al guardar', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const aplicacion = crearApp({
+      crearRepoMenu: repoMenu,
+      crearRepoPedidos: () => repoPedidosQueFalla,
+    });
+
+    const res = await crear(sobre(PEDIDO, 'crear_pedido'), { aplicacion });
+    expect(res.status).toBe(500);
+    expect(ErrorPedidoSchema.parse(await res.json()).error).toBe(
+      'No se pudo registrar el pedido. Intenta de nuevo en un momento.',
+    );
+  });
+
+  it('aparece en /openapi.json con sus respuestas y la firma de Retell', async () => {
+    const doc = (await (await app.request('/openapi.json')).json()) as {
+      paths: Record<
+        string,
+        { post?: { responses: Record<string, unknown>; security?: unknown[] } }
+      >;
+    };
+    const ruta = doc.paths['/pedidos']?.post;
+
+    expect(Object.keys(ruta?.responses ?? {})).toEqual(['200', '400', '401', '500']);
+    expect(ruta?.security).toEqual([{ FirmaRetell: [] }]);
   });
 });

@@ -1,5 +1,6 @@
 /**
- * Contrato de POST /pedidos/cotizar (US-07-P1 backend ↔ US-07-P2 agente).
+ * Contrato de POST /pedidos/cotizar (US-07-P1 backend ↔ US-07-P2 agente) y de
+ * POST /pedidos (US-08-P1 ↔ US-08-P2), al final del archivo.
  *
  * Es la fuente única del contrato: cualquier cambio entra por PR y se avisa a
  * quien tenga la otra parte.
@@ -115,15 +116,20 @@ export const ProductoPedidoSchema = z.strictObject({
  */
 export const ExtraSueltoPedidoSchema = ExtraPedidoSchema;
 
+/** Lo que se pide: igual en `cotizar_pedido` y `crear_pedido`. */
+const camposDelPedido = {
+  productos: listaOpcional(ProductoPedidoSchema, 30),
+  extrasSueltos: listaOpcional(ExtraSueltoPedidoSchema, 10),
+};
+
+const traeAlgo = (args: { productos: unknown[]; extrasSueltos: unknown[] }) =>
+  args.productos.length + args.extrasSueltos.length > 0;
+const MENSAJE_PEDIDO_VACIO = 'El pedido debe traer al menos un producto o un extra suelto.';
+
 /** Argumentos de la función `cotizar_pedido`, tal como los arma el agente. */
 export const CotizarPedidoArgsSchema = z
-  .strictObject({
-    productos: listaOpcional(ProductoPedidoSchema, 30),
-    extrasSueltos: listaOpcional(ExtraSueltoPedidoSchema, 10),
-  })
-  .refine((args) => args.productos.length + args.extrasSueltos.length > 0, {
-    message: 'El pedido debe traer al menos un producto o un extra suelto.',
-  });
+  .strictObject(camposDelPedido)
+  .refine(traeAlgo, { message: MENSAJE_PEDIDO_VACIO });
 
 /**
  * Sobre que manda Retell a una custom function con "Payload: args only"
@@ -242,11 +248,96 @@ export const RespuestaCotizarPedidoSchema = z.discriminatedUnion('ok', [
   CotizacionConAclaracionesSchema,
 ]);
 
+// ─── Crear pedido: POST /pedidos (US-08-P1) ─────────────────────────────────
+
+/** Estados del pedido (docs/negocio.md → Estados del pedido). */
+export const ESTADOS_PEDIDO = [
+  'confirmado',
+  'esperando_pago',
+  'en_cola',
+  'preparando',
+  'listo',
+  'entregado',
+  'cancelado',
+  'expirado',
+] as const;
+export const EstadoPedidoSchema = z.enum(ESTADOS_PEDIDO);
+
+/**
+ * Nombre y teléfono llegan tal como los dijo el cliente. Igual que la
+ * cantidad, la regla (2 a 60 letras; 10 dígitos de México, D32) la revisa el
+ * servicio y responde una aclaración en `datosCliente`, no un 400: así el
+ * agente sabe qué volver a pedir. Si no vienen (o vienen `null` o `""`), el
+ * servicio también lo aclara. El tope de longitud es anti-abuso.
+ */
+const DatoClienteSchema = opcional(z.string().max(80));
+
+/**
+ * Argumentos de `crear_pedido`: el mismo pedido que se cotizó, más nombre y
+ * teléfono. Nunca trae precios ni total: el backend vuelve a cotizar.
+ */
+export const CrearPedidoArgsSchema = z
+  .strictObject({ ...camposDelPedido, nombre: DatoClienteSchema, telefono: DatoClienteSchema })
+  .refine(traeAlgo, { message: MENSAJE_PEDIDO_VACIO });
+
+/** Sobre de Retell para `crear_pedido` (ver CotizarPedidoPeticionSchema). */
+export const CrearPedidoPeticionSchema = z.object({
+  name: z.literal('crear_pedido'),
+  args: CrearPedidoArgsSchema,
+});
+
+export const CAMPOS_CLIENTE = ['nombre', 'telefono'] as const;
+
+/** Un dato del cliente que falta o no cumple la regla; `detalle` la explica. */
+export const DatoClienteInvalidoSchema = z.object({
+  campo: z.enum(CAMPOS_CLIENTE),
+  detalle: z.string(),
+});
+
+/**
+ * Pedido guardado con estado `confirmado`. Los renglones y el total son los de
+ * la cotización que hizo el backend al crearlo. `yaExistia`: el mismo pedido
+ * con el mismo teléfono ya se había creado hace poco (D34) y se devuelve ese
+ * folio en lugar de crear otro.
+ */
+export const PedidoCreadoSchema = z.object({
+  ok: z.literal(true),
+  folio: z.number().int().positive(),
+  /** Para leerlo tal cual: "#1001". */
+  folioTexto: z.string(),
+  estado: EstadoPedidoSchema,
+  yaExistia: z.boolean(),
+  renglones: z.array(RenglonCotizacionSchema).min(1),
+  totalCentavos: CentavosSchema,
+  totalTexto: MontoTextoSchema,
+});
+
+/**
+ * No se creó nada. Trae juntas las aclaraciones del pedido (las mismas que
+ * `cotizar_pedido`) y las de los datos del cliente; al menos una de las dos.
+ */
+export const PedidoConAclaracionesSchema = z
+  .object({
+    ok: z.literal(false),
+    aclaraciones: z.array(AclaracionSchema),
+    datosCliente: z.array(DatoClienteInvalidoSchema),
+  })
+  .refine((r) => r.aclaraciones.length + r.datosCliente.length > 0, {
+    message: 'Debe traer al menos una aclaración.',
+  });
+
+/** Ambas respuestas usan HTTP 200, igual que cotizar. */
+export const RespuestaCrearPedidoSchema = z.discriminatedUnion('ok', [
+  PedidoCreadoSchema,
+  PedidoConAclaracionesSchema,
+]);
+
 // ─── Errores ────────────────────────────────────────────────────────────────
 
 /**
  * Mismo formato que ErrorMenuSchema: `{ error: "texto en español" }`.
  * 400: cuerpo mal formado (hook de validación). 401: firma de Retell inválida.
+ * Lo usan `POST /pedidos/cotizar` y `POST /pedidos`.
  */
 export const ErrorPedidoSchema = z.object({
   error: z.string(),
@@ -268,4 +359,12 @@ export type CotizacionOk = z.infer<typeof CotizacionOkSchema>;
 export type Aclaracion = z.infer<typeof AclaracionSchema>;
 export type CotizacionConAclaraciones = z.infer<typeof CotizacionConAclaracionesSchema>;
 export type RespuestaCotizarPedido = z.infer<typeof RespuestaCotizarPedidoSchema>;
+export type EstadoPedido = z.infer<typeof EstadoPedidoSchema>;
+export type CrearPedidoArgs = z.infer<typeof CrearPedidoArgsSchema>;
+export type CrearPedidoPeticion = z.infer<typeof CrearPedidoPeticionSchema>;
+export type CampoCliente = (typeof CAMPOS_CLIENTE)[number];
+export type DatoClienteInvalido = z.infer<typeof DatoClienteInvalidoSchema>;
+export type PedidoCreado = z.infer<typeof PedidoCreadoSchema>;
+export type PedidoConAclaraciones = z.infer<typeof PedidoConAclaracionesSchema>;
+export type RespuestaCrearPedido = z.infer<typeof RespuestaCrearPedidoSchema>;
 export type ErrorPedido = z.infer<typeof ErrorPedidoSchema>;
