@@ -6,6 +6,7 @@ import {
   buscarPorPalabras,
   cotizarPedido,
   DETALLE_CANTIDAD,
+  detalleCantidadExtra,
   MAX_OPCIONES,
   obtenerCotizacion,
   resolverPlatillo,
@@ -529,17 +530,52 @@ describe('cotizarPedido: cantidades (enteras de 1 a 20, D30)', () => {
     detalle: DETALLE_CANTIDAD,
   });
 
-  it.each([0, 1.5, 21])('%s en el platillo → cantidad_invalida', (cantidad) => {
+  /** La del extra de un platillo va con el platillo, pero su detalle nombra el extra. */
+  const invalidaDelExtra = (producto: string, extra: string) => ({
+    ...invalida('producto', producto),
+    detalle: detalleCantidadExtra(extra),
+  });
+
+  it.each([-1, 0, 1.5, 21])('%s en el platillo → cantidad_invalida', (cantidad) => {
     expect(aclaraciones({ productos: [{ producto: 'cowboy', cantidad }] })).toEqual([
       invalida('producto', 'cowboy'),
     ]);
   });
 
-  it.each([0, 1.5, 21])('%s en el extra de un platillo → cantidad_invalida del platillo', (n) => {
-    expect(aclaraciones(uno('t-bone', espuelas(n)))).toEqual([invalida('producto', 't-bone')]);
+  it.each([-1, 0, 1.5, 21])('%s en el extra de un platillo → nombra el extra', (n) => {
+    expect(aclaraciones(uno('t-bone', espuelas(n)))).toEqual([
+      invalidaDelExtra('t-bone', 'espuelas'),
+    ]);
+    expect(detalleCantidadExtra('espuelas')).toBe('La cantidad de "espuelas" debe ser de 1 a 20.');
   });
 
-  it.each([0, 1.5, 21])('%s en un extra suelto → cantidad_invalida', (cantidad) => {
+  it('el mismo extra repetido en un platillo se suma en uno solo → 40300 + 3 × 5500', () => {
+    const pedido = uno('t-bone', {
+      extras: [
+        { extra: 'espuelas', cantidad: 1 },
+        { extra: 'Espuelas (camarones)', cantidad: 2 },
+      ],
+    });
+    expect(cotizar(pedido)).toMatchObject({
+      ok: true,
+      renglones: [{ extras: [{ nombre: 'Espuelas (camarones)', cantidad: 3 }] }],
+      totalCentavos: 56800,
+    });
+  });
+
+  it('el extra repetido no se salta el límite: 10 + 10 vale, 20 + 20 → cantidad_invalida', () => {
+    const repetido = (cantidad: number) =>
+      uno('t-bone', {
+        extras: [
+          { extra: 'espuelas', cantidad },
+          { extra: 'espuelas', cantidad },
+        ],
+      });
+    expect(total(repetido(10))).toBe(40300 + 20 * 5500);
+    expect(aclaraciones(repetido(20))).toEqual([invalidaDelExtra('t-bone', 'espuelas')]);
+  });
+
+  it.each([-1, 0, 1.5, 21])('%s en un extra suelto → cantidad_invalida', (cantidad) => {
     expect(aclaraciones({ extrasSueltos: [{ extra: 'totopos', cantidad }] })).toEqual([
       invalida('extraSuelto', 'totopos'),
     ]);

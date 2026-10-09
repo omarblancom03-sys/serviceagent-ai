@@ -146,16 +146,24 @@ const nombresDe = (platillos: Platillo[]) => platillos.slice(0, MAX_OPCIONES).ma
  *   arman los renglones y el total. Nunca se cotiza una parte del pedido.
  * - El dinero sale solo de los precios del catálogo, en centavos (D7):
  *   subtotal = (precioVariante + Σ precioExtra × cantidadExtra) × cantidad.
- * - Las cantidades (platillo, extra ligado y extra suelto) son enteras de 1 a 20 (D30).
+ * - Las cantidades (platillo, extra ligado y extra suelto) son enteras de 1 a 20 (D30). El mismo
+ *   extra repetido en un platillo se suma en uno solo y el límite aplica a la suma.
  */
 
 export const DETALLE_CANTIDAD = `La cantidad debe ser de ${CANTIDAD_MINIMA} a ${CANTIDAD_MAXIMA}.`;
 
+/**
+ * Detalle de `cantidad_invalida` para un extra de un platillo. Nombra el extra: la aclaración va
+ * con el platillo como `producto` y, sin el nombre, el agente preguntaría cuántos platillos quiere.
+ */
+export const detalleCantidadExtra = (texto: string) =>
+  `La cantidad de "${texto}" debe ser de ${CANTIDAD_MINIMA} a ${CANTIDAD_MAXIMA}.`;
+
 /** `null` si la cantidad es válida; si no, el detalle para la aclaración `cantidad_invalida`. */
-export function validarCantidad(cantidad: number): string | null {
+export function validarCantidad(cantidad: number, detalle = DETALLE_CANTIDAD): string | null {
   return Number.isInteger(cantidad) && cantidad >= CANTIDAD_MINIMA && cantidad <= CANTIDAD_MAXIMA
     ? null
-    : DETALLE_CANTIDAD;
+    : detalle;
 }
 
 export type ResultadoVariante =
@@ -266,17 +274,25 @@ function cotizarProducto(
   for (const { extra: texto, cantidad } of pedido.extras ?? []) {
     const extra = resolverExtra(platillo, texto);
     if (!extra) aclararYMarcar({ tipo: 'extra_no_permitido', detalle: texto });
-    const detalle = validarCantidad(cantidad);
+    const detalle = validarCantidad(cantidad, detalleCantidadExtra(texto));
     if (detalle) aclararYMarcar({ tipo: 'cantidad_invalida', detalle });
-    if (extra && !detalle) {
-      extras.push({
-        idExtra: extra.id,
-        nombre: extra.nombre,
-        cantidad,
-        precioUnitarioCentavos: extra.precioCentavos,
-        precioUnitarioTexto: formatearPesos(extra.precioCentavos),
-      });
+    if (!extra || detalle) continue;
+
+    // Repetido ("espuelas" 20 y "espuelas" 20): se suma y la suma tampoco pasa de 20 (D30).
+    const previo = extras.find((e) => e.idExtra === extra.id);
+    if (previo) {
+      const detalleSuma = validarCantidad(previo.cantidad + cantidad, detalleCantidadExtra(texto));
+      if (detalleSuma) aclararYMarcar({ tipo: 'cantidad_invalida', detalle: detalleSuma });
+      else previo.cantidad += cantidad;
+      continue;
     }
+    extras.push({
+      idExtra: extra.id,
+      nombre: extra.nombre,
+      cantidad,
+      precioUnitarioCentavos: extra.precioCentavos,
+      precioUnitarioTexto: formatearPesos(extra.precioCentavos),
+    });
   }
 
   if (!completo || variante.tipo !== 'encontrada') return null;
