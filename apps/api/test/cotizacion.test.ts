@@ -17,13 +17,7 @@ import { armarMenu, type FilasMenu } from '../src/services/menu';
 import { crearRepoMenuEnMemoria, filasMenuDePrueba, repoMenuQueFalla } from './menuEnMemoria';
 import { leerSeedMenu } from './seedEnMemoria';
 
-// Removibles DE PRUEBA (el seed aún no trae, D29): Guacamole → Cebolla, Cilantro.
-const seed = leerSeedMenu({
-  removibles: [
-    { platillo: 'Guacamole', nombre: 'Cebolla' },
-    { platillo: 'Guacamole', nombre: 'Cilantro' },
-  ],
-});
+const seed = leerSeedMenu();
 const catalogo = armarCatalogo(armarMenu(seed.filas), seed.sinonimos);
 const buscar = (texto: string) => resolverPlatillo(catalogo, texto);
 
@@ -633,14 +627,83 @@ describe('cotizarPedido: variantes', () => {
   });
 });
 
-describe('cotizarPedido: ingredientes y reglas generales', () => {
-  it('quitar un ingrediente removible → el renglón lo lleva con su nombre oficial', () => {
-    expect(cotizar(uno('guacamole', { sinIngredientes: ['cebolla'] }))).toMatchObject({
+describe('cotizarPedido: ingredientes que se pueden quitar (seed 04, D29)', () => {
+  it('quitar un ingrediente removible → el renglón lo lleva con su nombre oficial y mismo precio', () => {
+    expect(
+      cotizar(uno('hamburguesa delicias', { sinIngredientes: ['LECHUGA', 'queso'] })),
+    ).toMatchObject({
       ok: true,
-      renglones: [{ sinIngredientes: ['Cebolla'], subtotalCentavos: 12300 }],
+      renglones: [{ sinIngredientes: ['Lechuga', 'Queso'], subtotalCentavos: 12900 }],
     });
   });
 
+  it('acepta plurales y acentos: "tomates" y "jalapenos" en la Torre de mariscos', () => {
+    expect(
+      cotizar(uno('torre de mariscos', { sinIngredientes: ['tomates', 'jalapenos'] })),
+    ).toMatchObject({ ok: true, renglones: [{ sinIngredientes: ['Tomate', 'Jalapeño'] }] });
+  });
+
+  it('el tomate no se quita de la Hamburguesa Delicias (decisión del PO)', () => {
+    expect(aclaraciones(uno('hamburguesa delicias', { sinIngredientes: ['tomate'] }))).toEqual([
+      expect.objectContaining({ tipo: 'ingrediente_no_removible', detalle: 'tomate' }),
+    ]);
+  });
+
+  it('la carne nunca se quita: Ensalada Granero sin pollo → ingrediente_no_removible', () => {
+    expect(aclaraciones(uno('ensalada granero', { sinIngredientes: ['pollo'] }))).toEqual([
+      expect.objectContaining({ tipo: 'ingrediente_no_removible', detalle: 'pollo' }),
+    ]);
+  });
+});
+
+describe('cotizarPedido: extras con otros nombres (D31)', () => {
+  it.each(['espuelas', 'Espuelas (camarones)', 'camarones', 'con camarón'])(
+    '"%s" en un T-Bone → Espuelas',
+    (texto) => {
+      const pedido = uno('t-bone', { extras: [{ extra: texto, cantidad: 1 }] });
+      expect(cotizar(pedido)).toMatchObject({
+        ok: true,
+        renglones: [{ extras: [{ nombre: 'Espuelas (camarones)' }] }],
+        totalCentavos: 40300 + 5500,
+      });
+    },
+  );
+
+  it.each([
+    ['salsa bbq', 'BBQ'],
+    ['salsa de BBQ', 'BBQ'],
+    ['chiles toreados', 'Toreados'],
+    ['un toreado', 'Toreados'],
+    ['totopo', 'Totopos'],
+    ['extra de aguacate', 'Aguacate'],
+  ])('"%s" suelto → %s', (texto, nombre) => {
+    expect(cotizar({ extrasSueltos: [{ extra: texto, cantidad: 1 }] })).toMatchObject({
+      ok: true,
+      renglones: [{ tipo: 'extra', nombre }],
+    });
+  });
+
+  it('"camarones" suelto → extra_no_permitido: las Espuelas van con su corte', () => {
+    expect(aclaraciones({ extrasSueltos: [{ extra: 'camarones', cantidad: 1 }] })).toEqual([
+      expect.objectContaining({ tipo: 'extra_no_permitido', origen: 'extraSuelto' }),
+    ]);
+  });
+
+  it('dos extras en un mismo texto no se adivinan: "bbq y toreados" → no_existe', () => {
+    expect(aclaraciones({ extrasSueltos: [{ extra: 'bbq y toreados', cantidad: 1 }] })).toEqual([
+      { tipo: 'no_existe', origen: 'extraSuelto', indice: 0, producto: 'bbq y toreados' },
+    ]);
+  });
+
+  it('"espuelas y bbq" en un T-Bone → extra_no_permitido, no se cobra ninguno', () => {
+    const pedido = uno('t-bone', { extras: [{ extra: 'espuelas y bbq', cantidad: 1 }] });
+    expect(aclaraciones(pedido)).toEqual([
+      expect.objectContaining({ tipo: 'extra_no_permitido', detalle: 'espuelas y bbq' }),
+    ]);
+  });
+});
+
+describe('cotizarPedido: reglas generales', () => {
   it('un platillo inactivo → no_existe', () => {
     const dePrueba = armarCatalogo(armarMenu(filasMenuDePrueba()), []);
     expect(cotizarCon(dePrueba, uno('Platillo dado de baja'))).toEqual({

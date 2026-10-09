@@ -14,7 +14,7 @@ import {
   type RespuestaMenu,
   type Variante,
 } from '@serviceagent/shared';
-import { normalizarExtra, normalizarSuave, palabras } from '../lib/normalizar';
+import { normalizarSuave, palabras } from '../lib/normalizar';
 import { formatearPesos } from '../lib/pesos';
 import { armarMenu, type MenuRepo, type Sinonimo } from './menu';
 
@@ -42,10 +42,10 @@ export interface Catalogo {
   indiceSinRelleno: Map<string, number[]>;
   /** Por platillo: las palabras (sin relleno) de su nombre y de cada sinónimo, para el paso 2. */
   palabrasPorPlatillo: Map<number, Set<string>[]>;
-  /** Extras que se piden solos (sin filas en `platillo_extra`, D19), por llave de `normalizarExtra`. */
-  extrasSueltos: Map<string, Extra>;
-  /** Extras ligados a algún platillo visible (hoy solo Espuelas), por la misma llave. */
-  extrasLigados: Map<string, ExtraPermitido>;
+  /** Extras que se piden solos (sin filas en `platillo_extra`, D19). */
+  extrasSueltos: Extra[];
+  /** Extras ligados a algún platillo visible (hoy solo Espuelas), sin repetir. */
+  extrasLigados: ExtraPermitido[];
 }
 
 export type ResultadoPlatillo =
@@ -85,10 +85,10 @@ export function armarCatalogo(menu: RespuestaMenu, sinonimos: Sinonimo[]): Catal
     indiceSuave: new Map(),
     indiceSinRelleno: new Map(),
     palabrasPorPlatillo: new Map(),
-    extrasSueltos: new Map(menu.extras.map((e) => [normalizarExtra(e.nombre), e])),
-    extrasLigados: new Map(
-      platillos.flatMap((p) => p.extrasPermitidos).map((e) => [normalizarExtra(e.nombre), e]),
-    ),
+    extrasSueltos: menu.extras,
+    extrasLigados: [
+      ...new Map(platillos.flatMap((p) => p.extrasPermitidos).map((e) => [e.id, e])).values(),
+    ],
   };
   for (const { idPlatillo, texto } of textos) {
     const llaveSuave = normalizarSuave(texto);
@@ -198,10 +198,39 @@ export function resolverVariante(platillo: Platillo, pedida?: string): Resultado
   return contienen.length === 1 && unica ? { tipo: 'encontrada', variante: unica } : faltante;
 }
 
+/**
+ * Formas de nombrar un extra: las palabras de su nombre sin paréntesis y las de adentro.
+ * "Espuelas (camarones)" → {espuela} y {camaron}; "BBQ" → {bbq}.
+ */
+function formasDeExtra(nombre: string): Set<string>[] {
+  const adentro = [...nombre.matchAll(/\(([^)]*)\)/g)].map((m) => m[1] ?? '');
+  return [nombre.replace(/\([^)]*\)/g, ' '), ...adentro]
+    .map((texto) => new Set(palabras(texto)))
+    .filter((forma) => forma.size > 0);
+}
+
+/**
+ * Id del extra del menú (suelto o ligado) al que se refiere el cliente (D31): el único con alguna
+ * forma cuyas palabras están todas en lo que dijo. "salsa bbq" → BBQ, "chiles toreados" →
+ * Toreados, "camarones" → Espuelas. Si ninguno o más de uno coincide ("bbq y toreados"), no hay
+ * extra: se aclara, nunca se adivina.
+ */
+export function identificarExtra(catalogo: Catalogo, texto: string): number | undefined {
+  const dichas = new Set(palabras(texto));
+  const coinciden = [...catalogo.extrasSueltos, ...catalogo.extrasLigados].filter((e) =>
+    formasDeExtra(e.nombre).some((forma) => [...forma].every((palabra) => dichas.has(palabra))),
+  );
+  return coinciden.length === 1 ? coinciden[0]?.id : undefined;
+}
+
 /** Extra pedido para un platillo: solo vale si está ligado a ese platillo (`platillo_extra`). */
-export function resolverExtra(platillo: Platillo, texto: string): ExtraPermitido | undefined {
-  const llave = normalizarExtra(texto);
-  return platillo.extrasPermitidos.find((e) => normalizarExtra(e.nombre) === llave);
+export function resolverExtra(
+  catalogo: Catalogo,
+  platillo: Platillo,
+  texto: string,
+): ExtraPermitido | undefined {
+  const id = identificarExtra(catalogo, texto);
+  return platillo.extrasPermitidos.find((e) => e.id === id);
 }
 
 /** Ingredientes que se pueden quitar: los removibles del platillo, con su nombre oficial. */
@@ -272,7 +301,7 @@ function cotizarProducto(
 
   const extras: ExtraAplicado[] = [];
   for (const { extra: texto, cantidad } of pedido.extras ?? []) {
-    const extra = resolverExtra(platillo, texto);
+    const extra = resolverExtra(catalogo, platillo, texto);
     if (!extra) aclararYMarcar({ tipo: 'extra_no_permitido', detalle: texto });
     const detalle = validarCantidad(cantidad, detalleCantidadExtra(texto));
     if (detalle) aclararYMarcar({ tipo: 'cantidad_invalida', detalle });
@@ -331,12 +360,11 @@ export function cotizarPedido(catalogo: Catalogo, args: CotizarPedidoArgs): Resp
   args.extrasSueltos.forEach(({ extra: texto, cantidad }, indice) => {
     const aclarar: Aclarar = (aclaracion) =>
       aclaraciones.push({ ...aclaracion, origen: 'extraSuelto', indice, producto: texto });
-    const llave = normalizarExtra(texto);
-    const extra = catalogo.extrasSueltos.get(llave);
+    const id = identificarExtra(catalogo, texto);
+    const extra = catalogo.extrasSueltos.find((e) => e.id === id);
     // Espuelas solo va con sus cortes (D19); un extra que no está en el menú no existe.
-    if (!extra && catalogo.extrasLigados.has(llave)) {
-      aclarar({ tipo: 'extra_no_permitido', detalle: texto });
-    } else if (!extra) aclarar({ tipo: 'no_existe' });
+    if (!extra && id !== undefined) aclarar({ tipo: 'extra_no_permitido', detalle: texto });
+    else if (!extra) aclarar({ tipo: 'no_existe' });
     const detalle = validarCantidad(cantidad);
     if (detalle) aclarar({ tipo: 'cantidad_invalida', detalle });
     if (extra && !detalle) {
