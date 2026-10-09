@@ -1,9 +1,9 @@
 {
   "id": "pedido-precio-de-un-corte",
   "historia": "US-07-P2",
-  "criterios": ["C5"],
+  "criterios": ["C3", "C5"],
   "categoria": "pedido",
-  "titulo": "Pregunta de precio: cotiza y dice el precio devuelto",
+  "titulo": "Pregunta de precio de un corte: dice el precio devuelto y ofrece espuelas",
   "mensajes": ["¿Cuánto cuesta el Rib Eye?"],
   "argsEsperados": [
     {
@@ -17,9 +17,12 @@
   ],
   "debe": [
     "Llama a cotizar_pedido con ese platillo y cantidad 1.",
-    "Dice el precio que devolvió cotizar_pedido, con el nombre de la respuesta."
+    "Dice el precio que devolvió cotizar_pedido, con el nombre de la respuesta.",
+    "Después de decir el precio, en el mismo mensaje, pregunta si lo quiere con espuelas."
   ],
   "noDebe": [
+    "Preguntar por las espuelas sin haber dicho el precio.",
+    "Decir un precio de las espuelas: esa cotización no las incluye.",
     "Dar un precio de memoria, aproximado o calculado.",
     "Decir que el pedido quedó registrado, o dar número de pedido o tiempo de espera."
   ]
