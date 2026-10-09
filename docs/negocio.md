@@ -35,7 +35,7 @@ Fuera de alcance: delivery a domicilio.
 
 - **Ligados:** un extra con filas en `platillo_extra` solo se puede agregar a esos platillos.
 - **Sueltos:** un extra sin filas en `platillo_extra` se pide aparte y se cobra aparte.
-- El agente no recomienda extras; los agrega solo si el cliente los pide. Cuáles extras son de cada tipo: [D19](decisiones.md). Sus precios viven en la base, no en los docs.
+- El agente no recomienda extras; los agrega solo si el cliente los pide. **Excepción:** ofrece Espuelas una sola vez por conversación cuando uno de sus 5 cortes aparece en una cotización, sea pedido o pregunta de precio ([D25](decisiones.md)). Cuáles extras son de cada tipo: [D19](decisiones.md). Sus precios viven en la base, no en los docs.
 
 ## Estados del pedido
 
