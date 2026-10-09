@@ -1,0 +1,34 @@
+{
+  "id": "pedido-dos-aclaraciones",
+  "historia": "US-07-P2",
+  "criterios": ["C2", "C4", "C5"],
+  "categoria": "pedido",
+  "titulo": "Dos aclaraciones: pregunta una por mensaje y vuelve a cotizar completo",
+  "mensajes": ["Una limonada mineral y una pizza de pepperoni"],
+  "respuestas": [
+    "Cuando pregunte la presentación de la limonada: \"En vaso\".",
+    "Cuando pregunte por la pizza: \"Mejor sin la pizza\"."
+  ],
+  "argsEsperados": [
+    {
+      "productos": [
+        {
+          "producto": "limonada mineral",
+          "variante": "Vaso 500 ml",
+          "cantidad": 1
+        }
+      ]
+    }
+  ],
+  "debe": [
+    "Pregunta una sola aclaración por mensaje; el orden lo decide el agente.",
+    "Con las dos resueltas, vuelve a llamar a cotizar_pedido con el pedido completo corregido: es la única llamada que fija argsEsperados.",
+    "Dice el total que devolvió esa última llamada."
+  ],
+  "noDebe": [
+    "Preguntar las dos aclaraciones en el mismo mensaje.",
+    "Elegir la presentación de la limonada o cambiar la pizza por otro platillo.",
+    "Decir un precio antes de la cotización final.",
+    "Sumar o restar al total en lugar de volver a cotizar."
+  ]
+}

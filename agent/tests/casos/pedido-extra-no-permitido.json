@@ -1,0 +1,34 @@
+{
+  "id": "pedido-extra-no-permitido",
+  "historia": "US-07-P2",
+  "criterios": ["C2", "C4"],
+  "categoria": "pedido",
+  "titulo": "Avisa que un platillo no lleva el extra pedido",
+  "mensajes": ["Una hamburguesa Hawaiana con espuelas"],
+  "argsEsperados": [
+    {
+      "productos": [
+        {
+          "producto": "hamburguesa Hawaiana",
+          "cantidad": 1,
+          "extras": [
+            {
+              "extra": "Espuelas",
+              "cantidad": 1
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "debe": [
+    "Manda Espuelas dentro de los extras de la hamburguesa, como lo pidió el cliente.",
+    "Dice que las espuelas no se pueden agregar a esa hamburguesa.",
+    "Pregunta si la quiere sin espuelas."
+  ],
+  "noDebe": [
+    "Quitar el extra y cotizar sin preguntar.",
+    "Ofrecer otro extra en su lugar.",
+    "Decir un precio o un total: con aclaraciones no hay ninguno."
+  ]
+}

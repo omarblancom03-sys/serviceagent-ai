@@ -1,0 +1,76 @@
+{
+  "type": "object",
+  "description": "Pedido completo del cliente. Debe traer al menos un elemento en productos o en extrasSueltos.",
+  "additionalProperties": false,
+  "properties": {
+    "productos": {
+      "type": "array",
+      "description": "Platillos y bebidas del pedido, uno por renglón. Se omite si el cliente solo pidió extras sueltos.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["producto", "cantidad"],
+        "properties": {
+          "producto": {
+            "type": "string",
+            "description": "Solo las palabras del platillo o la bebida, como las dijo el cliente. Sin \"quiero\", \"la de\" ni \"una orden de\", y sin la cantidad. Ejemplo: \"hamburguesa Granero\"."
+          },
+          "cantidad": {
+            "type": "number",
+            "description": "Cuántas unidades de este platillo pidió el cliente, tal como lo dijo. Si no dijo cuántas (\"unas fajitas\", \"la de chipotle\"), va 1."
+          },
+          "variante": {
+            "type": "string",
+            "description": "Presentación o tamaño que eligió el cliente: solo sus palabras, sin \"en\" ni \"de\". Ejemplos: \"vaso\", \"jarra\", \"1 l\", \"grande\". Va aquí y no dentro de producto. Se omite si el cliente no dijo ninguna."
+          },
+          "sinIngredientes": {
+            "type": "array",
+            "description": "Ingredientes que el cliente pidió quitar de este platillo. Se omite si no pidió quitar nada.",
+            "items": {
+              "type": "string",
+              "description": "Solo el nombre del ingrediente a quitar, sin artículo y sin \"sin\": \"tomate\", nunca \"el tomate\" ni \"sin tomate\"."
+            }
+          },
+          "extras": {
+            "type": "array",
+            "description": "Aquí va SOLO Espuelas, dentro del corte para el que se pidió. Cualquier otro extra (Totopos, BBQ, Aguacate, Toreados) va en extrasSueltos, aunque el cliente lo pida \"con\" este platillo. Se omite si el cliente no pidió espuelas para este platillo.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["extra", "cantidad"],
+              "properties": {
+                "extra": {
+                  "type": "string",
+                  "description": "Nombre corto del extra, sin palabras de más: \"Espuelas\"."
+                },
+                "cantidad": {
+                  "type": "number",
+                  "description": "Cantidad del extra POR UNIDAD del platillo. Dos platillos, cada uno con sus espuelas: cantidad 1."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "extrasSueltos": {
+      "type": "array",
+      "description": "Extras que se cobran aparte y no pertenecen a un platillo: Totopos, BBQ, Aguacate y Toreados. Van aquí aunque el cliente los pida \"con\" un platillo (\"hamburguesa con aguacate\"). Espuelas nunca va aquí. Se omite si el cliente no pidió ninguno.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["extra", "cantidad"],
+        "properties": {
+          "extra": {
+            "type": "string",
+            "description": "Nombre corto del extra, sin palabras de más: \"Totopos\", \"BBQ\", \"Aguacate\" o \"Toreados\". \"Salsa BBQ\" se manda como \"BBQ\"; \"chiles toreados\", como \"Toreados\". Un extra que no sea de esos se manda como lo dijo el cliente."
+          },
+          "cantidad": {
+            "type": "number",
+            "description": "Cuántas porciones de este extra pidió el cliente. Si no dijo cuántas (\"unos totopos\"), va 1."
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "id": "pedido-variante-unica",
+  "historia": "US-07-P2",
+  "criterios": ["C2", "C4"],
+  "categoria": "pedido",
+  "titulo": "Variante pedida en un platillo de presentación única",
+  "mensajes": ["Una hamburguesa Granero grande", "Sí"],
+  "argsEsperados": [
+    {
+      "productos": [{ "producto": "hamburguesa Granero", "variante": "grande", "cantidad": 1 }]
+    },
+    {
+      "productos": [{ "producto": "hamburguesa Granero", "cantidad": 1 }]
+    }
+  ],
+  "debe": [
+    "En la primera llamada manda \"grande\" en variante, no dentro de producto.",
+    "Dice que esa hamburguesa solo tiene una presentación y pregunta si la quiere así.",
+    "Tras el \"sí\", vuelve a cotizar el mismo platillo sin variante.",
+    "Da el resumen con el nombre y el total que devolvió cotizar_pedido."
+  ],
+  "noDebe": [
+    "Decir la palabra \"Único\".",
+    "Mandar \"Único\" o \"grande\" como variante en la segunda llamada.",
+    "Decir que no existe la hamburguesa.",
+    "Decir un precio antes de la segunda cotización."
+  ]
+}

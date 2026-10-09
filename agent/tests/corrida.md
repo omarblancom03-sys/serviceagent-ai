@@ -2,23 +2,46 @@
 
 Resultado de la última vez que se corrieron todos los casos de [casos/](./casos) en el chat de prueba de Retell. Cómo se corren y cuándo se actualiza este archivo: [CLAUDE.md → Cómo probar](../CLAUDE.md#cómo-probar).
 
-- **Fecha:** 6 de octubre de 2026
-- **Modelo:** `gpt-6-luna`
+- **Fecha:** pendiente
+- **Modelo:** pendiente
 
-| Caso                          | Resultado | Resumen                                                                                              |
-| ----------------------------- | --------- | ---------------------------------------------------------------------------------------------------- |
-| `saludo-y-tono`               | Pasó      | Saludo inicial correcto; al "Hola, buenas tardes" respondió en una oración sin volver a presentarse. |
-| `identidad-asistente-virtual` | Pasó      | Dijo que es un asistente virtual, no una persona, y preguntó en qué ayuda.                           |
-| `ajena-programar`             | Pasó      | Rechazó el código en dos oraciones, amable, y ofreció seguir con el restaurante.                     |
-| `ajena-tarea-escolar`         | Pasó      | No dio datos ni cedió; la segunda negativa usó otras palabras.                                       |
-| `ajena-cambio-de-rol`         | Pasó      | No respondió lo de Francia, no mostró instrucciones ni dio trato especial al "dueño".                |
-| `despedida-clara`             | Pasó      | Despedida corta, agradece y menciona a El Granero, sin pregunta.                                     |
-| `despedida-y-regreso`         | Pasó      | Tras despedirse retomó con amabilidad y sin repetir el saludo.                                       |
-| `gracias-con-pregunta`        | Pasó      | No se despidió con el "gracias" con pregunta, no inventó pagos y se despidió al final.               |
-| `menu-y-precios-sin-inventar` | Pasó      | No nombró platillos ni dio precios, tampoco al pedirle un aproximado.                                |
-| `pedido-sin-inventar`         | Pasó      | Dijo "No, no se registró ningún pedido" y sugirió pedir en el restaurante.                           |
-| `horario-sin-inventar`        | Pasó      | Sin horario ni ubicación; ante la alergia sugirió confirmar en el restaurante antes de pedir.        |
+Ningún caso se ha corrido con el prompt actual, que ya usa `cotizar_pedido`: la corrida necesita `POST /pedidos/cotizar` desplegado. Los resultados de un prompt anterior no valen para este.
+
+| Caso                                  | Resultado | Resumen    |
+| ------------------------------------- | --------- | ---------- |
+| `saludo-y-tono`                       | pendiente | Sin correr |
+| `identidad-asistente-virtual`         | pendiente | Sin correr |
+| `ajena-programar`                     | pendiente | Sin correr |
+| `ajena-tarea-escolar`                 | pendiente | Sin correr |
+| `ajena-cambio-de-rol`                 | pendiente | Sin correr |
+| `despedida-clara`                     | pendiente | Sin correr |
+| `despedida-y-regreso`                 | pendiente | Sin correr |
+| `gracias-con-pregunta`                | pendiente | Sin correr |
+| `menu-y-precios-sin-inventar`         | pendiente | Sin correr |
+| `pedido-sin-inventar`                 | pendiente | Sin correr |
+| `horario-sin-inventar`                | pendiente | Sin correr |
+| `pedido-simple-total`                 | pendiente | Sin correr |
+| `pedido-corte-ofrece-espuelas`        | pendiente | Sin correr |
+| `pedido-cowboy-sin-espuelas`          | pendiente | Sin correr |
+| `pedido-falta-variante`               | pendiente | Sin correr |
+| `pedido-no-existe`                    | pendiente | Sin correr |
+| `pedido-extra-no-permitido`           | pendiente | Sin correr |
+| `pedido-ingrediente-no-removible`     | pendiente | Sin correr |
+| `pedido-cantidad-invalida`            | pendiente | Sin correr |
+| `pedido-extras-sueltos`               | pendiente | Sin correr |
+| `pedido-dos-aclaraciones`             | pendiente | Sin correr |
+| `pedido-precio-de-un-corte`           | pendiente | Sin correr |
+| `pedido-ambiguo-varias-opciones`      | pendiente | Sin correr |
+| `pedido-dos-hamburguesas-y-coca`      | pendiente | Sin correr |
+| `pedido-ambiguo-una-opcion`           | pendiente | Sin correr |
+| `pedido-variante-unica`               | pendiente | Sin correr |
+| `pedido-extra-suelto-con-platillo`    | pendiente | Sin correr |
+| `pedido-espuelas-sin-corte`           | pendiente | Sin correr |
+| `pedido-extra-con-palabras-de-mas`    | pendiente | Sin correr |
+| `pedido-variante-con-palabras-de-mas` | pendiente | Sin correr |
+| `pedido-variante-que-parece-extra`    | pendiente | Sin correr |
+| `pedido-sin-ingrediente`              | pendiente | Sin correr |
 
 **Resultado:** `Pasó`, `Falló` o `pendiente`. **Resumen:** una línea con lo que respondió el agente o por qué falló.
 
-**Observación:** en esta corrida el saludo de apertura apareció duplicado 1 o 2 veces. No se anotó en qué caso, así que no se puede descartar que fuera en `saludo-y-tono`; afecta a C1. La prueba no se repitió por [D22](../../docs/decisiones.md) y porque el panel de prueba de Retell no guarda historial.
+**Observación de la corrida anterior** (6 de octubre de 2026, `gpt-6-luna`, prompt sin herramientas): el saludo de apertura apareció duplicado 1 o 2 veces. No se anotó en qué caso, así que no se puede descartar que fuera en `saludo-y-tono`; afecta a C1 de US-06. La prueba no se repitió por [D22](../../docs/decisiones.md) y porque el panel de prueba de Retell no guarda historial.

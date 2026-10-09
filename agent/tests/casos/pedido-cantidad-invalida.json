@@ -1,0 +1,28 @@
+{
+  "id": "pedido-cantidad-invalida",
+  "historia": "US-07-P2",
+  "criterios": ["C2", "C4"],
+  "categoria": "pedido",
+  "titulo": "Explica la regla de cantidad que devuelve el backend",
+  "mensajes": ["Veinticinco hamburguesas Algodoneros"],
+  "argsEsperados": [
+    {
+      "productos": [
+        {
+          "producto": "hamburguesa Algodoneros",
+          "cantidad": 25
+        }
+      ]
+    }
+  ],
+  "debe": [
+    "Manda la cantidad 25, tal como la dijo el cliente.",
+    "Explica la regla que viene en el detalle de la aclaración.",
+    "Pregunta cuántas quiere."
+  ],
+  "noDebe": [
+    "Cambiar la cantidad por su cuenta.",
+    "Decir un límite distinto al del detalle.",
+    "Decir un precio o un total: con aclaraciones no hay ninguno."
+  ]
+}

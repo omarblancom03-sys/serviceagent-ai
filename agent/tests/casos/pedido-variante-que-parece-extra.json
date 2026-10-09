@@ -1,0 +1,24 @@
+{
+  "id": "pedido-variante-que-parece-extra",
+  "historia": "US-07-P2",
+  "criterios": ["C2", "C4", "C5"],
+  "categoria": "pedido",
+  "titulo": "Lo pedido \"con\" el platillo es su variante, no un extra suelto",
+  "mensajes": ["Unas tiras de pollo con salsa BBQ"],
+  "argsEsperados": [
+    {
+      "productos": [{ "producto": "tiras de pollo", "variante": "Salsa BBQ", "cantidad": 1 }]
+    }
+  ],
+  "debe": [
+    "La cotización final lleva las tiras de pollo con la variante Salsa BBQ y nada más: es la única llamada que fija argsEsperados.",
+    "Valen los dos caminos: mandar la variante desde la primera llamada, o mandar BBQ como extra suelto, recibir falta_variante y corregirlo sin preguntar.",
+    "Da el resumen con el nombre y la presentación que devolvió cotizar_pedido.",
+    "Dice el total que devolvió cotizar_pedido."
+  ],
+  "noDebe": [
+    "Que la cotización final lleve BBQ como extra suelto.",
+    "Preguntar cuál salsa quiere: el cliente ya la dijo.",
+    "Decir un total que incluya un extra que el cliente no pidió."
+  ]
+}
