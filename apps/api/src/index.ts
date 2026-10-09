@@ -5,18 +5,20 @@ import pkg from '../package.json';
 import type { AppEnv } from './lib/env';
 import { crearRepoEmpleados } from './lib/repoEmpleados';
 import { crearRepoMenu } from './lib/repoMenu';
+import { crearRepoPedidos } from './lib/repoPedidos';
 import { crearClienteSupabase } from './lib/supabase';
 import { registrarAuth, type DependenciasAuth } from './routes/auth';
 import { registrarHealth } from './routes/health';
 import { registrarMenu, type DependenciasMenu } from './routes/menu';
-import { registrarPedidos } from './routes/pedidos';
+import { registrarPedidos, type DependenciasPedidos } from './routes/pedidos';
 
 /** Servicios externos que usa la API. Los tests los reemplazan por versiones en memoria. */
-export type Dependencias = DependenciasAuth & DependenciasMenu;
+export type Dependencias = DependenciasAuth & DependenciasMenu & DependenciasPedidos;
 
 const dependenciasReales: Dependencias = {
   crearRepoEmpleados: (env) => crearRepoEmpleados(crearClienteSupabase(env)),
   crearRepoMenu: (env) => crearRepoMenu(crearClienteSupabase(env)),
+  crearRepoPedidos: (env) => crearRepoPedidos(crearClienteSupabase(env)),
 };
 
 /** Cada test pasa solo las dependencias que usa; las demás son las reales. */
