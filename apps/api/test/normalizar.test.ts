@@ -34,6 +34,15 @@ describe('normalizarSuave', () => {
     expect(palabras('T-Bone 450 gr').slice(-2)).toEqual(['450', 'gr']);
   });
 
+  it('no quita la "s" de palabras que terminan en "ss"', () => {
+    expect(llavePlural('boneless')).toBe('boneless');
+  });
+
+  it('quita la "e" también en singular, para que coincida con el plural', () => {
+    expect(llavePlural('postre')).toBe('postr');
+    expect(llavePlural('postres')).toBe('postr');
+  });
+
   it('respeta las palabras de relleno', () => {
     expect(normalizarSuave('el granero')).toBe('el granero');
   });
@@ -104,6 +113,20 @@ describe('normalización sobre el seed del menú', () => {
   it('lee los 95 platillos y sus sinónimos', () => {
     expect(nombres).toHaveLength(95);
     expect(sinonimos.length).toBeGreaterThan(100);
+  });
+
+  /*
+   * La llave tiene que ser estable: si el menú ya guarda una llave y se vuelve a normalizar, no
+   * debe cambiar. Antes de la regla de "ss", "boneless" → "boneles" → "bonele" → ...
+   */
+  it.each([
+    ['normalizarSuave', normalizarSuave],
+    ['normalizarSinRelleno', normalizarSinRelleno],
+  ])('%s es idempotente en todos los nombres y sinónimos', (_nombre, normalizar) => {
+    for (const [, texto] of textos) {
+      const llave = normalizar(texto);
+      expect(normalizar(llave), texto).toBe(llave);
+    }
   });
 
   it('no tiene colisiones en el nivel suave', () => {

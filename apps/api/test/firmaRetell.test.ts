@@ -34,9 +34,39 @@ describe('verificarFirmaRetell', () => {
     expect(await verificarFirmaRetell(CUERPO, `${v},${d?.toUpperCase()}`, LLAVE, AHORA)).toBe(true);
   });
 
+  /*
+   * Vector fijo: el digesto se calculó UNA vez fuera del test con node:crypto y se pegó aquí, sin
+   * pasar por `firmar()`. Si `firmar()` y el código tuvieran el mismo error, este test lo detecta.
+   *   createHmac('sha256', 'llave_falsa_vector_fijo')
+   *     .update(cuerpo + '1790000000000', 'utf8').digest('hex')
+   * El cuerpo lleva acentos y ñ para comprobar que se firma en UTF-8.
+   */
+  it('acepta un vector fijo calculado con node:crypto (cuerpo con acentos)', async () => {
+    const cuerpo =
+      '{"name":"cotizar_pedido","args":{"productos":[{"nombre":"Papa con Champiñón","cantidad":1}]}}';
+    const encabezado =
+      'v=1790000000000,d=031d4a042156d1c0390b857db44fbdf63792eeecbb06a107018f8e925857165a';
+    expect(
+      await verificarFirmaRetell(cuerpo, encabezado, 'llave_falsa_vector_fijo', 1_790_000_000_000),
+    ).toBe(true);
+  });
+
   it('acepta una firma de hace casi 5 minutos', async () => {
     const encabezado = await firmar(CUERPO, LLAVE, AHORA - 4 * 60 * 1000);
     expect(await verificarFirmaRetell(CUERPO, encabezado, LLAVE, AHORA)).toBe(true);
+  });
+
+  it.each([
+    ['de hace 5 minutos exactos', -1],
+    ['de dentro de 5 minutos exactos', 1],
+  ])('acepta una firma %s (el límite cuenta como vigente)', async (_caso, signo) => {
+    const encabezado = await firmar(CUERPO, LLAVE, AHORA + signo * 5 * 60 * 1000);
+    expect(await verificarFirmaRetell(CUERPO, encabezado, LLAVE, AHORA)).toBe(true);
+  });
+
+  it('rechaza una firma de 5 minutos y 1 milisegundo', async () => {
+    const encabezado = await firmar(CUERPO, LLAVE, AHORA - 5 * 60 * 1000 - 1);
+    expect(await verificarFirmaRetell(CUERPO, encabezado, LLAVE, AHORA)).toBe(false);
   });
 
   it('rechaza si falta el encabezado o está mal formado', async () => {
@@ -118,10 +148,13 @@ describe('requiereFirmaRetell (middleware)', () => {
     }
   });
 
-  it('responde 500 si falta RETELL_API_KEY', async () => {
+  it.each([
+    ['vacía', ''],
+    ['de un espacio', ' '],
+  ])('responde 500 si RETELL_API_KEY está %s', async (_caso, llave) => {
     const res = await pedir(
       { 'X-Retell-Signature': await firmar(CUERPO, LLAVE, Date.now()) },
-      { ...env, RETELL_API_KEY: '' },
+      { ...env, RETELL_API_KEY: llave },
     );
     expect(res.status).toBe(500);
   });

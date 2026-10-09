@@ -56,12 +56,14 @@ export const PALABRAS_RELLENO: ReadonlySet<string> = new Set(
 /**
  * Lleva el singular y el plural de una palabra a la misma llave. En español, lo que termina en
  * vocal agrega "-s" (postre → postres) y lo que termina en consonante, "-es" (frijol → frijoles):
- * se quita la "s" final y, si queda una "e" después de l, n, r, d, z o j, también esa "e".
- * Palabras de 3 letras o menos ("res", "mas") y con dígitos ("450") no se tocan.
+ * se quita la "s" final y, si queda una "e" después de l, n, r, d, z o j, también esa "e". La "e"
+ * se quita aunque la palabra venga en singular (postre → postr), para que ambas formas coincidan.
+ * Palabras de 3 letras o menos ("res", "mas"), con dígitos ("450") o que terminan en "ss"
+ * ("boneless", que no es plural) no pierden la "s".
  */
 export function llavePlural(palabra: string): string {
   if (palabra.length <= 3 || /\d/.test(palabra)) return palabra;
-  let llave = palabra.endsWith('s') ? palabra.slice(0, -1) : palabra;
+  let llave = palabra.endsWith('s') && !palabra.endsWith('ss') ? palabra.slice(0, -1) : palabra;
   if (llave.length > 3 && /[lnrdzj]e$/.test(llave)) llave = llave.slice(0, -1);
   return llave;
 }
