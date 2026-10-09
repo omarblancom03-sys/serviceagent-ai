@@ -7,6 +7,8 @@ export interface Bindings {
   JWT_SECRET: string;
   /** Secreto que se mezcla con cada PIN antes del hash (D13). */
   PIN_PEPPER: string;
+  /** API key de Retell con badge de webhook: verifica `X-Retell-Signature`. */
+  RETELL_API_KEY: string;
   /** Duración del token: `8h`, `30m`, `900s`. Por defecto `8h`. */
   JWT_EXPIRES_IN?: string;
   /** Orígenes permitidos para CORS, separados por coma. */

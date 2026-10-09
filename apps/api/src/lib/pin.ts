@@ -101,7 +101,7 @@ async function derivar(
 }
 
 /** Recorre todos los bytes aunque encuentre una diferencia, para no filtrar información por el tiempo. */
-function igualesEnTiempoConstante(a: Uint8Array, b: Uint8Array): boolean {
+export function igualesEnTiempoConstante(a: Uint8Array, b: Uint8Array): boolean {
   if (a.length !== b.length) return false;
   let diferencia = 0;
   for (let i = 0; i < a.length; i++) {
