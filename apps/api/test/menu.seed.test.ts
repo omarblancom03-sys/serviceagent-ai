@@ -164,4 +164,9 @@ describe('seed de ingredientes removibles (04_ingrediente_removible.sql)', () =>
   it('es seguro de correr mas de una vez (on conflict do nothing)', () => {
     expect(contenidoRemovibles).toMatch(/on conflict \(id_platillo, nombre\) do nothing;/);
   });
+
+  it('borra en la misma sentencia los ingredientes que ya no estan en la lista', () => {
+    // Si la lista cambia, en bases ya cargadas (serviceagent-dev) no quedan filas viejas.
+    expect(contenidoRemovibles).toMatch(/retirados as \(\s*delete from ingrediente_removible/);
+  });
 });

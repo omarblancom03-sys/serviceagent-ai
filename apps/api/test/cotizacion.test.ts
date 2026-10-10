@@ -656,6 +656,46 @@ describe('cotizarPedido: ingredientes que se pueden quitar (seed 04, D29)', () =
   });
 });
 
+describe('cotizarPedido: ingredientes con otras palabras (D31)', () => {
+  it.each([
+    ['la cebolla', 'Cebolla'],
+    ['sin cebolla', 'Cebolla'],
+    ['chile morrón', 'Morrón'],
+    ['pimiento', 'Morrón'],
+    ['pimientos', 'Morrón'],
+  ])('"%s" en El Granero → %s', (texto, nombre) => {
+    expect(cotizar(uno('el granero', { sinIngredientes: [texto] }))).toMatchObject({
+      ok: true,
+      renglones: [{ sinIngredientes: [nombre] }],
+    });
+  });
+
+  it('"cebolla" en la Ensalada Rancho → "Cebolla asada", la única que la contiene', () => {
+    expect(cotizar(uno('ensalada rancho', { sinIngredientes: ['cebolla'] }))).toMatchObject({
+      ok: true,
+      renglones: [{ sinIngredientes: ['Cebolla asada'] }],
+    });
+  });
+
+  it('"jitomate" no es Tomate (decisión del PO: en la región es el tomate verde) → se aclara', () => {
+    expect(aclaraciones(uno('el granero', { sinIngredientes: ['jitomate'] }))).toEqual([
+      expect.objectContaining({ tipo: 'ingrediente_no_removible', detalle: 'jitomate' }),
+    ]);
+  });
+
+  it('dos ingredientes en un mismo texto no se adivinan: "cebolla tomate" → se aclara', () => {
+    expect(aclaraciones(uno('sartencito', { sinIngredientes: ['cebolla tomate'] }))).toEqual([
+      expect.objectContaining({ tipo: 'ingrediente_no_removible', detalle: 'cebolla tomate' }),
+    ]);
+  });
+
+  it('el mismo ingrediente repetido llega una sola vez al ticket de cocina', () => {
+    expect(
+      cotizar(uno('el granero', { sinIngredientes: ['tomate', 'Tomate', 'tomates'] })),
+    ).toMatchObject({ ok: true, renglones: [{ sinIngredientes: ['Tomate'] }] });
+  });
+});
+
 describe('cotizarPedido: extras con otros nombres (D31)', () => {
   it.each(['espuelas', 'Espuelas (camarones)', 'camarones', 'con camarón'])(
     '"%s" en un T-Bone → Espuelas',
@@ -701,6 +741,41 @@ describe('cotizarPedido: extras con otros nombres (D31)', () => {
       expect.objectContaining({ tipo: 'extra_no_permitido', detalle: 'espuelas y bbq' }),
     ]);
   });
+
+  it.each(['espuelas de camarón', 'más espuelas'])('"%s" en un T-Bone → Espuelas', (texto) => {
+    expect(total(uno('t-bone', { extras: [{ extra: texto, cantidad: 1 }] }))).toBe(40300 + 5500);
+  });
+
+  it('"más totopos" suelto → Totopos', () => {
+    expect(cotizar({ extrasSueltos: [{ extra: 'más totopos', cantidad: 1 }] })).toMatchObject({
+      ok: true,
+      renglones: [{ tipo: 'extra', nombre: 'Totopos' }],
+    });
+  });
+
+  /*
+   * Revisión del #25: la palabra del extra dentro de otra frase no lo pide. Antes estos textos
+   * cobraban el extra (y el platillo se perdía); ahora se aclaran y no se cobra nada.
+   */
+  it.each(['sin bbq', 'no quiero toreados', 'guacamole con totopos', 'hamburguesa con aguacate'])(
+    '"%s" suelto → no_existe, no se cobra',
+    (texto) => {
+      expect(aclaraciones({ extrasSueltos: [{ extra: texto, cantidad: 1 }] })).toEqual([
+        { tipo: 'no_existe', origen: 'extraSuelto', indice: 0, producto: texto },
+      ]);
+    },
+  );
+
+  // 9 platillos llevan "camarón" en el nombre: ninguno es el extra Espuelas.
+  it.each(['sin espuelas', 'camarones al ajillo', 'coctel de camarón'])(
+    '"%s" en un T-Bone → extra_no_permitido, no se cobran Espuelas',
+    (texto) => {
+      const pedido = uno('t-bone', { extras: [{ extra: texto, cantidad: 1 }] });
+      expect(aclaraciones(pedido)).toEqual([
+        expect.objectContaining({ tipo: 'extra_no_permitido', detalle: texto }),
+      ]);
+    },
+  );
 });
 
 describe('cotizarPedido: reglas generales', () => {

@@ -210,16 +210,30 @@ function formasDeExtra(nombre: string): Set<string>[] {
 }
 
 /**
- * Id del extra del menú (suelto o ligado) al que se refiere el cliente (D31): el único con alguna
- * forma cuyas palabras están todas en lo que dijo. "salsa bbq" → BBQ, "chiles toreados" →
- * Toreados, "camarones" → Espuelas. Si ninguno o más de uno coincide ("bbq y toreados"), no hay
- * extra: se aclara, nunca se adivina.
+ * Palabras que el cliente agrega al nombre de un extra sin cambiar de cuál habla (D31): "salsa
+ * bbq", "chiles toreados", "extra de aguacate", "más totopos". Ya en forma de llave. No incluye
+ * "sin" ni "no": cambian el significado.
+ */
+const PALABRAS_DE_EXTRA: ReadonlySet<string> = new Set(palabras('salsa chile extra más'));
+
+/**
+ * Id del extra del menú (suelto o ligado) al que se refiere el cliente (D31). Un extra coincide si
+ * lo que dijo contiene todas las palabras de alguna de sus formas Y no trae ninguna otra palabra
+ * que no sea suya o de `PALABRAS_DE_EXTRA`. "salsa bbq" → BBQ, "chiles toreados" → Toreados,
+ * "espuelas de camarón" → Espuelas. En cambio "sin bbq", "guacamole con totopos" o "camarones al
+ * ajillo" no son el extra: cobrarlo sería cobrar algo que no se pidió. Si ninguno o más de uno
+ * coincide, no hay extra: se aclara, nunca se adivina.
  */
 export function identificarExtra(catalogo: Catalogo, texto: string): number | undefined {
-  const dichas = new Set(palabras(texto));
-  const coinciden = [...catalogo.extrasSueltos, ...catalogo.extrasLigados].filter((e) =>
-    formasDeExtra(e.nombre).some((forma) => [...forma].every((palabra) => dichas.has(palabra))),
-  );
+  const dichas = palabras(texto);
+  const coinciden = [...catalogo.extrasSueltos, ...catalogo.extrasLigados].filter((e) => {
+    const formas = formasDeExtra(e.nombre);
+    const propias = new Set(formas.flatMap((forma) => [...forma]));
+    return (
+      formas.some((forma) => [...forma].every((palabra) => dichas.includes(palabra))) &&
+      dichas.every((palabra) => propias.has(palabra) || PALABRAS_DE_EXTRA.has(palabra))
+    );
+  });
   return coinciden.length === 1 ? coinciden[0]?.id : undefined;
 }
 
@@ -233,7 +247,50 @@ export function resolverExtra(
   return platillo.extrasPermitidos.find((e) => e.id === id);
 }
 
-/** Ingredientes que se pueden quitar: los removibles del platillo, con su nombre oficial. */
+type IngredienteRemovible = Platillo['ingredientesRemovibles'][number];
+
+/**
+ * Otros nombres de un ingrediente, ya en forma de llave (D31): "pimiento" es el Morrón. A
+ * propósito NO está "jitomate" → Tomate: en la región, "jitomate" es el tomate verde de la salsa,
+ * otro ingrediente; se aclara.
+ */
+const OTROS_NOMBRES_INGREDIENTE: ReadonlyMap<string, string> = new Map([['pimiento', 'morron']]);
+
+/** Palabras que pueden acompañar al ingrediente sin cambiar cuál es: "sin cebolla", "chile morrón". */
+const PALABRAS_DE_INGREDIENTE: ReadonlySet<string> = new Set(palabras('sin chile'));
+
+const palabrasDeIngrediente = (texto: string) =>
+  palabras(texto).map((palabra) => OTROS_NOMBRES_INGREDIENTE.get(palabra) ?? palabra);
+
+/**
+ * Ingrediente removible del platillo al que se refiere el cliente (D31): el exacto, o el único que
+ * coincide por palabras. Coincide si lo dicho está dentro de su nombre ("cebolla" → "Cebolla
+ * asada") o si su nombre completo está en lo dicho y lo demás es genérico ("la cebolla", "chile
+ * morrón", "pimiento"). Si coinciden dos o ninguno, se aclara: quitar algo cambia lo que prepara
+ * cocina.
+ */
+function resolverIngrediente(platillo: Platillo, pedido: string): IngredienteRemovible | undefined {
+  const removibles = platillo.ingredientesRemovibles;
+  const exacto = removibles.find((i) => normalizarSuave(i.nombre) === normalizarSuave(pedido));
+  if (exacto) return exacto;
+
+  const dichas = palabrasDeIngrediente(pedido);
+  if (dichas.length === 0) return undefined;
+  const coinciden = removibles.filter((i) => {
+    const propias = palabrasDeIngrediente(i.nombre);
+    const dentroDelNombre = dichas.every((palabra) => propias.includes(palabra));
+    const nombreCompleto =
+      propias.every((palabra) => dichas.includes(palabra)) &&
+      dichas.every((palabra) => propias.includes(palabra) || PALABRAS_DE_INGREDIENTE.has(palabra));
+    return dentroDelNombre || nombreCompleto;
+  });
+  return coinciden.length === 1 ? coinciden[0] : undefined;
+}
+
+/**
+ * Ingredientes que se pueden quitar: los removibles del platillo, con su nombre oficial y sin
+ * repetir ("tomate" y "tomates" llegan una sola vez al ticket de cocina).
+ */
 export function resolverIngredientes(
   platillo: Platillo,
   pedidos: string[],
@@ -241,11 +298,9 @@ export function resolverIngredientes(
   const quitados: string[] = [];
   const noRemovibles: string[] = [];
   for (const pedido of pedidos) {
-    const removible = platillo.ingredientesRemovibles.find(
-      (i) => normalizarSuave(i.nombre) === normalizarSuave(pedido),
-    );
-    if (removible) quitados.push(removible.nombre);
-    else noRemovibles.push(pedido);
+    const removible = resolverIngrediente(platillo, pedido);
+    if (!removible) noRemovibles.push(pedido);
+    else if (!quitados.includes(removible.nombre)) quitados.push(removible.nombre);
   }
   return { quitados, noRemovibles };
 }

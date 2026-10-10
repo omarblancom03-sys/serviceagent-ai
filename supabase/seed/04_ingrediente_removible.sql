@@ -7,12 +7,14 @@
 -- permiten quitar nada. Datos simulados (no son la receta real).
 --
 -- Se buscan los ids por nombre (no fijos) porque este seed corre después de
--- 01_menu_el_granero.sql. ON CONFLICT DO NOTHING: seguro de correr más de una
--- vez sin duplicar (índice único ingrediente_removible_unico).
+-- 01_menu_el_granero.sql. La lista es la fuente única: en una sola sentencia,
+-- "retirados" borra los ingredientes que ya no están en ella (si la lista
+-- cambia, en bases como serviceagent-dev no quedan filas viejas, igual que los
+-- sinónimos de D27) y el insert agrega los que faltan. ON CONFLICT DO NOTHING:
+-- seguro de correr más de una vez sin duplicar (índice único
+-- ingrediente_removible_unico); la segunda vez no borra ni agrega nada.
 
-insert into ingrediente_removible (id_platillo, nombre)
-select p.id_platillo, v.nombre
-from (values
+with lista (nombre_platillo, nombre) as (values
   -- Hamburguesas
   ('Hamburguesa Delicias', 'Lechuga'),
   ('Hamburguesa Delicias', 'Queso'),
@@ -71,6 +73,17 @@ from (values
   ('Torre de mariscos', 'Cilantro'),
   ('Torre de mariscos', 'Jalapeño'),
   ('Torre de mariscos', 'Aguacate')
-) as v(nombre_platillo, nombre)
-join platillo p on p.nombre = v.nombre_platillo
+),
+retirados as (
+  delete from ingrediente_removible i
+  using platillo p
+  where i.id_platillo = p.id_platillo
+    and not exists (
+      select 1 from lista l where l.nombre_platillo = p.nombre and l.nombre = i.nombre
+    )
+)
+insert into ingrediente_removible (id_platillo, nombre)
+select p.id_platillo, l.nombre
+from lista l
+join platillo p on p.nombre = l.nombre_platillo
 on conflict (id_platillo, nombre) do nothing;
