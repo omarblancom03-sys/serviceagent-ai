@@ -1,7 +1,10 @@
 import {
   CotizarPedidoArgsSchema,
   CotizarPedidoPeticionSchema,
+  CrearPedidoArgsSchema,
+  CrearPedidoPeticionSchema,
   RespuestaCotizarPedidoSchema,
+  RespuestaCrearPedidoSchema,
 } from '@serviceagent/shared';
 import { describe, expect, it } from 'vitest';
 
@@ -272,5 +275,56 @@ describe('Contrato de cotizar pedido: respuesta', () => {
         renglones: [{ ...renglonExtra, subtotalCentavos: monto }],
       }),
     ).toThrow();
+  });
+});
+
+describe('Contrato de crear pedido', () => {
+  const cliente = { nombre: 'Ana', telefono: '6141234567' };
+
+  it('acepta el sobre de Retell con el pedido, nombre y teléfono', () => {
+    const peticion = CrearPedidoPeticionSchema.parse({
+      name: 'crear_pedido',
+      call: { call_id: 'chat_1' },
+      args: { ...args, ...cliente },
+    });
+    expect(peticion.args).toMatchObject(cliente);
+  });
+
+  it('rechaza el sobre de cotizar_pedido y viceversa', () => {
+    const sobre = { name: 'cotizar_pedido', args: { ...args, ...cliente } };
+    expect(CrearPedidoPeticionSchema.safeParse(sobre).success).toBe(false);
+    expect(CotizarPedidoPeticionSchema.safeParse({ ...sobre, name: 'crear_pedido' }).success).toBe(
+      false,
+    );
+  });
+
+  it('nunca acepta montos de afuera: totalCentavos es una llave desconocida', () => {
+    expect(CrearPedidoArgsSchema.safeParse({ ...args, ...cliente, totalCentavos: 1 }).success).toBe(
+      false,
+    );
+  });
+
+  it('nombre y teléfono en null o "" valen como "no vino" (los aclara el servicio)', () => {
+    expect(CrearPedidoArgsSchema.parse({ ...args, nombre: null, telefono: '  ' })).toMatchObject({
+      nombre: undefined,
+      telefono: undefined,
+    });
+  });
+
+  it('el teléfono como número se convierte a texto (la regla de 10 dígitos la revisa el servicio)', () => {
+    expect(
+      CrearPedidoArgsSchema.parse({ ...args, ...cliente, telefono: 6141234567 }),
+    ).toMatchObject({ telefono: '6141234567' });
+  });
+
+  it('sigue exigiendo al menos un producto o extra suelto', () => {
+    expect(CrearPedidoArgsSchema.safeParse({ ...cliente }).success).toBe(false);
+  });
+
+  it('respuesta: ok: false necesita al menos una aclaración del pedido o del cliente', () => {
+    const sinNada = { ok: false, aclaraciones: [], datosCliente: [] };
+    expect(RespuestaCrearPedidoSchema.safeParse(sinNada).success).toBe(false);
+    const conDato = { ...sinNada, datosCliente: [{ campo: 'telefono', detalle: 'x' }] };
+    expect(RespuestaCrearPedidoSchema.safeParse(conDato).success).toBe(true);
   });
 });
