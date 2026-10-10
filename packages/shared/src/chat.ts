@@ -31,14 +31,12 @@ export const CODIGOS_ERROR_CHAT = [
 // ─── Identificador de la conversación ───────────────────────────────────────
 
 /**
- * Id opaco de la conversación. La API lo usa dentro de rutas de Retell (`/end-chat/{chat_id}`),
- * así que solo admite letras, dígitos, guion y guion bajo: nada de `/`, `.`, `?`, `%` ni
- * espacios. El tope de 64 es una cota nuestra: el formato real del `chat_id` de Retell se
- * confirma con una prueba real en el PR del endpoint (US-09-P1).
+ * Id público de la conversación: el uuid propio de nuestra API (llave de la tabla
+ * `conversaciones_chat`, generado por Postgres). El `chat_id` de Retell nunca sale del
+ * servidor. Validar el formato aquí evita que un id como `abc` llegue a Postgres y falle al
+ * convertirse a uuid: un id mal formado da 400 `peticion_invalida`.
  */
-export const IdConversacionSchema = z
-  .string()
-  .regex(/^[A-Za-z0-9_-]{1,64}$/, 'El id de la conversación no es válido');
+export const IdConversacionSchema = z.uuid('El id de la conversación no es válido');
 
 /** Parámetros de `POST /chat/conversaciones/{id}/mensajes`. */
 export const ParamsConversacionSchema = z.object({
@@ -105,7 +103,8 @@ export type RespuestaEnviarMensaje = z.infer<typeof RespuestaEnviarMensajeSchema
  * - `conversacion_no_encontrada` (404): id bien formado que no existe.
  * - `conversacion_terminada` (409): el chat cerró; la web ofrece iniciar otro.
  * - `limite_alcanzado` (429): ya se enviaron `LIMITE_MENSAJES_CLIENTE` mensajes.
- * - `servicio_no_disponible` (503): Retell falló, tardó o no está configurado.
+ * - `servicio_no_disponible` (503): Retell falló, tardó o no está configurado; al iniciar,
+ *   también si se alcanzó el tope diario de conversaciones nuevas.
  */
 export const ErrorChatSchema = z.object({
   error: z.string().min(1),

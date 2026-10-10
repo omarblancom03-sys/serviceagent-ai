@@ -20,6 +20,9 @@ const mensaje = {
   creadoEn: '2026-10-08T18:30:00.000Z',
 };
 
+/** Id de ejemplo: el uuid de `conversaciones_chat`, como lo genera Postgres. */
+const idConversacion = crypto.randomUUID();
+
 const respuestaEnviar = {
   mensajes: [mensaje],
   mensajesUsados: 1,
@@ -91,29 +94,25 @@ describe('Contrato del chat: enviar mensaje', () => {
 });
 
 describe('Contrato del chat: id de la conversación', () => {
-  it.each(['Jabr9TXYYJHfvl6Syypi88rdAHYHmcq6', 'a_b-1', 'x', 'a'.repeat(64)])(
-    'acepta el id %s',
+  it.each([crypto.randomUUID(), crypto.randomUUID(), crypto.randomUUID()])(
+    'acepta el uuid %s',
     (id) => {
       expect(ParamsConversacionSchema.parse({ id }).id).toBe(id);
     },
   );
 
   it.each([
+    'abc',
     '',
     '../x',
-    '..',
     'a/b',
-    '/a',
-    'a\\b',
     'a?b',
-    'a#b',
     'a b',
-    ' abc',
-    'abc\n',
     '%2e%2e',
-    'a.b',
-    'ñandu',
-    'a'.repeat(65),
+    'a1B2'.repeat(16),
+    `${idConversacion}0`,
+    `${idConversacion}\n`,
+    ` ${idConversacion}`,
   ])('rechaza el id %j', (id) => {
     expect(IdConversacionSchema.safeParse(id).success).toBe(false);
   });
@@ -122,7 +121,7 @@ describe('Contrato del chat: id de la conversación', () => {
 describe('Contrato del chat: respuestas', () => {
   it('acepta iniciar una conversación sin mensajes del agente', () => {
     const r = RespuestaIniciarConversacionSchema.parse({
-      conversacionId: 'Jabr9TXYYJHfvl6Syypi88rdAHYHmcq6',
+      conversacionId: idConversacion,
       mensajes: [],
       mensajesUsados: 0,
       limiteMensajes: LIMITE_MENSAJES_CLIENTE,
@@ -132,7 +131,7 @@ describe('Contrato del chat: respuestas', () => {
 
   it('acepta iniciar una conversación con el saludo del agente', () => {
     const r = RespuestaIniciarConversacionSchema.parse({
-      conversacionId: 'abc',
+      conversacionId: idConversacion,
       mensajes: [mensaje],
       mensajesUsados: 0,
       limiteMensajes: LIMITE_MENSAJES_CLIENTE,
@@ -182,7 +181,11 @@ describe('Contrato del chat: sin campos de herramientas', () => {
   it('las respuestas de ejemplo pasan con los esquemas estrictos', () => {
     expect(() => EnviarEstricto.parse(respuestaEnviar)).not.toThrow();
     expect(() =>
-      IniciarEstricto.parse({ conversacionId: 'abc', ...respuestaEnviar, mensajesUsados: 0 }),
+      IniciarEstricto.parse({
+        conversacionId: idConversacion,
+        ...respuestaEnviar,
+        mensajesUsados: 0,
+      }),
     ).not.toThrow();
   });
 
@@ -207,7 +210,7 @@ describe('Contrato del chat: sin campos de herramientas', () => {
     expect(EnviarEstricto.safeParse({ ...respuestaEnviar, ...campo }).success).toBe(false);
     expect(
       IniciarEstricto.safeParse({
-        conversacionId: 'abc',
+        conversacionId: idConversacion,
         ...respuestaEnviar,
         mensajesUsados: 0,
         ...campo,

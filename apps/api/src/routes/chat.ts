@@ -18,6 +18,13 @@ const error503 = {
     '`servicio_no_disponible`: el agente no responde (falla, tarda o no está configurado). Sin detalles técnicos.',
 };
 
+const error503Iniciar = {
+  content: json(ErrorChatSchema),
+  description:
+    '`servicio_no_disponible`: Retell caído, sin saldo o sin configuración, o tope diario de conversaciones nuevas alcanzado. ' +
+    'El texto del error puede variar según la causa; el código no. Sin detalles técnicos.',
+};
+
 export const iniciarConversacionRoute = createRoute({
   method: 'post',
   path: '/chat/conversaciones',
@@ -28,7 +35,7 @@ export const iniciarConversacionRoute = createRoute({
     '`mensajes` trae lo que el agente escribió al abrir y puede venir vacío; `mensajesUsados` empieza en 0.',
   responses: {
     201: { content: json(RespuestaIniciarConversacionSchema), description: 'Conversación creada' },
-    503: error503,
+    503: error503Iniciar,
   },
 });
 
