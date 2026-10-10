@@ -243,6 +243,47 @@ describe('POST /pedidos', () => {
     expect(repo.pedidos).toHaveLength(0);
   });
 
+  it('rechaza con 401 si el cuerpo cambió después de firmarse y no guarda nada', async () => {
+    const { app: aplicacion, repo } = nuevaApp();
+    const cuerpo = sobre(PEDIDO, 'crear_pedido');
+    const firma = await firmar(cuerpo, LLAVE, Date.now());
+    const alterado = cuerpo.replace('"cantidad":2', '"cantidad":20');
+
+    expect((await crear(alterado, { aplicacion, firma })).status).toBe(401);
+    expect(repo.pedidos).toHaveLength(0);
+  });
+
+  it('rechaza con 401 una firma vencida (más de 5 minutos) y no guarda nada', async () => {
+    const { app: aplicacion, repo } = nuevaApp();
+    const cuerpo = sobre(PEDIDO, 'crear_pedido');
+    const firma = await firmar(cuerpo, LLAVE, Date.now() - 6 * 60_000);
+
+    expect((await crear(cuerpo, { aplicacion, firma })).status).toBe(401);
+    expect(repo.pedidos).toHaveLength(0);
+  });
+
+  it('un precio dentro de un producto → 400 que lo nombra y no guarda nada', async () => {
+    const { app: aplicacion, repo } = nuevaApp();
+    const productos = [{ ...PEDIDO.productos[0], precioCentavos: 100 }];
+    const res = await crear(sobre({ ...PEDIDO, productos }, 'crear_pedido'), { aplicacion });
+
+    expect(res.status).toBe(400);
+    expect(ErrorPedidoSchema.parse(await res.json()).error).toContain(
+      'args.productos.0.precioCentavos',
+    );
+    expect(repo.pedidos).toHaveLength(0);
+  });
+
+  it('acepta el teléfono como número (sin comillas) y lo guarda como texto', async () => {
+    const { app: aplicacion, repo } = nuevaApp();
+    const res = await crear(sobre({ ...PEDIDO, telefono: 6141234567 }, 'crear_pedido'), {
+      aplicacion,
+    });
+
+    expect(await res.json()).toMatchObject({ ok: true, folio: 1001 });
+    expect(repo.pedidos[0]?.telefono).toBe('6141234567');
+  });
+
   it('un total o precio que venga de afuera es un cuerpo mal formado → 400', async () => {
     const { app: aplicacion, repo } = nuevaApp();
     const res = await crear(sobre({ ...PEDIDO, totalCentavos: 100 }, 'crear_pedido'), {
@@ -251,7 +292,7 @@ describe('POST /pedidos', () => {
 
     expect(res.status).toBe(400);
     expect(ErrorPedidoSchema.parse(await res.json()).error).toBe(
-      'La petición de crear_pedido no tiene el formato esperado. Revisa: args.',
+      'La petición de crear_pedido no tiene el formato esperado. Revisa: args.totalCentavos.',
     );
     expect(repo.pedidos).toHaveLength(0);
   });

@@ -273,11 +273,20 @@ export const EstadoPedidoSchema = z.enum(ESTADOS_PEDIDO);
 const DatoClienteSchema = opcional(z.string().max(80));
 
 /**
+ * El teléfono también se acepta como número (`6141234567` sin comillas): el modelo a veces lo
+ * manda así y un 400 no le diría qué volver a pedir. Se convierte a texto y sigue la misma regla.
+ */
+const TelefonoSchema = z.preprocess(
+  (valor) => (typeof valor === 'number' ? String(valor) : valor),
+  DatoClienteSchema,
+);
+
+/**
  * Argumentos de `crear_pedido`: el mismo pedido que se cotizó, más nombre y
  * teléfono. Nunca trae precios ni total: el backend vuelve a cotizar.
  */
 export const CrearPedidoArgsSchema = z
-  .strictObject({ ...camposDelPedido, nombre: DatoClienteSchema, telefono: DatoClienteSchema })
+  .strictObject({ ...camposDelPedido, nombre: DatoClienteSchema, telefono: TelefonoSchema })
   .refine(traeAlgo, { message: MENSAJE_PEDIDO_VACIO });
 
 /** Sobre de Retell para `crear_pedido` (ver CotizarPedidoPeticionSchema). */
@@ -297,7 +306,7 @@ export const DatoClienteInvalidoSchema = z.object({
 /**
  * Pedido guardado con estado `confirmado`. Los renglones y el total son los de
  * la cotización que hizo el backend al crearlo. `yaExistia`: el mismo pedido
- * con el mismo teléfono ya se había creado hace poco (D34) y se devuelve ese
+ * con el mismo teléfono y nombre ya se había creado hace poco (D34) y se devuelve ese
  * folio en lugar de crear otro.
  */
 export const PedidoCreadoSchema = z.object({

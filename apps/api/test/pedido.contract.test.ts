@@ -311,6 +311,12 @@ describe('Contrato de crear pedido', () => {
     });
   });
 
+  it('el teléfono como número se convierte a texto (la regla de 10 dígitos la revisa el servicio)', () => {
+    expect(
+      CrearPedidoArgsSchema.parse({ ...args, ...cliente, telefono: 6141234567 }),
+    ).toMatchObject({ telefono: '6141234567' });
+  });
+
   it('sigue exigiendo al menos un producto o extra suelto', () => {
     expect(CrearPedidoArgsSchema.safeParse({ ...cliente }).success).toBe(false);
   });

@@ -4,7 +4,8 @@
 -- nombre del menú, el pedido de hoy sigue diciendo lo que se cobró. Los ids apuntan al menú para
 -- cocina, inventario y reportes.
 
--- Folio que ve el cliente: consecutivo desde 1001 y nunca se repite (D33).
+-- Folio que ve el cliente: creciente desde 1001 y nunca se repite; si un pedido falla al
+-- guardarse, su número se pierde y queda un hueco (D33).
 create sequence public.pedidos_folio_seq start with 1001;
 
 create table public.pedidos (
@@ -106,7 +107,8 @@ alter table public.extras_renglon_pedido enable row level security;
 -- Guarda un pedido completo en una sola transacción: el pedido, su primer estado ('confirmado'),
 -- sus renglones y los extras de cada renglón. Si algo falla, no queda nada a medias.
 --
--- Duplicados (D34): si el mismo teléfono ya tiene un pedido con la misma huella creado hace menos
+-- Duplicados (D34): si el mismo teléfono ya tiene un pedido con la misma huella (la API mete el
+-- nombre del cliente en la huella, así que otro nombre es otro pedido) creado hace menos
 -- de p_minutos_duplicado minutos (y no cancelado), no crea otro y devuelve ese folio, su total y
 -- su estado actual con ya_existia = true. El candado por teléfono hace que dos llamadas iguales
 -- al mismo tiempo esperen una a la otra en lugar de crear dos pedidos.
