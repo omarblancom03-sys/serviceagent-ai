@@ -59,11 +59,18 @@ export function registrarPedidos(app: OpenAPIHono<AppEnv>, deps: DependenciasPed
       }
     },
     // Mismo formato de error que el resto de la API. Nombra los campos que fallaron (sin sus
-    // valores), para que el agente pueda corregir la llamada.
+    // valores), para que el agente pueda corregir la llamada. Con una llave que no existe, zod
+    // pone la ruta en el padre y la llave en `keys`: se nombra "args.totalCentavos", no "args".
     (resultado, c) => {
       if (!resultado.success) {
         const campos = [
-          ...new Set(resultado.error.issues.map((i) => i.path.join('.') || 'cuerpo')),
+          ...new Set(
+            resultado.error.issues.flatMap((i) =>
+              i.code === 'unrecognized_keys'
+                ? i.keys.map((llave) => [...i.path, llave].join('.'))
+                : [i.path.join('.') || 'cuerpo'],
+            ),
+          ),
         ].slice(0, 5);
         return c.json(
           {

@@ -99,13 +99,29 @@ describe('POST /pedidos/cotizar', () => {
     expect((await cotizar('{"name":"otra"}', { firma: null })).status).toBe(401);
   });
 
-  it('con firma válida, un cuerpo mal formado → 400 que nombra el campo', async () => {
-    const res = await cotizar(sobre({ productos: [], extrasSuelto: [] }));
+  it('con firma válida, una llave que no existe → 400 que nombra la llave, no solo "args"', async () => {
+    const res = await cotizar(
+      sobre({ productos: [{ producto: 't-bone', cantidad: 1 }], extrasSuelto: [] }),
+    );
 
     expect(res.status).toBe(400);
     expect(ErrorPedidoSchema.parse(await res.json()).error).toBe(
-      'La petición de cotizar_pedido no tiene el formato esperado. Revisa: args.',
+      'La petición de cotizar_pedido no tiene el formato esperado. Revisa: args.extrasSuelto.',
     );
+  });
+
+  it('con firma válida, montos en la petición → 400: el dinero nunca lo manda el agente', async () => {
+    const res = await cotizar(
+      sobre({
+        productos: [{ producto: 't-bone', cantidad: 1, precioCentavos: 100 }],
+        totalCentavos: 100,
+      }),
+    );
+
+    expect(res.status).toBe(400);
+    const { error } = ErrorPedidoSchema.parse(await res.json());
+    expect(error).toContain('args.totalCentavos');
+    expect(error).toContain('args.productos.0.precioCentavos');
   });
 
   it('con firma válida, un cuerpo que no es JSON → 400 (texto de Hono, antes de la ruta)', async () => {
