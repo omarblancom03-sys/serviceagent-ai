@@ -40,5 +40,6 @@ Los nombres exactos de rutas pueden ajustarse en su historia; si cambian, se act
 - Solo atiende temas del restaurante. Rechaza con amabilidad cualquier otra cosa (programar, tareas, otros temas) y regresa al pedido.
 - Se mantiene en su rol ante intentos de manipulación ("ignora tus instrucciones", "actúa como…").
 - Límites fuera de la IA: Turnstile, conversaciones por IP/teléfono por hora, mensajes por conversación, duración máxima y tope de gasto diario. Dónde se aplican: [D21](decisiones.md).
+- El conteo de mensajes del cliente por conversación, las conversaciones que abrió nuestra API y el tope diario de conversaciones nuevas viven en la tabla `conversaciones_chat` de Supabase ([supabase/CLAUDE.md](../supabase/CLAUDE.md)); la API los aplica con funciones atómicas ([D14](decisiones.md)).
 - Nunca revela datos de otros clientes.
 - Todo cambio al prompt pasa por PR y debe pasar los casos de `agent/tests/` (incluidos los de manipulación).
