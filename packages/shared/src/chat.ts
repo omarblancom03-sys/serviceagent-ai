@@ -12,7 +12,7 @@
  */
 import { z } from 'zod';
 
-// ─── Constantes ─────────────────────────────────────────────────────────────
+// Constantes
 
 /** Mensajes que el cliente puede enviar en una conversación; el siguiente se rechaza (D21). */
 export const LIMITE_MENSAJES_CLIENTE = 30;
@@ -28,7 +28,7 @@ export const CODIGOS_ERROR_CHAT = [
   'servicio_no_disponible',
 ] as const;
 
-// ─── Identificador de la conversación ───────────────────────────────────────
+// Identificador de la conversación
 
 /**
  * Id público de la conversación: el uuid propio de nuestra API (llave de la tabla
@@ -44,7 +44,7 @@ export const ParamsConversacionSchema = z.object({
 });
 export type ParamsConversacion = z.infer<typeof ParamsConversacionSchema>;
 
-// ─── Peticiones ─────────────────────────────────────────────────────────────
+// Peticiones
 
 /** Cuerpo de `POST /chat/conversaciones/{id}/mensajes`. El texto se recorta antes de medirlo. */
 export const EnviarMensajePeticionSchema = z.strictObject({
@@ -52,7 +52,7 @@ export const EnviarMensajePeticionSchema = z.strictObject({
 });
 export type EnviarMensajePeticion = z.infer<typeof EnviarMensajePeticionSchema>;
 
-// ─── Respuestas ─────────────────────────────────────────────────────────────
+// Respuestas
 
 /** Mensaje del agente tal como lo ve el cliente: solo texto, sin rol ni herramientas. */
 export const MensajeAgenteSchema = z.object({
