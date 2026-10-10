@@ -9,6 +9,7 @@ import { crearClienteSupabase } from './lib/supabase';
 import { registrarAuth, type DependenciasAuth } from './routes/auth';
 import { registrarHealth } from './routes/health';
 import { registrarMenu, type DependenciasMenu } from './routes/menu';
+import { registrarPedidos } from './routes/pedidos';
 
 /** Servicios externos que usa la API. Los tests los reemplazan por versiones en memoria. */
 export type Dependencias = DependenciasAuth & DependenciasMenu;
@@ -40,12 +41,19 @@ export function crearApp(reemplazos: Partial<Dependencias> = {}) {
   registrarHealth(app);
   registrarAuth(app, dependencias);
   registrarMenu(app, dependencias);
+  registrarPedidos(app, dependencias);
 
   // Documentación OpenAPI (JSON) y Swagger UI.
   app.openAPIRegistry.registerComponent('securitySchemes', 'Bearer', {
     type: 'http',
     scheme: 'bearer',
     bearerFormat: 'JWT',
+  });
+  app.openAPIRegistry.registerComponent('securitySchemes', 'FirmaRetell', {
+    type: 'apiKey',
+    in: 'header',
+    name: 'X-Retell-Signature',
+    description: '`v=<timestamp ms>,d=<HMAC-SHA256(cuerpo + timestamp, RETELL_API_KEY)>`',
   });
   app.doc('/openapi.json', {
     openapi: '3.0.0',
