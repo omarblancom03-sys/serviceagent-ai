@@ -94,11 +94,3 @@ export function palabras(texto: string): string[] {
 export function normalizarSinRelleno(texto: string): string {
   return palabras(texto).join(' ');
 }
-
-/**
- * Llave de un extra: ignora lo que va entre paréntesis (los extras no tienen sinónimos).
- * "Espuelas (camarones)" y "espuelas" → "espuela".
- */
-export function normalizarExtra(texto: string): string {
-  return normalizarSuave(texto.replace(/\([^)]*\)/g, ' '));
-}
