@@ -4,7 +4,6 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
   llavePlural,
-  normalizarExtra,
   normalizarSinRelleno,
   normalizarSuave,
   palabras,
@@ -66,13 +65,6 @@ describe('normalizarSinRelleno y palabras', () => {
 
   it('un texto de puro relleno queda vacío', () => {
     expect(palabras('la de')).toEqual([]);
-  });
-});
-
-describe('normalizarExtra', () => {
-  it('ignora lo que va entre paréntesis y normaliza igual que el resto', () => {
-    expect(normalizarExtra('Espuelas (camarones)')).toBe(normalizarExtra('espuelas'));
-    expect(normalizarExtra('Toreados')).toBe(normalizarExtra('toreado'));
   });
 });
 

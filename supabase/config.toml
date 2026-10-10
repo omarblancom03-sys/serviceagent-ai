@@ -1,7 +1,8 @@
 # Configuración del CLI de Supabase (US-02-P1).
 # El orden importa: el menú (01) debe cargar antes que platillo_extra (02,
-# depende de sus ids) y que tiempos (03, actualiza platillo por nombre);
-# empleados es independiente de los tres.
+# depende de sus ids), que tiempos (03, actualiza platillo por nombre) y que
+# ingredientes removibles (04, busca el platillo por nombre);
+# empleados es independiente de los cuatro.
 
 [db.seed]
 enabled = true
@@ -9,5 +10,6 @@ sql_paths = [
   "./seed/01_menu_el_granero.sql",
   "./seed/02_platillo_extra.sql",
   "./seed/03_tiempos_preparacion_menu.sql",
+  "./seed/04_ingrediente_removible.sql",
   "./seed/empleados.sql",
 ]

@@ -14,7 +14,7 @@ import {
   type RespuestaMenu,
   type Variante,
 } from '@serviceagent/shared';
-import { normalizarExtra, normalizarSuave, palabras } from '../lib/normalizar';
+import { normalizarSuave, palabras } from '../lib/normalizar';
 import { formatearPesos } from '../lib/pesos';
 import { armarMenu, type MenuRepo, type Sinonimo } from './menu';
 
@@ -42,10 +42,10 @@ export interface Catalogo {
   indiceSinRelleno: Map<string, number[]>;
   /** Por platillo: las palabras (sin relleno) de su nombre y de cada sinónimo, para el paso 2. */
   palabrasPorPlatillo: Map<number, Set<string>[]>;
-  /** Extras que se piden solos (sin filas en `platillo_extra`, D19), por llave de `normalizarExtra`. */
-  extrasSueltos: Map<string, Extra>;
-  /** Extras ligados a algún platillo visible (hoy solo Espuelas), por la misma llave. */
-  extrasLigados: Map<string, ExtraPermitido>;
+  /** Extras que se piden solos (sin filas en `platillo_extra`, D19). */
+  extrasSueltos: Extra[];
+  /** Extras ligados a algún platillo visible (hoy solo Espuelas), sin repetir. */
+  extrasLigados: ExtraPermitido[];
 }
 
 export type ResultadoPlatillo =
@@ -85,10 +85,10 @@ export function armarCatalogo(menu: RespuestaMenu, sinonimos: Sinonimo[]): Catal
     indiceSuave: new Map(),
     indiceSinRelleno: new Map(),
     palabrasPorPlatillo: new Map(),
-    extrasSueltos: new Map(menu.extras.map((e) => [normalizarExtra(e.nombre), e])),
-    extrasLigados: new Map(
-      platillos.flatMap((p) => p.extrasPermitidos).map((e) => [normalizarExtra(e.nombre), e]),
-    ),
+    extrasSueltos: menu.extras,
+    extrasLigados: [
+      ...new Map(platillos.flatMap((p) => p.extrasPermitidos).map((e) => [e.id, e])).values(),
+    ],
   };
   for (const { idPlatillo, texto } of textos) {
     const llaveSuave = normalizarSuave(texto);
@@ -198,13 +198,99 @@ export function resolverVariante(platillo: Platillo, pedida?: string): Resultado
   return contienen.length === 1 && unica ? { tipo: 'encontrada', variante: unica } : faltante;
 }
 
-/** Extra pedido para un platillo: solo vale si está ligado a ese platillo (`platillo_extra`). */
-export function resolverExtra(platillo: Platillo, texto: string): ExtraPermitido | undefined {
-  const llave = normalizarExtra(texto);
-  return platillo.extrasPermitidos.find((e) => normalizarExtra(e.nombre) === llave);
+/**
+ * Formas de nombrar un extra: las palabras de su nombre sin paréntesis y las de adentro.
+ * "Espuelas (camarones)" → {espuela} y {camaron}; "BBQ" → {bbq}.
+ */
+function formasDeExtra(nombre: string): Set<string>[] {
+  const adentro = [...nombre.matchAll(/\(([^)]*)\)/g)].map((m) => m[1] ?? '');
+  return [nombre.replace(/\([^)]*\)/g, ' '), ...adentro]
+    .map((texto) => new Set(palabras(texto)))
+    .filter((forma) => forma.size > 0);
 }
 
-/** Ingredientes que se pueden quitar: los removibles del platillo, con su nombre oficial. */
+/**
+ * Palabras que el cliente agrega al nombre de un extra sin cambiar de cuál habla (D31): "salsa
+ * bbq", "chiles toreados", "extra de aguacate", "más totopos". Ya en forma de llave. No incluye
+ * "sin" ni "no": cambian el significado.
+ */
+const PALABRAS_DE_EXTRA: ReadonlySet<string> = new Set(palabras('salsa chile extra más'));
+
+/**
+ * Id del extra del menú (suelto o ligado) al que se refiere el cliente (D31). Un extra coincide si
+ * lo que dijo contiene todas las palabras de alguna de sus formas Y no trae ninguna otra palabra
+ * que no sea suya o de `PALABRAS_DE_EXTRA`. "salsa bbq" → BBQ, "chiles toreados" → Toreados,
+ * "espuelas de camarón" → Espuelas. En cambio "sin bbq", "guacamole con totopos" o "camarones al
+ * ajillo" no son el extra: cobrarlo sería cobrar algo que no se pidió. Si ninguno o más de uno
+ * coincide, no hay extra: se aclara, nunca se adivina.
+ */
+export function identificarExtra(catalogo: Catalogo, texto: string): number | undefined {
+  const dichas = palabras(texto);
+  const coinciden = [...catalogo.extrasSueltos, ...catalogo.extrasLigados].filter((e) => {
+    const formas = formasDeExtra(e.nombre);
+    const propias = new Set(formas.flatMap((forma) => [...forma]));
+    return (
+      formas.some((forma) => [...forma].every((palabra) => dichas.includes(palabra))) &&
+      dichas.every((palabra) => propias.has(palabra) || PALABRAS_DE_EXTRA.has(palabra))
+    );
+  });
+  return coinciden.length === 1 ? coinciden[0]?.id : undefined;
+}
+
+/** Extra pedido para un platillo: solo vale si está ligado a ese platillo (`platillo_extra`). */
+export function resolverExtra(
+  catalogo: Catalogo,
+  platillo: Platillo,
+  texto: string,
+): ExtraPermitido | undefined {
+  const id = identificarExtra(catalogo, texto);
+  return platillo.extrasPermitidos.find((e) => e.id === id);
+}
+
+type IngredienteRemovible = Platillo['ingredientesRemovibles'][number];
+
+/**
+ * Otros nombres de un ingrediente, ya en forma de llave (D31): "pimiento" es el Morrón. A
+ * propósito NO está "jitomate" → Tomate: en la región, "jitomate" es el tomate verde de la salsa,
+ * otro ingrediente; se aclara.
+ */
+const OTROS_NOMBRES_INGREDIENTE: ReadonlyMap<string, string> = new Map([['pimiento', 'morron']]);
+
+/** Palabras que pueden acompañar al ingrediente sin cambiar cuál es: "sin cebolla", "chile morrón". */
+const PALABRAS_DE_INGREDIENTE: ReadonlySet<string> = new Set(palabras('sin chile'));
+
+const palabrasDeIngrediente = (texto: string) =>
+  palabras(texto).map((palabra) => OTROS_NOMBRES_INGREDIENTE.get(palabra) ?? palabra);
+
+/**
+ * Ingrediente removible del platillo al que se refiere el cliente (D31): el exacto, o el único que
+ * coincide por palabras. Coincide si lo dicho está dentro de su nombre ("cebolla" → "Cebolla
+ * asada") o si su nombre completo está en lo dicho y lo demás es genérico ("la cebolla", "chile
+ * morrón", "pimiento"). Si coinciden dos o ninguno, se aclara: quitar algo cambia lo que prepara
+ * cocina.
+ */
+function resolverIngrediente(platillo: Platillo, pedido: string): IngredienteRemovible | undefined {
+  const removibles = platillo.ingredientesRemovibles;
+  const exacto = removibles.find((i) => normalizarSuave(i.nombre) === normalizarSuave(pedido));
+  if (exacto) return exacto;
+
+  const dichas = palabrasDeIngrediente(pedido);
+  if (dichas.length === 0) return undefined;
+  const coinciden = removibles.filter((i) => {
+    const propias = palabrasDeIngrediente(i.nombre);
+    const dentroDelNombre = dichas.every((palabra) => propias.includes(palabra));
+    const nombreCompleto =
+      propias.every((palabra) => dichas.includes(palabra)) &&
+      dichas.every((palabra) => propias.includes(palabra) || PALABRAS_DE_INGREDIENTE.has(palabra));
+    return dentroDelNombre || nombreCompleto;
+  });
+  return coinciden.length === 1 ? coinciden[0] : undefined;
+}
+
+/**
+ * Ingredientes que se pueden quitar: los removibles del platillo, con su nombre oficial y sin
+ * repetir ("tomate" y "tomates" llegan una sola vez al ticket de cocina).
+ */
 export function resolverIngredientes(
   platillo: Platillo,
   pedidos: string[],
@@ -212,11 +298,9 @@ export function resolverIngredientes(
   const quitados: string[] = [];
   const noRemovibles: string[] = [];
   for (const pedido of pedidos) {
-    const removible = platillo.ingredientesRemovibles.find(
-      (i) => normalizarSuave(i.nombre) === normalizarSuave(pedido),
-    );
-    if (removible) quitados.push(removible.nombre);
-    else noRemovibles.push(pedido);
+    const removible = resolverIngrediente(platillo, pedido);
+    if (!removible) noRemovibles.push(pedido);
+    else if (!quitados.includes(removible.nombre)) quitados.push(removible.nombre);
   }
   return { quitados, noRemovibles };
 }
@@ -272,7 +356,7 @@ function cotizarProducto(
 
   const extras: ExtraAplicado[] = [];
   for (const { extra: texto, cantidad } of pedido.extras ?? []) {
-    const extra = resolverExtra(platillo, texto);
+    const extra = resolverExtra(catalogo, platillo, texto);
     if (!extra) aclararYMarcar({ tipo: 'extra_no_permitido', detalle: texto });
     const detalle = validarCantidad(cantidad, detalleCantidadExtra(texto));
     if (detalle) aclararYMarcar({ tipo: 'cantidad_invalida', detalle });
@@ -331,12 +415,11 @@ export function cotizarPedido(catalogo: Catalogo, args: CotizarPedidoArgs): Resp
   args.extrasSueltos.forEach(({ extra: texto, cantidad }, indice) => {
     const aclarar: Aclarar = (aclaracion) =>
       aclaraciones.push({ ...aclaracion, origen: 'extraSuelto', indice, producto: texto });
-    const llave = normalizarExtra(texto);
-    const extra = catalogo.extrasSueltos.get(llave);
+    const id = identificarExtra(catalogo, texto);
+    const extra = catalogo.extrasSueltos.find((e) => e.id === id);
     // Espuelas solo va con sus cortes (D19); un extra que no está en el menú no existe.
-    if (!extra && catalogo.extrasLigados.has(llave)) {
-      aclarar({ tipo: 'extra_no_permitido', detalle: texto });
-    } else if (!extra) aclarar({ tipo: 'no_existe' });
+    if (!extra && id !== undefined) aclarar({ tipo: 'extra_no_permitido', detalle: texto });
+    else if (!extra) aclarar({ tipo: 'no_existe' });
     const detalle = validarCantidad(cantidad);
     if (detalle) aclarar({ tipo: 'cantidad_invalida', detalle });
     if (extra && !detalle) {
