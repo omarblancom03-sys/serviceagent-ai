@@ -1,5 +1,5 @@
 /**
- * Contrato del chat web (US-09-P1 contrato ↔ US-09-P2 endpoint y web).
+ * Contrato del chat web (US-09-P1: contrato y endpoint; US-09-P2: pantalla).
  *
  * La web no habla con Retell: habla con nuestra API, que hace de proxy (D21). La llave de
  * Retell vive solo en el servidor y al navegador solo llega el texto de los mensajes del
@@ -34,7 +34,7 @@ export const CODIGOS_ERROR_CHAT = [
  * Id opaco de la conversación. La API lo usa dentro de rutas de Retell (`/end-chat/{chat_id}`),
  * así que solo admite letras, dígitos, guion y guion bajo: nada de `/`, `.`, `?`, `%` ni
  * espacios. El tope de 64 es una cota nuestra: el formato real del `chat_id` de Retell se
- * confirma con una prueba real en US-09-P2.
+ * confirma con una prueba real en el PR del endpoint (US-09-P1).
  */
 export const IdConversacionSchema = z
   .string()

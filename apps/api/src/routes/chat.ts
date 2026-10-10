@@ -69,7 +69,7 @@ export const enviarMensajeRoute = createRoute({
   },
 });
 
-/** Solo documenta el contrato en Swagger: la conexión con Retell se implementa en US-09-P2. */
+/** Solo documenta el contrato en Swagger: Retell se conecta en el siguiente PR de US-09-P1. */
 export function registrarChat(app: OpenAPIHono<AppEnv>) {
   app.openAPIRegistry.registerPath(iniciarConversacionRoute);
   app.openAPIRegistry.registerPath(enviarMensajeRoute);
