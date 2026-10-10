@@ -42,7 +42,7 @@ Fuera de alcance: delivery a domicilio.
 ## Pedido confirmado
 
 - `crear_pedido` recibe el mismo pedido que se cotizó más nombre y teléfono; el backend vuelve a cotizar y guarda con estado `confirmado` ([D35](decisiones.md)).
-- Teléfono de México a 10 dígitos y nombre de 2 a 60 letras ([D32](decisiones.md)); folio consecutivo desde 1001 ([D33](decisiones.md)); el mismo pedido dos veces en 10 minutos no se duplica ([D34](decisiones.md)).
+- Teléfono de México a 10 dígitos y nombre de 2 a 60 letras ([D32](decisiones.md)); folio creciente desde 1001 ([D33](decisiones.md)); el mismo pedido con el mismo teléfono y nombre dos veces en 10 minutos no se duplica ([D34](decisiones.md)).
 
 ## Estados del pedido
 

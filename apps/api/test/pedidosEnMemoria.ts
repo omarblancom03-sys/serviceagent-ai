@@ -9,7 +9,7 @@ export interface PedidoEnMemoria extends NuevoPedido {
 
 /**
  * Repo de pedidos en memoria con las mismas reglas que la función SQL `crear_pedido`: folio desde
- * 1001, duplicado = mismo teléfono + misma huella + no cancelado + dentro de la ventana, y la suma
+ * 1001, duplicado = mismo teléfono + misma huella (incluye el nombre) + no cancelado + dentro de la ventana, y la suma
  * de los subtotales debe dar el total. `pedidos` queda expuesto para que el test lo revise.
  */
 export function crearRepoPedidosEnMemoria(): PedidosRepo & { pedidos: PedidoEnMemoria[] } {

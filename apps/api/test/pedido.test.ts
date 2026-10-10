@@ -88,13 +88,21 @@ describe('calcularHuella', () => {
   });
 
   it('es SHA-256 en hex y no depende del orden de los renglones', async () => {
-    const a = await calcularHuella([renglon(1, 1), renglon(2, 1)]);
+    const a = await calcularHuella([renglon(1, 1), renglon(2, 1)], 'Ana');
     expect(a).toMatch(/^[0-9a-f]{64}$/);
-    expect(await calcularHuella([renglon(2, 1), renglon(1, 1)])).toBe(a);
+    expect(await calcularHuella([renglon(2, 1), renglon(1, 1)], 'Ana')).toBe(a);
   });
 
   it('cambia si cambia la cantidad', async () => {
-    expect(await calcularHuella([renglon(1, 2)])).not.toBe(await calcularHuella([renglon(1, 1)]));
+    expect(await calcularHuella([renglon(1, 2)], 'Ana')).not.toBe(
+      await calcularHuella([renglon(1, 1)], 'Ana'),
+    );
+  });
+
+  it('cambia si cambia el nombre, pero no por mayúsculas ni acentos', async () => {
+    const ana = await calcularHuella([renglon(1, 1)], 'Ana María');
+    expect(await calcularHuella([renglon(1, 1)], 'ANA MARIA')).toBe(ana);
+    expect(await calcularHuella([renglon(1, 1)], 'Juan')).not.toBe(ana);
   });
 });
 
@@ -224,6 +232,31 @@ describe('crearPedido', () => {
 
       expect(otroTelefono.respuesta).toMatchObject({ folio: 1002, yaExistia: false });
       expect(unoSolo.respuesta).toMatchObject({ folio: 1003, yaExistia: false });
+    });
+
+    it('el mismo pedido y teléfono con otro nombre es un pedido nuevo (decisión del PO)', async () => {
+      const repo = crearRepoPedidosEnMemoria();
+      await crear({ ...DOS_TBONE, ...CLIENTE }, repo);
+      const { respuesta } = await crear(
+        { ...DOS_TBONE, ...CLIENTE, nombre: 'Juan' },
+        repo,
+        minutosDespues(1),
+      );
+
+      expect(respuesta).toMatchObject({ folio: 1002, yaExistia: false });
+      expect(repo.pedidos.map((p) => p.nombreCliente)).toEqual(['María José', 'Juan']);
+    });
+
+    it('el mismo nombre con otras mayúsculas o sin acento sigue siendo el mismo pedido', async () => {
+      const repo = crearRepoPedidosEnMemoria();
+      await crear({ ...DOS_TBONE, ...CLIENTE }, repo);
+      const { respuesta } = await crear(
+        { ...DOS_TBONE, ...CLIENTE, nombre: 'maria jose' },
+        repo,
+        minutosDespues(1),
+      );
+
+      expect(respuesta).toMatchObject({ folio: 1001, yaExistia: true });
     });
 
     it('un pedido cancelado no cuenta como duplicado', async () => {

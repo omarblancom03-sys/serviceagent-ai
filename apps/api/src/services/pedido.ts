@@ -15,7 +15,7 @@ import type { MenuRepo } from './menu';
  * aclaración. Nunca recibe ni guarda un monto que venga de afuera.
  */
 
-/** El mismo pedido con el mismo teléfono dentro de esta ventana devuelve el folio que ya existe (D34). */
+/** El mismo pedido (huella con nombre) y teléfono dentro de esta ventana devuelve el mismo folio (D34). */
 export const MINUTOS_PEDIDO_DUPLICADO = 10;
 
 export const NOMBRE_MIN = 2;
@@ -98,10 +98,15 @@ export function validarDatosCliente(args: Pick<CrearPedidoArgs, 'nombre' | 'tele
 
 /**
  * Huella del pedido (D34): SHA-256 de lo que se pidió ya resuelto (ids, cantidades, extras,
- * ingredientes quitados y precios), sin importar el orden ni cómo lo dijo el cliente. "Dos T-Bone"
- * y "2 t bone" dan la misma huella; si cambia un precio, ya es otro pedido.
+ * ingredientes quitados y precios), sin importar el orden ni cómo lo dijo el cliente, más el nombre
+ * del cliente sin mayúsculas ni acentos. "Dos T-Bone" y "2 t bone" dan la misma huella; si cambia
+ * un precio o el nombre ("Juan" y luego "Ana" con el mismo teléfono), ya es otro pedido.
  */
-export async function calcularHuella(renglones: RenglonCotizacion[]): Promise<string> {
+export async function calcularHuella(
+  renglones: RenglonCotizacion[],
+  nombreCliente: string,
+): Promise<string> {
+  const cliente = nombreCliente.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
   const partes = renglones
     .map((r) =>
       JSON.stringify(
@@ -120,6 +125,7 @@ export async function calcularHuella(renglones: RenglonCotizacion[]): Promise<st
       ),
     )
     .sort();
+  partes.unshift(JSON.stringify(['cliente', cliente]));
   const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(partes.join('\n')));
   return [...new Uint8Array(bytes)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
@@ -153,7 +159,7 @@ export async function crearPedido(
     {
       nombreCliente: datos.nombre,
       telefono: datos.telefono,
-      huella: await calcularHuella(cotizacion.renglones),
+      huella: await calcularHuella(cotizacion.renglones, datos.nombre),
       totalCentavos: cotizacion.totalCentavos,
       renglones: cotizacion.renglones,
     },
