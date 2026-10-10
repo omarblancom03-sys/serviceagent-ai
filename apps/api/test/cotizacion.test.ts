@@ -1,17 +1,29 @@
+import { CotizarPedidoArgsSchema, RespuestaCotizarPedidoSchema } from '@serviceagent/shared';
 import { describe, expect, it } from 'vitest';
 import { palabras } from '../src/lib/normalizar';
 import {
   armarCatalogo,
   buscarPorPalabras,
+  cotizarPedido,
+  DETALLE_CANTIDAD,
+  detalleCantidadExtra,
   MAX_OPCIONES,
+  obtenerCotizacion,
   resolverPlatillo,
+  type Catalogo,
   type ResultadoPlatillo,
 } from '../src/services/cotizacion';
 import { armarMenu, type FilasMenu } from '../src/services/menu';
-import { filasMenuDePrueba } from './menuEnMemoria';
+import { crearRepoMenuEnMemoria, filasMenuDePrueba, repoMenuQueFalla } from './menuEnMemoria';
 import { leerSeedMenu } from './seedEnMemoria';
 
-const seed = leerSeedMenu();
+// Removibles DE PRUEBA (el seed aún no trae, D29): Guacamole → Cebolla, Cilantro.
+const seed = leerSeedMenu({
+  removibles: [
+    { platillo: 'Guacamole', nombre: 'Cebolla' },
+    { platillo: 'Guacamole', nombre: 'Cilantro' },
+  ],
+});
 const catalogo = armarCatalogo(armarMenu(seed.filas), seed.sinonimos);
 const buscar = (texto: string) => resolverPlatillo(catalogo, texto);
 
@@ -245,5 +257,452 @@ describe('resolverPlatillo con un menú de prueba', () => {
       tipo: 'ambiguo',
       opciones: Array.from({ length: MAX_OPCIONES }, (_, i) => `Taco ${86 + i}`),
     });
+  });
+});
+
+/*
+ * Cálculo de la cotización con el menú real. La petición pasa por el mismo esquema que usará la
+ * ruta (defaults incluidos) y la respuesta se valida contra el contrato.
+ */
+function cotizarCon(catalogoUsado: Catalogo, args: unknown) {
+  return RespuestaCotizarPedidoSchema.parse(
+    cotizarPedido(catalogoUsado, CotizarPedidoArgsSchema.parse(args)),
+  );
+}
+const cotizar = (args: unknown) => cotizarCon(catalogo, args);
+const uno = (producto: string, extra: Record<string, unknown> = {}) => ({
+  productos: [{ producto, cantidad: 1, ...extra }],
+});
+/** Total de una cotización que debe salir bien. */
+function total(args: unknown) {
+  const respuesta = cotizar(args);
+  if (!respuesta.ok) throw new Error(`Se esperaba ok: ${JSON.stringify(respuesta.aclaraciones)}`);
+  return respuesta.totalCentavos;
+}
+/** Aclaraciones de una cotización que debe pedirlas. */
+function aclaraciones(args: unknown) {
+  const respuesta = cotizar(args);
+  if (respuesta.ok) throw new Error(`Se esperaban aclaraciones: ${JSON.stringify(respuesta)}`);
+  return respuesta.aclaraciones;
+}
+
+const LIMONADAS = ['Vaso 500 ml', 'Frasco 1 L', 'Jarra 2000 ml'];
+const espuelas = (cantidad: number) => ({ extras: [{ extra: 'espuelas', cantidad }] });
+
+describe('cotizarPedido: los 14 casos acordados', () => {
+  it('1. Hamburguesa Granero + refresco → $188.00', () => {
+    const respuesta = cotizar({
+      productos: [
+        { producto: 'hamburguesa granero', cantidad: 1 },
+        { producto: 'refresco', cantidad: 1 },
+      ],
+    });
+    expect(respuesta).toMatchObject({ ok: true, totalCentavos: 18800, totalTexto: '$188.00' });
+  });
+
+  it('2. dos T-Bone con 1 Espuelas cada uno → (40300 + 5500) × 2 = 91600', () => {
+    expect(cotizar({ productos: [{ producto: 't-bone', cantidad: 2, ...espuelas(1) }] })).toEqual({
+      ok: true,
+      renglones: [
+        {
+          tipo: 'platillo',
+          indice: 0,
+          idPlatillo: expect.any(Number),
+          nombre: 'T-Bone 450 gr',
+          idVariante: expect.any(Number),
+          variante: null,
+          cantidad: 2,
+          sinIngredientes: [],
+          extras: [
+            {
+              idExtra: expect.any(Number),
+              nombre: 'Espuelas (camarones)',
+              cantidad: 1,
+              precioUnitarioCentavos: 5500,
+              precioUnitarioTexto: '$55.00',
+            },
+          ],
+          precioUnitarioCentavos: 40300,
+          precioUnitarioTexto: '$403.00',
+          subtotalCentavos: 91600,
+          subtotalTexto: '$916.00',
+        },
+      ],
+      totalCentavos: 91600,
+      totalTexto: '$916.00',
+    });
+  });
+
+  it('3. Cowboy → 46900', () => {
+    expect(total(uno('cowboy'))).toBe(46900);
+  });
+
+  it('4. Limonada natural sin variante → falta_variante con sus 3 presentaciones', () => {
+    expect(aclaraciones(uno('limonada natural'))).toEqual([
+      {
+        tipo: 'falta_variante',
+        origen: 'producto',
+        indice: 0,
+        producto: 'limonada natural',
+        opciones: LIMONADAS,
+      },
+    ]);
+  });
+
+  it('5. pizza de pepperoni → no_existe', () => {
+    expect(aclaraciones(uno('pizza de pepperoni'))).toEqual([
+      { tipo: 'no_existe', origen: 'producto', indice: 0, producto: 'pizza de pepperoni' },
+    ]);
+  });
+
+  it('6. Hawaiana con Espuelas → extra_no_permitido (solo van con sus cortes)', () => {
+    expect(aclaraciones(uno('hawaiana', espuelas(1)))).toEqual([
+      {
+        tipo: 'extra_no_permitido',
+        origen: 'producto',
+        indice: 0,
+        producto: 'hawaiana',
+        detalle: 'espuelas',
+      },
+    ]);
+  });
+
+  it('7. Guacamole sin aguacate → ingrediente_no_removible', () => {
+    expect(aclaraciones(uno('guacamole', { sinIngredientes: ['aguacate'] }))).toEqual([
+      {
+        tipo: 'ingrediente_no_removible',
+        origen: 'producto',
+        indice: 0,
+        producto: 'guacamole',
+        detalle: 'aguacate',
+      },
+    ]);
+  });
+
+  it('8. 25 Algodoneros → cantidad_invalida', () => {
+    expect(aclaraciones({ productos: [{ producto: 'algodoneros', cantidad: 25 }] })).toEqual([
+      {
+        tipo: 'cantidad_invalida',
+        origen: 'producto',
+        indice: 0,
+        producto: 'algodoneros',
+        detalle: DETALLE_CANTIDAD,
+      },
+    ]);
+  });
+
+  it('9. Totopos + Aguacate sueltos → 2000 + 2500 = 4500', () => {
+    const respuesta = cotizar({
+      extrasSueltos: [
+        { extra: 'totopos', cantidad: 1 },
+        { extra: 'aguacate', cantidad: 1 },
+      ],
+    });
+    expect(respuesta).toMatchObject({
+      ok: true,
+      renglones: [
+        { tipo: 'extra', indice: 0, nombre: 'Totopos', subtotalCentavos: 2000 },
+        { tipo: 'extra', indice: 1, nombre: 'Aguacate', subtotalCentavos: 2500 },
+      ],
+      totalCentavos: 4500,
+    });
+  });
+
+  it('10. Limonada mineral + pepperoni → las 2 aclaraciones juntas; con "vaso" → 4900', () => {
+    expect(
+      aclaraciones({
+        productos: [
+          { producto: 'limonada mineral', cantidad: 1 },
+          { producto: 'pizza de pepperoni', cantidad: 1 },
+        ],
+      }),
+    ).toEqual([
+      {
+        tipo: 'falta_variante',
+        origen: 'producto',
+        indice: 0,
+        producto: 'limonada mineral',
+        opciones: LIMONADAS,
+      },
+      { tipo: 'no_existe', origen: 'producto', indice: 1, producto: 'pizza de pepperoni' },
+    ]);
+
+    expect(cotizar(uno('limonada mineral', { variante: 'vaso' }))).toMatchObject({
+      ok: true,
+      renglones: [{ variante: 'Vaso 500 ml', subtotalCentavos: 4900 }],
+      totalCentavos: 4900,
+    });
+  });
+
+  it('11. Rib Eye → 47300 y "$473.00"', () => {
+    expect(cotizar(uno('rib eye'))).toMatchObject({
+      ok: true,
+      totalCentavos: 47300,
+      totalTexto: '$473.00',
+    });
+  });
+
+  it('12. fajitas → ambiguo con las 5 fajitas', () => {
+    expect(aclaraciones(uno('fajitas'))).toEqual([
+      {
+        tipo: 'ambiguo',
+        origen: 'producto',
+        indice: 0,
+        producto: 'fajitas',
+        opciones: [
+          'Fajitas de arrachera',
+          'Fajitas Trío',
+          'Fajitas de pollo',
+          'Fajitas de pollo infantil',
+          'Fajitas de arrachera infantil',
+        ],
+      },
+    ]);
+  });
+
+  it.each(['chipotle', 'la de chipotle'])('13 y 14. "%s" → ambiguo con 1 opción', (texto) => {
+    expect(aclaraciones(uno(texto))).toEqual([
+      {
+        tipo: 'ambiguo',
+        origen: 'producto',
+        indice: 0,
+        producto: texto,
+        opciones: ['Arrachera al Chipotle 450 gr'],
+      },
+    ]);
+  });
+
+  it('14. reenviar el nombre que vino en `opciones` se cotiza directo → 47300', () => {
+    expect(total(uno('Arrachera al Chipotle 450 gr'))).toBe(47300);
+  });
+});
+
+describe('cotizarPedido: extras', () => {
+  it('Espuelas con cantidad 2 en un T-Bone → 40300 + 2 × 5500 = 51300 (D30)', () => {
+    expect(total(uno('t-bone', espuelas(2)))).toBe(51300);
+  });
+
+  it('Espuelas suelta → extra_no_permitido con origen extraSuelto', () => {
+    expect(aclaraciones({ extrasSueltos: [{ extra: 'espuelas', cantidad: 1 }] })).toEqual([
+      {
+        tipo: 'extra_no_permitido',
+        origen: 'extraSuelto',
+        indice: 0,
+        producto: 'espuelas',
+        detalle: 'espuelas',
+      },
+    ]);
+  });
+
+  it('un extra suelto que no existe → no_existe con origen extraSuelto', () => {
+    expect(aclaraciones({ extrasSueltos: [{ extra: 'queso extra', cantidad: 1 }] })).toEqual([
+      { tipo: 'no_existe', origen: 'extraSuelto', indice: 0, producto: 'queso extra' },
+    ]);
+  });
+
+  it('un extra que no existe dentro de un platillo → extra_no_permitido con el extra', () => {
+    const pedido = uno('t-bone', { extras: [{ extra: 'chimichurri', cantidad: 1 }] });
+    expect(aclaraciones(pedido)).toEqual([
+      {
+        tipo: 'extra_no_permitido',
+        origen: 'producto',
+        indice: 0,
+        producto: 't-bone',
+        detalle: 'chimichurri',
+      },
+    ]);
+  });
+
+  it('un extra suelto (Aguacate) dentro de un platillo → extra_no_permitido', () => {
+    const pedido = uno('guacamole', { extras: [{ extra: 'aguacate', cantidad: 1 }] });
+    expect(aclaraciones(pedido)).toEqual([
+      expect.objectContaining({ tipo: 'extra_no_permitido', detalle: 'aguacate' }),
+    ]);
+  });
+});
+
+describe('cotizarPedido: cantidades (enteras de 1 a 20, D30)', () => {
+  const invalida = (origen: 'producto' | 'extraSuelto', producto: string) => ({
+    tipo: 'cantidad_invalida',
+    origen,
+    indice: 0,
+    producto,
+    detalle: DETALLE_CANTIDAD,
+  });
+
+  /** La del extra de un platillo va con el platillo, pero su detalle nombra el extra. */
+  const invalidaDelExtra = (producto: string, extra: string) => ({
+    ...invalida('producto', producto),
+    detalle: detalleCantidadExtra(extra),
+  });
+
+  it.each([-1, 0, 1.5, 21])('%s en el platillo → cantidad_invalida', (cantidad) => {
+    expect(aclaraciones({ productos: [{ producto: 'cowboy', cantidad }] })).toEqual([
+      invalida('producto', 'cowboy'),
+    ]);
+  });
+
+  it.each([-1, 0, 1.5, 21])('%s en el extra de un platillo → nombra el extra', (n) => {
+    expect(aclaraciones(uno('t-bone', espuelas(n)))).toEqual([
+      invalidaDelExtra('t-bone', 'espuelas'),
+    ]);
+    expect(detalleCantidadExtra('espuelas')).toBe('La cantidad de "espuelas" debe ser de 1 a 20.');
+  });
+
+  it('el mismo extra repetido en un platillo se suma en uno solo → 40300 + 3 × 5500', () => {
+    const pedido = uno('t-bone', {
+      extras: [
+        { extra: 'espuelas', cantidad: 1 },
+        { extra: 'Espuelas (camarones)', cantidad: 2 },
+      ],
+    });
+    expect(cotizar(pedido)).toMatchObject({
+      ok: true,
+      renglones: [{ extras: [{ nombre: 'Espuelas (camarones)', cantidad: 3 }] }],
+      totalCentavos: 56800,
+    });
+  });
+
+  it('el extra repetido no se salta el límite: 10 + 10 vale, 20 + 20 → cantidad_invalida', () => {
+    const repetido = (cantidad: number) =>
+      uno('t-bone', {
+        extras: [
+          { extra: 'espuelas', cantidad },
+          { extra: 'espuelas', cantidad },
+        ],
+      });
+    expect(total(repetido(10))).toBe(40300 + 20 * 5500);
+    expect(aclaraciones(repetido(20))).toEqual([invalidaDelExtra('t-bone', 'espuelas')]);
+  });
+
+  it.each([-1, 0, 1.5, 21])('%s en un extra suelto → cantidad_invalida', (cantidad) => {
+    expect(aclaraciones({ extrasSueltos: [{ extra: 'totopos', cantidad }] })).toEqual([
+      invalida('extraSuelto', 'totopos'),
+    ]);
+  });
+
+  it('acepta los límites 1 y 20', () => {
+    expect(total({ productos: [{ producto: 'cowboy', cantidad: 20 }] })).toBe(46900 * 20);
+    expect(total({ extrasSueltos: [{ extra: 'totopos', cantidad: 20 }] })).toBe(2000 * 20);
+  });
+});
+
+describe('cotizarPedido: variantes', () => {
+  it('sin variante y con una sola "Único" → se usa y sale variante null', () => {
+    expect(cotizar(uno('guacamole'))).toMatchObject({
+      ok: true,
+      renglones: [{ nombre: 'Guacamole', variante: null, subtotalCentavos: 12300 }],
+    });
+  });
+
+  it('con una sola variante, pedir "único" coincide', () => {
+    expect(total(uno('guacamole', { variante: 'único' }))).toBe(12300);
+  });
+
+  it('con una sola variante, una variante que no coincide → falta_variante con esa opción', () => {
+    expect(aclaraciones(uno('guacamole', { variante: 'grande' }))).toEqual([
+      {
+        tipo: 'falta_variante',
+        origen: 'producto',
+        indice: 0,
+        producto: 'guacamole',
+        detalle: 'grande',
+        opciones: ['Único'],
+      },
+    ]);
+  });
+
+  it('la variante que contiene las palabras pedidas se elige: "charros"', () => {
+    expect(cotizar(uno('taquiza sirloin', { variante: 'charros' }))).toMatchObject({
+      ok: true,
+      renglones: [{ variante: 'Con frijoles charros', subtotalCentavos: 60900 }],
+    });
+  });
+
+  it('si las palabras están en varias variantes → falta_variante con lo pedido', () => {
+    expect(aclaraciones(uno('taquiza sirloin', { variante: 'frijoles' }))).toEqual([
+      {
+        tipo: 'falta_variante',
+        origen: 'producto',
+        indice: 0,
+        producto: 'taquiza sirloin',
+        detalle: 'frijoles',
+        opciones: ['Con frijoles charros', 'Con frijoles refritos'],
+      },
+    ]);
+  });
+});
+
+describe('cotizarPedido: ingredientes y reglas generales', () => {
+  it('quitar un ingrediente removible → el renglón lo lleva con su nombre oficial', () => {
+    expect(cotizar(uno('guacamole', { sinIngredientes: ['cebolla'] }))).toMatchObject({
+      ok: true,
+      renglones: [{ sinIngredientes: ['Cebolla'], subtotalCentavos: 12300 }],
+    });
+  });
+
+  it('un platillo inactivo → no_existe', () => {
+    const dePrueba = armarCatalogo(armarMenu(filasMenuDePrueba()), []);
+    expect(cotizarCon(dePrueba, uno('Platillo dado de baja'))).toEqual({
+      ok: false,
+      aclaraciones: [
+        { tipo: 'no_existe', origen: 'producto', indice: 0, producto: 'Platillo dado de baja' },
+      ],
+    });
+  });
+
+  it('junta todas las aclaraciones de un pedido, cada una con su origen e índice', () => {
+    const resultado = aclaraciones({
+      productos: [
+        { producto: 'cowboy', cantidad: 1 },
+        { producto: 'guacamole', cantidad: 0, sinIngredientes: ['aguacate'] },
+        { producto: 'hawaiana', cantidad: 1, ...espuelas(1) },
+      ],
+      extrasSueltos: [
+        { extra: 'espuelas', cantidad: 1 },
+        { extra: 'queso extra', cantidad: 1 },
+      ],
+    });
+    expect(resultado.map(({ tipo, origen, indice }) => `${origen}[${indice}] ${tipo}`)).toEqual([
+      'producto[1] cantidad_invalida',
+      'producto[1] ingrediente_no_removible',
+      'producto[2] extra_no_permitido',
+      'extraSuelto[0] extra_no_permitido',
+      'extraSuelto[1] no_existe',
+    ]);
+  });
+
+  it('platillos y extras sueltos juntos: renglones en el orden pedido y total en centavos', () => {
+    expect(
+      cotizar({
+        productos: [
+          { producto: 'rib eye', cantidad: 1, ...espuelas(1) },
+          { producto: 'limonada natural', variante: 'jarra', cantidad: 2 },
+        ],
+        extrasSueltos: [{ extra: 'toreados', cantidad: 3 }],
+      }),
+    ).toMatchObject({
+      ok: true,
+      renglones: [
+        { tipo: 'platillo', indice: 0, subtotalCentavos: 47300 + 5500 },
+        { tipo: 'platillo', indice: 1, variante: 'Jarra 2000 ml', subtotalCentavos: 13800 * 2 },
+        { tipo: 'extra', indice: 0, nombre: 'Toreados', subtotalCentavos: 2100 * 3 },
+      ],
+      totalCentavos: 52800 + 27600 + 6300,
+      totalTexto: '$867.00',
+    });
+  });
+});
+
+describe('obtenerCotizacion', () => {
+  it('lee el menú y los sinónimos del repo y cotiza', async () => {
+    const repo = crearRepoMenuEnMemoria(seed.filas, seed.sinonimos);
+    const args = CotizarPedidoArgsSchema.parse(uno('hamburguesa granero'));
+    expect(await obtenerCotizacion(repo, args)).toMatchObject({ ok: true, totalCentavos: 14900 });
+  });
+
+  it('propaga el error si el repo falla (la ruta responderá 500)', async () => {
+    const args = CotizarPedidoArgsSchema.parse(uno('cowboy'));
+    await expect(obtenerCotizacion(repoMenuQueFalla, args)).rejects.toThrow('Supabase no responde');
   });
 });
