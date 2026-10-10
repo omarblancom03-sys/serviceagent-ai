@@ -7,6 +7,7 @@ import { crearRepoEmpleados } from './lib/repoEmpleados';
 import { crearRepoMenu } from './lib/repoMenu';
 import { crearClienteSupabase } from './lib/supabase';
 import { registrarAuth, type DependenciasAuth } from './routes/auth';
+import { registrarChat } from './routes/chat';
 import { registrarHealth } from './routes/health';
 import { registrarMenu, type DependenciasMenu } from './routes/menu';
 
@@ -40,6 +41,7 @@ export function crearApp(reemplazos: Partial<Dependencias> = {}) {
   registrarHealth(app);
   registrarAuth(app, dependencias);
   registrarMenu(app, dependencias);
+  registrarChat(app);
 
   // Documentación OpenAPI (JSON) y Swagger UI.
   app.openAPIRegistry.registerComponent('securitySchemes', 'Bearer', {

@@ -20,6 +20,30 @@ Retell llama a nuestra API. **Toda petición de Retell se verifica con la firma 
 
 Los nombres exactos de rutas pueden ajustarse en su historia; si cambian, se actualiza esta tabla en el mismo PR.
 
+## Chat web (proxy)
+
+La web no usa el widget de Retell: habla con nuestra API, que habla con Retell. La llave de Retell vive solo en el servidor ([D21](decisiones.md)). Contrato en `packages/shared/src/chat.ts`; detalle de cada campo en Swagger (`/docs`).
+
+| Endpoint                                  | Respuesta                                                                                                                              |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /chat/conversaciones`               | 201: `conversacionId`, `mensajes` (lo que el agente escribió al abrir; puede venir vacío), `mensajesUsados` (0) y `limiteMensajes`     |
+| `POST /chat/conversaciones/{id}/mensajes` | Cuerpo `{ texto }` (se recorta; 1 a 500 caracteres). 200: `mensajes` (solo los nuevos del agente), `mensajesUsados` y `limiteMensajes` |
+
+- Cada mensaje trae solo `id`, `texto` y `creadoEn` (ISO 8601 UTC). La API solo devuelve el texto de los mensajes de Retell con `role` `agent`: nunca invocaciones ni resultados de herramientas, transiciones ni datos técnicos.
+- La API cuenta los mensajes del cliente por conversación y devuelve `mensajesUsados` y `limiteMensajes` (30, [D21](decisiones.md)).
+- El id público de la conversación es el uuid de nuestra tabla `conversaciones_chat`; el `chat_id` de Retell nunca sale del servidor. Un id que no es uuid da 400 `peticion_invalida`.
+- Sin verificar en la documentación de Retell: si `create-chat` trae el saludo del agente y qué error da un chat ya cerrado.
+
+Errores: `{ error, codigo }`, con `error` en español para el cliente y sin detalles técnicos.
+
+| `codigo`                     | HTTP | Cuándo                                                                                                                                                                                                                      |
+| ---------------------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `peticion_invalida`          | 400  | Texto vacío, solo espacios o de más de 500 caracteres; cuerpo o id mal formado                                                                                                                                              |
+| `conversacion_no_encontrada` | 404  | Id bien formado que no existe                                                                                                                                                                                               |
+| `conversacion_terminada`     | 409  | El chat cerró (por inactividad o porque terminó); la web ofrece iniciar otro                                                                                                                                                |
+| `limite_alcanzado`           | 429  | Ya se enviaron los mensajes permitidos; hay que iniciar otra conversación                                                                                                                                                   |
+| `servicio_no_disponible`     | 503  | Retell falló, tardó, no tiene saldo, llegó al límite de la cuenta o falta la llave; al iniciar, también si se alcanzó el tope diario de conversaciones nuevas. El texto del error puede variar según la causa; el código no |
+
 ## Comportamiento
 
 - Español mexicano, amable y breve.
