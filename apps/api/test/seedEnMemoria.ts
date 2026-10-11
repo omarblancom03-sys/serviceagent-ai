@@ -4,8 +4,8 @@ import { fileURLToPath } from 'node:url';
 import type { FilasMenu, Sinonimo } from '../src/services/menu';
 
 /*
- * Menú real para los tests: lee supabase/seed/01_menu_el_granero.sql y 02_platillo_extra.sql como
- * texto (sin conectarse a Supabase) y los convierte en las filas que devolvería el repo. Los ids
+ * Menú real para los tests: lee supabase/seed/01_menu_el_granero.sql, 02_platillo_extra.sql y
+ * 04_ingrediente_removible.sql como texto (sin conectarse a Supabase) y los convierte en las filas que devolvería el repo. Los ids
  * siguen el orden del archivo, como al cargar el seed en una base vacía. Aplica también la
  * sección 6 (sinónimos retirados), igual que la base.
  */
@@ -24,18 +24,13 @@ function bloque(contenido: string, inicio: string, fin?: string): string {
 const coincidencias = (texto: string, patron: RegExp) =>
   [...texto.matchAll(patron)].map((m) => m.slice(1).map((grupo) => grupo ?? ''));
 
-/**
- * `removibles`: ingredientes removibles DE PRUEBA. El seed todavía no trae ninguno (los aprueba el
- * PO y se cargan en el PR B3, D29); sirven para probar la regla sin inventar datos del menú.
- */
-export function leerSeedMenu({
-  removibles = [],
-}: { removibles?: { platillo: string; nombre: string }[] } = {}): {
-  filas: FilasMenu;
-  sinonimos: Sinonimo[];
-} {
+export function leerSeedMenu(): { filas: FilasMenu; sinonimos: Sinonimo[] } {
   const menu = leerSeed('01_menu_el_granero.sql');
   const platilloExtra = leerSeed('02_platillo_extra.sql');
+  const removibles = coincidencias(
+    leerSeed('04_ingrediente_removible.sql'),
+    /^\s*\('([^']+)',\s*'([^']+)'\),?$/gm,
+  ).map(([platillo = '', nombre = '']) => ({ platillo, nombre }));
 
   const categorias = coincidencias(
     bloque(menu, '1) CATEGORIAS', '2) PLATILLOS'),
