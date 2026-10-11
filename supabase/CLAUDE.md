@@ -34,6 +34,7 @@ Estos PIN son públicos: **nunca** se usa este seed en un ambiente real. Los has
 - **RLS activo en toda tabla nueva** (el proyecto también lo activa solo). Sin políticas: `service_role` tiene `BYPASSRLS` y los permisos por rol viven en la API.
 - El seed se puede correr varias veces (`on conflict ... do nothing` o `do update`). Los datos simulados se marcan como tales.
 - El descuento y la reposición de inventario ocurren dentro de una transacción.
+- **Candados de transacción** (`pg_advisory_xact_lock`): cada candado usa su propia clave. En uso: `9010001` (tope diario de conversaciones del chat, `abrir_conversacion_chat`). Antes de crear otro, revisa esta lista.
 - `platillo.nombre` es único: 16 nombres del menú fuente se ajustaron al cargarlos (3 por colisión entre categorías, 6 papas asadas con prefijo "Papa", y por decisión del PO 6 hamburguesas con prefijo "Hamburguesa" más "Filete de pescado infantil", para que no se lean ambiguos en cocina; el nombre original queda como sinónimo, salvo "Pollo", "Granero", "Delicias" y "Filete de pescado", retirados por genéricos, D27). La lista está al inicio de `seed/01_menu_el_granero.sql`.
 
 ## Cómo probar
