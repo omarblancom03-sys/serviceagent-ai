@@ -128,3 +128,45 @@ describe('seed de tiempos de preparacion (03_tiempos_preparacion_menu.sql)', () 
     }
   });
 });
+
+describe('seed de ingredientes removibles (04_ingrediente_removible.sql)', () => {
+  const contenidoRemovibles = readFileSync(
+    path.join(raizRepo, 'supabase/seed/04_ingrediente_removible.sql'),
+    'utf-8',
+  );
+  const filas = [...contenidoRemovibles.matchAll(/^\s*\('([^']+)',\s*'([^']+)'\),?$/gm)].map(
+    (m) => ({ platillo: m[1], nombre: m[2] }),
+  );
+  const bloquePlatillos = extraerBloque(contenidoMenu, '2) PLATILLOS', '3) VARIANTES');
+  const platillosMenu = new Set(
+    [...bloquePlatillos.matchAll(/\('[^']+',\s*'([^']+)',\s*'/g)].map((m) => m[1]),
+  );
+
+  it('carga los 54 ingredientes de 18 platillos que aprobó el PO (D29)', () => {
+    expect(filas).toHaveLength(54);
+    expect(new Set(filas.map((f) => f.platillo)).size).toBe(18);
+  });
+
+  it('cada platillo existe en el seed del menu con ese nombre exacto', () => {
+    // Si un nombre difiere, el join no encuentra el platillo y la fila se pierde sin avisar.
+    expect(filas.filter((f) => !platillosMenu.has(f.platillo))).toEqual([]);
+  });
+
+  it('no repite ningun par (platillo, ingrediente)', () => {
+    const pares = filas.map((f) => `${f.platillo} | ${f.nombre}`);
+    expect(pares.filter((par, i) => pares.indexOf(par) !== i)).toEqual([]);
+  });
+
+  it('el tomate no se quita de la Hamburguesa Delicias (decision del PO)', () => {
+    expect(filas).not.toContainEqual({ platillo: 'Hamburguesa Delicias', nombre: 'Tomate' });
+  });
+
+  it('es seguro de correr mas de una vez (on conflict do nothing)', () => {
+    expect(contenidoRemovibles).toMatch(/on conflict \(id_platillo, nombre\) do nothing;/);
+  });
+
+  it('borra en la misma sentencia los ingredientes que ya no estan en la lista', () => {
+    // Si la lista cambia, en bases ya cargadas (serviceagent-dev) no quedan filas viejas.
+    expect(contenidoRemovibles).toMatch(/retirados as \(\s*delete from ingrediente_removible/);
+  });
+});
