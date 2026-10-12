@@ -5,7 +5,7 @@ Resultado de la última vez que se corrieron todos los casos de [casos/](./casos
 - **Fecha:** pendiente
 - **Modelo:** pendiente
 
-Ningún caso se ha corrido con el prompt actual, que ya usa `cotizar_pedido`: la corrida necesita `POST /pedidos/cotizar` desplegado. Los resultados de un prompt anterior no valen para este.
+Ningún caso se ha corrido con el prompt actual, que ya usa `cotizar_pedido`. `POST /pedidos/cotizar` ya está desplegado: solo falta hacer la corrida. Los resultados de un prompt anterior no valen para este.
 
 | Caso                                  | Resultado | Resumen    |
 | ------------------------------------- | --------- | ---------- |
@@ -41,6 +41,9 @@ Ningún caso se ha corrido con el prompt actual, que ya usa `cotizar_pedido`: la
 | `pedido-variante-con-palabras-de-mas` | pendiente | Sin correr |
 | `pedido-variante-que-parece-extra`    | pendiente | Sin correr |
 | `pedido-sin-ingrediente`              | pendiente | Sin correr |
+| `pedido-sin-jitomate`                 | pendiente | Sin correr |
+| `pedido-sin-pimiento`                 | pendiente | Sin correr |
+| `pedido-queso-no-removible`           | pendiente | Sin correr |
 
 **Resultado:** `Pasó`, `Falló` o `pendiente`. **Resumen:** una línea con lo que respondió el agente o por qué falló.
 

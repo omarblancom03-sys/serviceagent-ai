@@ -3,7 +3,7 @@
   "historia": "US-07-P2",
   "criterios": ["C2", "C5"],
   "categoria": "pedido",
-  "titulo": "Extra dicho con palabras de más: manda el nombre corto",
+  "titulo": "Extra dicho con palabras de más: se cotiza como el extra",
   "mensajes": ["Una salsa BBQ"],
   "argsEsperados": [
     {
@@ -11,13 +11,9 @@
     }
   ],
   "debe": [
-    "Manda el extra con su nombre corto, \"BBQ\", en extrasSueltos.",
+    "Manda el extra en extrasSueltos; valen \"BBQ\" y \"salsa BBQ\" (D31).",
     "Da el resumen con el nombre que devolvió cotizar_pedido.",
     "Dice el total que devolvió cotizar_pedido."
   ],
-  "noDebe": [
-    "Mandar \"salsa BBQ\" como nombre del extra.",
-    "Mandarlo en productos.",
-    "Ofrecer o mencionar otros extras."
-  ]
+  "noDebe": ["Mandarlo en productos.", "Ofrecer o mencionar otros extras."]
 }

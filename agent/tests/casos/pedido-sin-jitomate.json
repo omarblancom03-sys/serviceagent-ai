@@ -1,0 +1,28 @@
+{
+  "id": "pedido-sin-jitomate",
+  "historia": "US-07-P2",
+  "criterios": ["C2", "C4"],
+  "categoria": "pedido",
+  "titulo": "\"Jitomate\" no es tomate: pregunta a qué se refiere sin adivinar",
+  "mensajes": ["Una orden de El Granero sin jitomate", "El tomate"],
+  "argsEsperados": [
+    {
+      "productos": [{ "producto": "El Granero", "cantidad": 1, "sinIngredientes": ["jitomate"] }]
+    },
+    {
+      "productos": [{ "producto": "El Granero", "cantidad": 1, "sinIngredientes": ["tomate"] }]
+    }
+  ],
+  "debe": [
+    "En la primera llamada manda \"jitomate\", la palabra del cliente.",
+    "Dice que no puede quitar el jitomate de ese platillo y, en una sola pregunta: a qué ingrediente se refiere, o si lo quiere como viene.",
+    "Tras la respuesta, vuelve a cotizar con \"tomate\" y dice \"sin tomate\" en el resumen.",
+    "Dice el total que devolvió cotizar_pedido."
+  ],
+  "noDebe": [
+    "Mandar \"tomate\" en la primera llamada.",
+    "Preguntar \"¿te refieres al tomate?\" o proponer ingredientes.",
+    "Decir que el platillo irá sin jitomate.",
+    "Decir un precio antes de la segunda cotización."
+  ]
+}

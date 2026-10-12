@@ -18,10 +18,11 @@
   ],
   "debe": [
     "Manda \"tomate\" en sinIngredientes de la hamburguesa.",
-    "Dice que el tomate no se puede quitar de esa hamburguesa.",
-    "Pregunta si la quiere como viene."
+    "Dice que no puede quitar el tomate de esa hamburguesa.",
+    "En una sola pregunta: a qué ingrediente se refiere, o si la quiere como viene."
   ],
   "noDebe": [
+    "Proponer otro ingrediente para quitar.",
     "Decir que la hamburguesa irá sin tomate.",
     "Cotizarla completa sin preguntar.",
     "Decir un precio o un total: con aclaraciones no hay ninguno."

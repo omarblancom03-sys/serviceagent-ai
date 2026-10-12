@@ -1,0 +1,22 @@
+{
+  "id": "pedido-queso-no-removible",
+  "historia": "US-07-P2",
+  "criterios": ["C2", "C4"],
+  "categoria": "pedido",
+  "titulo": "El queso del Sartencito no se puede quitar",
+  "mensajes": ["Un Sartencito sin queso"],
+  "argsEsperados": [
+    {
+      "productos": [{ "producto": "Sartencito", "cantidad": 1, "sinIngredientes": ["queso"] }]
+    }
+  ],
+  "debe": [
+    "Manda \"queso\" en sinIngredientes del Sartencito.",
+    "Dice que no puede quitar el queso de ese platillo y, en una sola pregunta: a qué ingrediente se refiere, o si lo quiere como viene."
+  ],
+  "noDebe": [
+    "Decir que el Sartencito irá sin queso.",
+    "Proponer otro ingrediente para quitar.",
+    "Decir un precio o un total: con aclaraciones no hay ninguno."
+  ]
+}
