@@ -49,8 +49,8 @@ export async function verificarFirmaRetell(
 export function requiereFirmaRetell() {
   return createMiddleware<AppEnv>(async (c, next) => {
     const llave = c.env.RETELL_API_KEY;
-    // Una llave en blanco cuenta como faltante. Falta exigir un largo mínimo: se fija cuando el PO
-    // confirme cuánto mide la llave real de Retell.
+    // Una llave en blanco cuenta como faltante. No se exige un largo mínimo (decisión del PO): la
+    // llave la carga solo el PO desde el dashboard de Retell.
     if (!llave || llave.trim() === '') {
       console.error('Falta RETELL_API_KEY: no se puede verificar la firma de Retell.');
       return c.json({ error: 'El servicio no está configurado. Intenta más tarde.' }, 500);
