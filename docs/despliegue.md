@@ -43,8 +43,23 @@ Secreto que se mezcla con cada PIN (HMAC) antes del hash (D13). No vive en la ba
 
 Verifica `X-Retell-Signature` en las peticiones que manda Retell a la API (custom functions). Debe ser la API key de Retell que tiene el **badge de webhook**: con otra llave, ninguna firma coincide y la API responde 401. Si falta o está en blanco, esas rutas responden 500. La revisa el middleware `requiereFirmaRetell`; hoy lo usa `POST /pedidos/cotizar` (`cotizar_pedido`).
 
+El chat web usa la misma llave para llamar a la API de Retell (`Authorization: Bearer`). Si falta, `POST /chat/...` responde 503 `servicio_no_disponible` sin abrir conversaciones ni contar mensajes.
+
 - **Local:** en `apps/api/.dev.vars` (`RETELL_API_KEY=<valor>`), copiada del dashboard de Retell → API Keys.
 - **Ambiente desplegado:** la carga el PO con `cd apps/api && pnpm exec wrangler secret put RETELL_API_KEY`.
+
+### `RETELL_AGENT_ID` (agente del chat web)
+
+Id del agente de chat de Retell con el que `POST /chat/conversaciones` abre cada chat. Obligatoria para el chat: si falta o está en blanco, responde 503 sin abrir la conversación ni gastar el tope diario. No es secreta, pero se carga igual que los secretos para no publicar identificadores de la cuenta ([agent/retell.md](../agent/retell.md#cómo-leer-retelljson)).
+
+- **Local:** en `apps/api/.dev.vars` (`RETELL_AGENT_ID=<valor>`). Para probar sin gastar el saldo del equipo, usa el agente de tu propia cuenta de Retell ([D22](decisiones.md)).
+- **Ambiente desplegado:** la carga el PO con `cd apps/api && pnpm exec wrangler secret put RETELL_AGENT_ID`.
+
+### `CHAT_TOPE_DIARIO` (opcional)
+
+Conversaciones nuevas del chat al día en todo el sistema, contadas por día de America/Chihuahua ([D38](decisiones.md)). Entero de 1 a 100; si falta, está vacía, no es un entero o está fuera de rango, se usa **3**: el chat nunca queda sin tope.
+
+- **Ambiente desplegado:** para cambiarla sin tocar código, el PO la carga con `cd apps/api && pnpm exec wrangler secret put CHAT_TOPE_DIARIO`. No es secreta, pero en `vars` de `wrangler.jsonc` cambiarla exigiría un PR, y una variable puesta a mano en el dashboard se borra en el siguiente despliegue.
 
 ### Frontends (web y simuladores)
 
