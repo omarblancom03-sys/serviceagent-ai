@@ -5,6 +5,7 @@ import { RutaProtegida } from './auth/RutaProtegida';
 import { useSesion } from './auth/SesionContext';
 import { AdminMenu } from './pages/AdminMenu';
 import { Login } from './pages/Login';
+import { MenuCliente } from './pages/MenuCliente';
 import { PaginaPlaceholder } from './pages/PaginaPlaceholder';
 
 /** Pantallas internas que ya tienen página real; las demás muestran el placeholder. */
@@ -35,6 +36,9 @@ export function App() {
           <span className="font-bold text-orange-700">ServiceAgent AI</span>
           <NavLink to="/pedir" className={claseEnlace}>
             Pedir
+          </NavLink>
+          <NavLink to="/menu" className={claseEnlace}>
+            Menú
           </NavLink>
           {pantallasVisibles.map((pantalla) => (
             <NavLink key={pantalla.path} to={pantalla.path} className={claseEnlace}>
@@ -68,6 +72,7 @@ export function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/pedir" replace />} />
           <Route path="/pedir" element={<PaginaPlaceholder titulo="Pedir" />} />
+          <Route path="/menu" element={<MenuCliente />} />
           <Route path="/login" element={<Login />} />
           {PANTALLAS_EMPLEADO.map((pantalla) => (
             <Route
