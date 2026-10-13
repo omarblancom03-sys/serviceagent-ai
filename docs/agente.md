@@ -74,12 +74,13 @@ Lógica en `apps/api/src/services/chat.ts`; Retell se llama con `fetch` directo 
 
 **Limitación conocida:** si Retell falla al abrir, el lugar del tope diario queda gastado aunque Retell claramente no haya creado el chat (un 4xx): una caída de Retell consume los lugares del día. Devolverlo requiere una función SQL nueva (el tope cuenta las filas creadas ese día y la API no puede borrarlas). Es una mejora pendiente ([D39](decisiones.md)).
 
-**Se confirma en la prueba real** (la documentación de Retell no lo dice):
+**Confirmado en la prueba real** (la documentación de Retell no lo dice):
 
-- Si `create-chat` trae el saludo del agente y en qué campo. La API lo busca en `message_with_tool_calls`; si no viene, `mensajes` sale vacío.
-- El formato del `chat_id`. La API acepta de 1 a 128 caracteres, el largo de la columna.
-- Qué error da `create-chat-completion` con un chat ya terminado. La API supone 400 o 422 y lo confirma con `get-chat`.
-- Que la llave con la etiqueta de webhook sirva también para llamar a la API de Retell.
+- `create-chat` no trae el saludo del agente: `mensajes` sale vacío, así que la pantalla de `/pedir` muestra su propio saludo.
+- El `chat_id` empieza con `chat_` y mide 32 caracteres. La API acepta de 1 a 128, el largo de la columna.
+- Con un chat cerrado por inactividad, `create-chat-completion` responde 400; la API consulta `get-chat` (`ended`), termina la conversación, devuelve el mensaje y responde 409. A los 13 minutos sin actividad el chat ya estaba cerrado; no se midió si cierra exactamente a los 6.
+- La llave de API de Retell que se usó en la prueba sirve para llamar a la API de chat (`create-chat` y `create-chat-completion`).
+- Cada respuesta del agente tardó de 2.6 a 4 s.
 
 ## Comportamiento
 
