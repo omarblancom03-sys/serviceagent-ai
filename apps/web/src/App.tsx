@@ -7,6 +7,7 @@ import { AdminMenu } from './pages/AdminMenu';
 import { Login } from './pages/Login';
 import { MenuCliente } from './pages/MenuCliente';
 import { PaginaPlaceholder } from './pages/PaginaPlaceholder';
+import { PedirChat } from './pages/PedirChat';
 
 /** Pantallas internas que ya tienen página real; las demás muestran el placeholder. */
 const PAGINA_EMPLEADO: Partial<Record<string, ReactNode>> = {
@@ -71,7 +72,7 @@ export function App() {
       <main className="mx-auto max-w-5xl px-4 py-8">
         <Routes>
           <Route path="/" element={<Navigate to="/pedir" replace />} />
-          <Route path="/pedir" element={<PaginaPlaceholder titulo="Pedir" />} />
+          <Route path="/pedir" element={<PedirChat />} />
           <Route path="/menu" element={<MenuCliente />} />
           <Route path="/login" element={<Login />} />
           {PANTALLAS_EMPLEADO.map((pantalla) => (
