@@ -23,6 +23,8 @@ export function PedirChat() {
   const [borrador, setBorrador] = useState('');
   const [errorTexto, setErrorTexto] = useState<string | null>(null);
   const finLista = useRef<HTMLDivElement>(null);
+  const cajaTexto = useRef<HTMLInputElement>(null);
+  const faseAnterior = useRef(estado.fase);
 
   const activo = puedeEscribir(estado);
   const enviando = estado.fase === 'enviando';
@@ -30,6 +32,12 @@ export function PedirChat() {
   useEffect(() => {
     finLista.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [estado.burbujas.length, estado.fase]);
+
+  // Tras una respuesta (enviando -> listo) el foco vuelve a la caja; al cargar no se enfoca.
+  useEffect(() => {
+    if (faseAnterior.current === 'enviando' && estado.fase === 'listo') cajaTexto.current?.focus();
+    faseAnterior.current = estado.fase;
+  }, [estado.fase]);
 
   /** Crea la conversación si aún no existe y luego envía el texto. */
   async function ejecutar(texto: string) {
@@ -158,6 +166,7 @@ export function PedirChat() {
             Escribe tu mensaje
           </label>
           <input
+            ref={cajaTexto}
             id="mensaje-chat"
             type="text"
             autoComplete="off"
