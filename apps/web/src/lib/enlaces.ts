@@ -3,8 +3,9 @@ export type Segmento = { tipo: 'texto'; valor: string } | { tipo: 'enlace'; url:
 
 // Solo http y https: cualquier otro esquema (javascript:, data:…) queda como texto.
 const PATRON_URL = /https?:\/\/[^\s<>"]+/gi;
-// Puntuación que cierra una oración y no forma parte de la URL: "mira https://x.com."
-const PUNTUACION_FINAL = /[.,;:!?)\]}'"»]+$/;
+// Puntuación que cierra una oración y no forma parte de la URL: "mira https://x.com.", y las
+// marcas de Markdown que deja el agente alrededor: "**https://x.com**".
+const PUNTUACION_FINAL = /[.,;:!?)\]}'"»*_]+$/;
 
 function esUrlSegura(url: string): boolean {
   try {

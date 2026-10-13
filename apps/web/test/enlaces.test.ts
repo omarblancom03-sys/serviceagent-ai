@@ -40,6 +40,23 @@ describe('separarEnlaces', () => {
     ]);
   });
 
+  it('no incluye las marcas de Markdown (* y _) en el enlace', () => {
+    expect(separarEnlaces('**https://x.mx/menu**')).toEqual([
+      { tipo: 'texto', valor: '**' },
+      { tipo: 'enlace', url: 'https://x.mx/menu' },
+      { tipo: 'texto', valor: '**' },
+    ]);
+    expect(separarEnlaces('_https://x.mx/menu_')).toEqual([
+      { tipo: 'texto', valor: '_' },
+      { tipo: 'enlace', url: 'https://x.mx/menu' },
+      { tipo: 'texto', valor: '_' },
+    ]);
+    expect(separarEnlaces('https://x.mx/menu**.')).toEqual([
+      { tipo: 'enlace', url: 'https://x.mx/menu' },
+      { tipo: 'texto', valor: '**.' },
+    ]);
+  });
+
   it('separa varias URLs', () => {
     const segmentos = separarEnlaces('https://a.mx y https://b.mx!');
     expect(segmentos.filter((s) => s.tipo === 'enlace')).toEqual([
