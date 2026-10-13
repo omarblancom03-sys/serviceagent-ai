@@ -96,7 +96,7 @@ export function PedirChat() {
   }
 
   return (
-    <section className="mx-auto flex h-[calc(100dvh-9rem)] min-h-96 w-full max-w-xl flex-col overflow-hidden rounded-2xl border border-orange-200 bg-orange-50">
+    <section className="mx-auto flex min-h-0 w-full flex-1 max-w-xl flex-col overflow-hidden rounded-2xl border border-orange-200 bg-orange-50">
       <header className="flex items-center gap-3 border-b border-orange-200 bg-white px-4 py-3">
         <div
           aria-hidden="true"
