@@ -108,7 +108,10 @@ describe('estado del chat', () => {
   it('si la respuesta llega al límite pasa a limite con el mismo aviso que el 429', () => {
     const estado = aplicar({ tipo: 'enviar', texto: 'hola' }, creada, respuesta(30));
     expect(estado.fase).toBe('limite');
-    expect(estado.aviso).toEqual({ mensaje: mensajeLimite(30), accion: 'ninguna' });
+    expect(estado.aviso).toEqual({ mensaje: mensajeLimite(30), accion: 'iniciar_otra' });
+    expect(estado.aviso?.mensaje).toBe(
+      'Llegaste al límite de 30 mensajes de esta conversación. Puedes iniciar otra.',
+    );
     expect(puedeEscribir(estado)).toBe(false);
   });
 
@@ -183,8 +186,17 @@ describe('estado del chat', () => {
       { tipo: 'fallo', falla },
     );
     expect(estado.fase).toBe('limite');
+    expect(estado.aviso).toEqual({ mensaje: mensajeLimite(30), accion: 'iniciar_otra' });
     expect(estado.mensajesUsados).toBe(30);
     expect(puedeEscribir(estado)).toBe(false);
+  });
+
+  it('Iniciar otra desde el límite vuelve al estado inicial', () => {
+    const enLimite = aplicar({ tipo: 'enviar', texto: 'hola' }, creada, respuesta(30));
+    expect(enLimite.fase).toBe('limite');
+    const nueva = reducirChat(enLimite, { tipo: 'iniciarOtra' });
+    expect(nueva).toEqual(estadoInicial());
+    expect(puedeEscribir(nueva)).toBe(true);
   });
 
   it('el tope diario bloquea la caja y no ofrece Reintentar', () => {
@@ -291,7 +303,7 @@ describe('clasificarErrorChat', () => {
     );
     expect(falla).toEqual({
       fase: 'limite',
-      aviso: { mensaje: mensajeLimite(12), accion: 'ninguna' },
+      aviso: { mensaje: mensajeLimite(12), accion: 'iniciar_otra' },
     });
     expect(falla.aviso.mensaje).toContain('12');
     expect(falla.aviso.mensaje).not.toContain('30');

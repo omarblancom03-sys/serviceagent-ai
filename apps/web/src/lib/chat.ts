@@ -28,7 +28,7 @@ export const MENSAJE_TERMINADA = 'Esta conversación terminó.';
 export const MENSAJE_PETICION_INVALIDA = `No pudimos enviar tu mensaje. Revisa que tenga de 1 a ${MAX_CARACTERES_MENSAJE} caracteres.`;
 
 export function mensajeLimite(limiteMensajes: number): string {
-  return `Llegaste al límite de ${limiteMensajes} mensajes de esta conversación.`;
+  return `Llegaste al límite de ${limiteMensajes} mensajes de esta conversación. Puedes iniciar otra.`;
 }
 
 export type Fase = 'listo' | 'enviando' | 'error' | 'terminada' | 'limite' | 'tope_diario';
@@ -131,7 +131,9 @@ export function reducirChat(estado: EstadoChat, accion: AccionChat): EstadoChat 
         limiteMensajes: accion.limiteMensajes,
         fase: lleno ? 'limite' : 'listo',
         pendiente: null,
-        aviso: lleno ? { mensaje: mensajeLimite(accion.limiteMensajes), accion: 'ninguna' } : null,
+        aviso: lleno
+          ? { mensaje: mensajeLimite(accion.limiteMensajes), accion: 'iniciar_otra' }
+          : null,
       };
     }
     case 'fallo':
@@ -214,7 +216,10 @@ export function clasificarErrorChat(
     return { fase: 'terminada', aviso: { mensaje: MENSAJE_TERMINADA, accion: 'iniciar_otra' } };
   }
   if (codigo === 'limite_alcanzado') {
-    return { fase: 'limite', aviso: { mensaje: mensajeLimite(limiteMensajes), accion: 'ninguna' } };
+    return {
+      fase: 'limite',
+      aviso: { mensaje: mensajeLimite(limiteMensajes), accion: 'iniciar_otra' },
+    };
   }
   if (codigo === 'peticion_invalida') {
     return { fase: 'listo', aviso: { mensaje: MENSAJE_PETICION_INVALIDA, accion: 'ninguna' } };
