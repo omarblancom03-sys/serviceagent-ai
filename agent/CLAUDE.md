@@ -22,6 +22,7 @@ Todo lo del agente de Retell, **versionado en Git** y no solo en el dashboard de
 
 - Los nombres de función y sus endpoints son los de la tabla de [docs/agente.md](../docs/agente.md#custom-functions); el JSON de `functions/` debe coincidir con el endpoint de la API.
 - El menú completo **no** va en el prompt: se consulta con `buscar_menu`.
+- El enlace del menú del prompt es la URL de producción de la web ([docs/despliegue.md](../docs/despliegue.md)); si cambia el dominio, se cambia el prompt.
 - El prompt nunca pide al modelo calcular montos; los montos vienen de `cotizar_pedido`.
 - La sección "Lo que puedes hacer hoy" del prompt dice qué hace el agente con lo que aún no tiene herramienta. La historia que agrega una custom function reemplaza ahí su línea y ajusta los casos `sin_inventar` que correspondan.
 - El archivo que descarga "Export" en Retell **nunca entra al repo**: trae ids de la cuenta y una copia del prompt. Se guarda fuera del proyecto y solo se usa para comparar ([retell.md → Export del agente](./retell.md#export-del-agente)).
