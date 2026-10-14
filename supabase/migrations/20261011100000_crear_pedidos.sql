@@ -13,7 +13,7 @@ create table public.pedidos (
   folio integer not null unique default nextval('public.pedidos_folio_seq'),
   nombre_cliente text not null check (length(trim(nombre_cliente)) between 2 and 60),
   -- 10 dígitos de México, ya normalizado por la API (D32).
-  telefono text not null check (telefono ~ '^[0-9]{10}$'),
+  telefono text not null check (telefono ~ '^[2-9][0-9]{9}$'),
   estado text not null default 'confirmado' check (
     estado in (
       'confirmado', 'esperando_pago', 'en_cola', 'preparando',

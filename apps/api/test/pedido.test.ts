@@ -48,12 +48,19 @@ describe('normalizarTelefono (10 dígitos de México, D32)', () => {
     expect(normalizarTelefono(texto)).toBe(esperado);
   });
 
-  it.each(['614123456', '61412345678', '+1 614 123 4567', '614 123 456a', '', 'sin teléfono'])(
-    '"%s" no es válido',
-    (texto) => {
-      expect(normalizarTelefono(texto)).toBeNull();
-    },
-  );
+  it.each([
+    '614123456',
+    '61412345678',
+    '+1 614 123 4567',
+    '614 123 456a',
+    '',
+    'sin teléfono',
+    '0141234567',
+    '1614123456',
+    '044 614 123 456',
+  ])('"%s" no es válido', (texto) => {
+    expect(normalizarTelefono(texto)).toBeNull();
+  });
 });
 
 describe('normalizarNombre', () => {

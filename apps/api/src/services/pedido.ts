@@ -57,13 +57,14 @@ export interface PedidosRepo {
 
 /**
  * Teléfono de México a 10 dígitos (D32). Acepta espacios, guiones, puntos y paréntesis, y la lada
- * de país +52 (o el viejo +521 de celulares). `null` si no queda en 10 dígitos.
+ * de país +52 (o el viejo +521 de celulares). `null` si no queda en 10 dígitos o empieza con 0 o 1:
+ * en México ningún número empieza así (eran los prefijos 01, 044 y 045, retirados en 2019).
  * "+52 (614) 123-4567" → "6141234567".
  */
 export function normalizarTelefono(texto: string): string | null {
   const sinSeparadores = texto.replace(/[\s\-.()]/g, '');
   const digitos = sinSeparadores.replace(/^\+?521?(?=\d{10}$)/, '');
-  return /^\d{10}$/.test(digitos) ? digitos : null;
+  return /^[2-9]\d{9}$/.test(digitos) ? digitos : null;
 }
 
 /**
