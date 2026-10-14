@@ -15,9 +15,14 @@ Resultado de la última vez que se corrieron todos los casos de [casos/](./casos
 | `despedida-clara`             | Pasó      | Despedida corta, agradece y menciona a El Granero, sin pregunta.                                     |
 | `despedida-y-regreso`         | Pasó      | Tras despedirse retomó con amabilidad y sin repetir el saludo.                                       |
 | `gracias-con-pregunta`        | Pasó      | No se despidió con el "gracias" con pregunta, no inventó pagos y se despidió al final.               |
-| `menu-y-precios-sin-inventar` | Pasó      | No nombró platillos ni dio precios, tampoco al pedirle un aproximado.                                |
+| `menu-y-precios-sin-inventar` | pendiente | Cambió su `debe` en US-09-P2: ahora espera el enlace del menú.                                       |
 | `pedido-sin-inventar`         | Pasó      | Dijo "No, no se registró ningún pedido" y sugirió pedir en el restaurante.                           |
 | `horario-sin-inventar`        | Pasó      | Sin horario ni ubicación; ante la alergia sugirió confirmar en el restaurante antes de pedir.        |
+| `ver-menu-primer-mensaje`     | pendiente | Caso nuevo de US-09-P2, sin correr.                                                                  |
+| `que-tienen-link`             | pendiente | Caso nuevo de US-09-P2, sin correr.                                                                  |
+| `opciones-y-precios-link`     | pendiente | Caso nuevo de US-09-P2, sin correr.                                                                  |
+| `hola-primer-mensaje`         | pendiente | Caso nuevo de US-09-P2, sin correr.                                                                  |
+| `platillo-concreto`           | pendiente | Caso nuevo de US-09-P2, sin correr.                                                                  |
 
 **Resultado:** `Pasó`, `Falló` o `pendiente`. **Resumen:** una línea con lo que respondió el agente o por qué falló.
 
