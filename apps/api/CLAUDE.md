@@ -53,4 +53,4 @@ Los tests usan `crearApp({ ... })` con repos en memoria y `app.request(ruta, ini
 - [docs/negocio.md](../../docs/negocio.md): estados del pedido, pagos, inventario, tiempo estimado, auth y roles.
 - [docs/agente.md](../../docs/agente.md): endpoints de las custom functions y verificación de `X-Retell-Signature`.
 - [docs/despliegue.md](../../docs/despliegue.md): secretos del Worker (`JWT_SECRET`, `PIN_PEPPER`, `RETELL_API_KEY`, `RETELL_AGENT_ID`, `CHAT_TOPE_DIARIO`, `SUPABASE_*`) y despliegue.
-- [docs/decisiones.md](../../docs/decisiones.md): D2, D7, D8, D9, D12, D13, D14, D19, D20, D21, D36, D38, D39.
+- [docs/decisiones.md](../../docs/decisiones.md): D2, D7, D8, D9, D12, D13, D14, D19, D20, D21, D36, D38, D39, D41.

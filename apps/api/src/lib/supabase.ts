@@ -27,10 +27,22 @@ async function esJwtDelFuturo(respuesta: Response): Promise<boolean> {
   }
 }
 
+/** Ruta de la petición para el log (`/rest/v1/extra`): dice qué tabla o función falló, sin la query. */
+function rutaDe(entrada: Parameters<typeof fetch>[0]): string {
+  const url =
+    typeof entrada === 'string' ? entrada : entrada instanceof URL ? entrada.href : entrada.url;
+  try {
+    return new URL(url).pathname;
+  } catch {
+    return '(ruta desconocida)';
+  }
+}
+
 /**
  * `fetch` que reintenta solo ante `PGRST303` "JWT issued at future" (D41); cualquier otra respuesta
- * se devuelve tal cual. Si se agotan los reintentos, devuelve el último 401 y el repo lanza su
- * error de siempre (→ 500). supabase-js manda el cuerpo como texto, así que se puede reenviar.
+ * se devuelve tal cual. Si se agotan los reintentos, lo avisa en el log y devuelve el último 401, y
+ * el repo lanza su error de siempre (→ 500). supabase-js manda el cuerpo como texto, así que se
+ * puede reenviar. El 401 que se descarta se cierra para no dejar ocupada la conexión.
  */
 export function crearFetchConReintento(
   fetchBase: typeof fetch = (entrada, init) => fetch(entrada, init),
@@ -39,9 +51,16 @@ export function crearFetchConReintento(
   return async (entrada, init) => {
     for (let intento = 0; ; intento++) {
       const respuesta = await fetchBase(entrada, init);
+      if (!(await esJwtDelFuturo(respuesta))) return respuesta;
+
       const espera = ESPERAS_REINTENTO_MS[intento];
-      if (espera === undefined || !(await esJwtDelFuturo(respuesta))) return respuesta;
-      console.warn(`Supabase: PGRST303 "JWT issued at future"; reintento ${intento + 1}`);
+      const aviso = `Supabase: PGRST303 "JWT issued at future" en ${rutaDe(entrada)}`;
+      if (espera === undefined) {
+        console.warn(`${aviso}; se agotaron los ${ESPERAS_REINTENTO_MS.length} reintentos`);
+        return respuesta;
+      }
+      console.warn(`${aviso}; reintento ${intento + 1}`);
+      await respuesta.body?.cancel();
       await esperar(espera);
     }
   };
