@@ -310,7 +310,7 @@ export const DatoClienteInvalidoSchema = z.object({
 });
 
 /**
- * Pedido guardado con estado `confirmado`. Los renglones y el total son los de
+ * Pedido guardado y ya en la cola de cocina (`en_cola`, D46). Los renglones y el total son los de
  * la cotización que hizo el backend al crearlo. `yaExistia`: el mismo pedido
  * con el mismo teléfono y nombre ya se había creado hace poco (D34) y se devuelve ese
  * folio en lugar de crear otro.

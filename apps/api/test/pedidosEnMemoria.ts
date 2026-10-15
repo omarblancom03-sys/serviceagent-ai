@@ -44,11 +44,11 @@ export function crearRepoPedidosEnMemoria(
       if (suma !== pedido.totalCentavos) throw new Error('El total no coincide con los renglones.');
 
       const folio = 1001 + pedidos.length;
-      pedidos.push({ ...pedido, folio, estado: 'confirmado', creadoEn: repo.ahora });
+      pedidos.push({ ...pedido, folio, estado: 'en_cola', creadoEn: repo.ahora });
       return {
         folio,
         totalCentavos: pedido.totalCentavos,
-        estado: 'confirmado' as const,
+        estado: 'en_cola' as const,
         yaExistia: false,
       };
     },

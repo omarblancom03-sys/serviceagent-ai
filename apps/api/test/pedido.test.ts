@@ -123,7 +123,7 @@ describe('crearPedido', () => {
       ok: true,
       folio: 1001,
       folioTexto: '#1001',
-      estado: 'confirmado',
+      estado: 'en_cola',
       yaExistia: false,
       totalCentavos: 91600,
       totalTexto: '$916.00',
