@@ -8,19 +8,24 @@ import type { AppEnv } from './lib/env';
 import { crearRepoChat } from './lib/repoChat';
 import { crearRepoEmpleados } from './lib/repoEmpleados';
 import { crearRepoMenu } from './lib/repoMenu';
+import { crearRepoPedidos } from './lib/repoPedidos';
 import { crearClienteSupabase } from './lib/supabase';
 import { registrarAuth, type DependenciasAuth } from './routes/auth';
 import { ERROR_PETICION_INVALIDA, registrarChat, type DependenciasChat } from './routes/chat';
 import { registrarHealth } from './routes/health';
 import { registrarMenu, type DependenciasMenu } from './routes/menu';
-import { registrarPedidos } from './routes/pedidos';
+import { registrarPedidos, type DependenciasPedidos } from './routes/pedidos';
 
 /** Servicios externos que usa la API. Los tests los reemplazan por versiones en memoria. */
-export type Dependencias = DependenciasAuth & DependenciasMenu & DependenciasChat;
+export type Dependencias = DependenciasAuth &
+  DependenciasMenu &
+  DependenciasPedidos &
+  DependenciasChat;
 
 const dependenciasReales: Dependencias = {
   crearRepoEmpleados: (env) => crearRepoEmpleados(crearClienteSupabase(env)),
   crearRepoMenu: (env) => crearRepoMenu(crearClienteSupabase(env)),
+  crearRepoPedidos: (env) => crearRepoPedidos(crearClienteSupabase(env)),
   crearRepoChat: (env) => crearRepoChat(crearClienteSupabase(env)),
   crearClienteRetell: (llave) => crearClienteRetell(llave),
 };
