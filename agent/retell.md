@@ -101,3 +101,5 @@ No se configura en Retell: el cierre por inactividad (`end_chat_after_silence_ms
 2. Se copia a un borrador del agente en el dashboard.
 3. Se corren todos los casos de `tests/casos/` y se actualiza `tests/corrida.md`.
 4. Con el PR fusionado, se publica la versión.
+
+**Si dos PR cambian el prompt al mismo tiempo:** el borrador del equipo en Retell es para el PR que usa herramientas; el otro prueba en su propia cuenta de Retell o, si no puede, deja sus casos en `pendiente`. El que se fusiona segundo corre todos los casos antes de publicar, y solo se publica lo que ya está en `main`.
