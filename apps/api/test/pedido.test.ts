@@ -29,8 +29,10 @@ const DOS_TBONE = {
 };
 
 /** Crea el pedido con el seed real; la petición y la respuesta pasan por el contrato. */
-async function crear(args: unknown, repo = crearRepoPedidosEnMemoria(), ahora = AHORA) {
-  const respuesta = await crearPedido(repoMenu, repo, CrearPedidoArgsSchema.parse(args), ahora);
+/** Crea el pedido con el reloj de la base (el del repo en memoria) puesto en `ahora`. */
+async function crear(args: unknown, repo = crearRepoPedidosEnMemoria(AHORA), ahora = AHORA) {
+  repo.ahora = ahora;
+  const respuesta = await crearPedido(repoMenu, repo, CrearPedidoArgsSchema.parse(args));
   return { respuesta: RespuestaCrearPedidoSchema.parse(respuesta), repo };
 }
 
@@ -138,7 +140,7 @@ describe('crearPedido', () => {
     ]);
   });
 
-  it('los folios son consecutivos', async () => {
+  it('los folios son crecientes', async () => {
     const repo = crearRepoPedidosEnMemoria();
     await crear({ ...DOS_TBONE, ...CLIENTE }, repo);
     const { respuesta } = await crear({ ...DOS_TBONE, ...CLIENTE, telefono: '6149998877' }, repo);
@@ -174,6 +176,20 @@ describe('crearPedido', () => {
     });
     expect(repo.pedidos).toHaveLength(0);
   });
+
+  it.each([-6141234567, 614.1234567, 61412.34567])(
+    'el teléfono %s como número da la aclaración del teléfono y no guarda nada',
+    async (telefono) => {
+      const { respuesta, repo } = await crear({ ...DOS_TBONE, ...CLIENTE, telefono });
+
+      expect(respuesta).toEqual({
+        ok: false,
+        aclaraciones: [],
+        datosCliente: [{ campo: 'telefono', detalle: DETALLE_TELEFONO }],
+      });
+      expect(repo.pedidos).toHaveLength(0);
+    },
+  );
 
   it('nombre y teléfono que no vinieron (o vinieron null o "") → "falta"', async () => {
     const { respuesta } = await crear({ ...DOS_TBONE, nombre: null, telefono: '' });
@@ -285,14 +301,27 @@ describe('crearPedido', () => {
       const { respuesta } = await crear({ ...DOS_TBONE, ...CLIENTE }, repo, minutosDespues(1));
       expect(respuesta).toMatchObject({ folio: 1001, yaExistia: true, estado: 'en_cola' });
     });
+
+    it.each(['entregado', 'expirado'] as const)(
+      'un pedido %s dentro de los 10 minutos sigue contando como duplicado (D34)',
+      async (estado) => {
+        const repo = crearRepoPedidosEnMemoria();
+        await crear({ ...DOS_TBONE, ...CLIENTE }, repo);
+        const [primero] = repo.pedidos;
+        if (primero) primero.estado = estado;
+
+        const { respuesta } = await crear({ ...DOS_TBONE, ...CLIENTE }, repo, minutosDespues(1));
+        expect(respuesta).toMatchObject({ folio: 1001, yaExistia: true, estado });
+      },
+    );
   });
 
   it('propaga el error si falla el menú o al guardar (la ruta responderá 500)', async () => {
     const args = CrearPedidoArgsSchema.parse({ ...DOS_TBONE, ...CLIENTE });
-    await expect(
-      crearPedido(repoMenuQueFalla, crearRepoPedidosEnMemoria(), args, AHORA),
-    ).rejects.toThrow('Supabase no responde');
-    await expect(crearPedido(repoMenu, repoPedidosQueFalla, args, AHORA)).rejects.toThrow(
+    await expect(crearPedido(repoMenuQueFalla, crearRepoPedidosEnMemoria(), args)).rejects.toThrow(
+      'Supabase no responde',
+    );
+    await expect(crearPedido(repoMenu, repoPedidosQueFalla, args)).rejects.toThrow(
       'Supabase no responde',
     );
   });

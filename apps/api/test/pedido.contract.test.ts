@@ -317,6 +317,15 @@ describe('Contrato de crear pedido', () => {
     ).toMatchObject({ telefono: '6141234567' });
   });
 
+  it.each([-6141234567, 614.1234567, 61412.34567, 0])(
+    'el teléfono %s como número no se convierte en uno válido (el servicio lo aclara)',
+    (telefono) => {
+      const { telefono: texto } = CrearPedidoArgsSchema.parse({ ...args, ...cliente, telefono });
+      expect(texto).toBeDefined();
+      expect(texto).not.toMatch(/^\d+$/);
+    },
+  );
+
   it('sigue exigiendo al menos un producto o extra suelto', () => {
     expect(CrearPedidoArgsSchema.safeParse({ ...cliente }).success).toBe(false);
   });

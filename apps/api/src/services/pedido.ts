@@ -21,7 +21,8 @@ export const MINUTOS_PEDIDO_DUPLICADO = 10;
 export const NOMBRE_MIN = 2;
 export const NOMBRE_MAX = 60;
 export const DETALLE_NOMBRE = `El nombre debe tener de ${NOMBRE_MIN} a ${NOMBRE_MAX} letras.`;
-export const DETALLE_TELEFONO = 'El teléfono debe tener 10 dígitos.';
+export const DETALLE_TELEFONO =
+  'El teléfono debe ser de México: 10 dígitos que no empiecen con 0 ni 1.';
 export const DETALLE_FALTA_NOMBRE = 'Falta el nombre del cliente.';
 export const DETALLE_FALTA_TELEFONO = 'Falta el teléfono del cliente.';
 
@@ -46,13 +47,10 @@ export interface PedidoGuardado {
 export interface PedidosRepo {
   /**
    * Guarda el pedido con estado `confirmado` en una sola transacción, o devuelve el que ya existe
-   * si el mismo teléfono mandó la misma huella hace menos de `minutosDuplicado` minutos.
+   * si el mismo teléfono mandó la misma huella hace menos de `minutosDuplicado` minutos. La hora
+   * la pone la base, no la API (D42).
    */
-  guardarPedido(
-    pedido: NuevoPedido,
-    minutosDuplicado: number,
-    ahora: Date,
-  ): Promise<PedidoGuardado>;
+  guardarPedido(pedido: NuevoPedido, minutosDuplicado: number): Promise<PedidoGuardado>;
 }
 
 /**
@@ -140,7 +138,6 @@ export async function crearPedido(
   repoMenu: MenuRepo,
   repoPedidos: PedidosRepo,
   args: CrearPedidoArgs,
-  ahora: Date = new Date(),
 ): Promise<RespuestaCrearPedido> {
   const datos = validarDatosCliente(args);
   const cotizacion = await obtenerCotizacion(repoMenu, {
@@ -165,7 +162,6 @@ export async function crearPedido(
       renglones: cotizacion.renglones,
     },
     MINUTOS_PEDIDO_DUPLICADO,
-    ahora,
   );
 
   // Con la misma huella, los renglones y precios son los mismos que se guardaron.

@@ -272,14 +272,20 @@ export const EstadoPedidoSchema = z.enum(ESTADOS_PEDIDO);
  */
 const DatoClienteSchema = opcional(z.string().max(80));
 
+/** Texto que reemplaza a un teléfono numérico con signo o decimales: no pasa la regla de D32. */
+const TELEFONO_NUMERO_INVALIDO = 'número no válido';
+
 /**
  * El teléfono también se acepta como número (`6141234567` sin comillas): el modelo a veces lo
- * manda así y un 400 no le diría qué volver a pedir. Se convierte a texto y sigue la misma regla.
+ * manda así y un 400 no le diría qué volver a pedir. Solo un entero positivo se convierte a texto:
+ * con `-6141234567` o `614.1234567`, `String()` dejaría un "-" o un "." que la regla quita como
+ * separadores y el teléfono pasaría. Cualquier otro número se vuelve un texto que no pasa la regla,
+ * así que el servicio responde la aclaración del teléfono, igual que con un texto mal escrito.
  */
-const TelefonoSchema = z.preprocess(
-  (valor) => (typeof valor === 'number' ? String(valor) : valor),
-  DatoClienteSchema,
-);
+const TelefonoSchema = z.preprocess((valor) => {
+  if (typeof valor !== 'number') return valor;
+  return Number.isSafeInteger(valor) && valor > 0 ? String(valor) : TELEFONO_NUMERO_INVALIDO;
+}, DatoClienteSchema);
 
 /**
  * Argumentos de `crear_pedido`: el mismo pedido que se cotizó, más nombre y

@@ -118,14 +118,16 @@ alter table public.extras_renglon_pedido enable row level security;
 --      sin_ingredientes: [..], precio_unitario_centavos, subtotal_centavos,
 --      extras: [{ id_extra, nombre, cantidad, precio_unitario_centavos }] }]
 -- Como segunda barrera, la suma de los subtotales debe ser igual a p_total_centavos.
+--
+-- Las horas las pone Postgres con now() (D42): es la misma para todo lo que guarda esta
+-- transacción y es el único reloj de los cambios de estado.
 create function public.crear_pedido(
   p_nombre_cliente text,
   p_telefono text,
   p_huella text,
   p_total_centavos integer,
   p_renglones jsonb,
-  p_minutos_duplicado integer,
-  p_ahora timestamptz default now()
+  p_minutos_duplicado integer
 )
 returns table (
   folio_asignado integer, total_guardado integer, estado_actual text, ya_existia boolean
@@ -149,7 +151,7 @@ begin
   where p.telefono = p_telefono
     and p.huella = p_huella
     and p.estado <> 'cancelado'
-    and p.creado_en > p_ahora - make_interval(mins => p_minutos_duplicado)
+    and p.creado_en > now() - make_interval(mins => p_minutos_duplicado)
   order by p.creado_en desc
   limit 1;
   if found then
@@ -158,11 +160,11 @@ begin
   end if;
 
   insert into public.pedidos (nombre_cliente, telefono, huella, total_centavos, creado_en)
-  values (p_nombre_cliente, p_telefono, p_huella, p_total_centavos, p_ahora)
+  values (p_nombre_cliente, p_telefono, p_huella, p_total_centavos, now())
   returning id_pedido, folio into v_id_pedido, v_folio;
 
   insert into public.historial_estado_pedido (id_pedido, estado, creado_en)
-  values (v_id_pedido, 'confirmado', p_ahora);
+  values (v_id_pedido, 'confirmado', now());
 
   for v_renglon in select r.valor from jsonb_array_elements(p_renglones) as r(valor) loop
     insert into public.renglones_pedido (
@@ -216,7 +218,7 @@ end;
 $$;
 
 -- Postgres deja ejecutar funciones a PUBLIC por defecto: se quita y solo la API puede llamarla.
-revoke execute on function public.crear_pedido(text, text, text, integer, jsonb, integer, timestamptz)
+revoke execute on function public.crear_pedido(text, text, text, integer, jsonb, integer)
   from public, anon, authenticated;
-grant execute on function public.crear_pedido(text, text, text, integer, jsonb, integer, timestamptz)
+grant execute on function public.crear_pedido(text, text, text, integer, jsonb, integer)
   to service_role;

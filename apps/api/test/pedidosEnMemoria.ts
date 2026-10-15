@@ -10,14 +10,18 @@ export interface PedidoEnMemoria extends NuevoPedido {
 /**
  * Repo de pedidos en memoria con las mismas reglas que la función SQL `crear_pedido`: folio desde
  * 1001, duplicado = mismo teléfono + misma huella (incluye el nombre) + no cancelado + dentro de la ventana, y la suma
- * de los subtotales debe dar el total. `pedidos` queda expuesto para que el test lo revise.
+ * de los subtotales debe dar el total. `pedidos` queda expuesto para que el test lo revise, y
+ * `ahora` hace de reloj de la base (D42): el test lo mueve para simular el paso del tiempo.
  */
-export function crearRepoPedidosEnMemoria(): PedidosRepo & { pedidos: PedidoEnMemoria[] } {
+export function crearRepoPedidosEnMemoria(
+  ahora = new Date(),
+): PedidosRepo & { pedidos: PedidoEnMemoria[]; ahora: Date } {
   const pedidos: PedidoEnMemoria[] = [];
-  return {
+  const repo = {
     pedidos,
-    async guardarPedido(pedido, minutosDuplicado, ahora) {
-      const desde = ahora.getTime() - minutosDuplicado * 60_000;
+    ahora,
+    async guardarPedido(pedido: NuevoPedido, minutosDuplicado: number) {
+      const desde = repo.ahora.getTime() - minutosDuplicado * 60_000;
       const previo = pedidos
         .filter(
           (p) =>
@@ -40,10 +44,16 @@ export function crearRepoPedidosEnMemoria(): PedidosRepo & { pedidos: PedidoEnMe
       if (suma !== pedido.totalCentavos) throw new Error('El total no coincide con los renglones.');
 
       const folio = 1001 + pedidos.length;
-      pedidos.push({ ...pedido, folio, estado: 'confirmado', creadoEn: ahora });
-      return { folio, totalCentavos: pedido.totalCentavos, estado: 'confirmado', yaExistia: false };
+      pedidos.push({ ...pedido, folio, estado: 'confirmado', creadoEn: repo.ahora });
+      return {
+        folio,
+        totalCentavos: pedido.totalCentavos,
+        estado: 'confirmado' as const,
+        yaExistia: false,
+      };
     },
   };
+  return repo;
 }
 
 /** Repo que siempre falla, como si Supabase no respondiera. */

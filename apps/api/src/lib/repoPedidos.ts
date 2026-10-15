@@ -54,7 +54,7 @@ function renglonesParaSql(renglones: NuevoPedido['renglones']) {
 /** Implementación de `PedidosRepo` sobre Supabase: todo pasa por la función SQL, en una transacción. */
 export function crearRepoPedidos(cliente: SupabaseClient): PedidosRepo {
   return {
-    async guardarPedido(pedido, minutosDuplicado, ahora) {
+    async guardarPedido(pedido, minutosDuplicado) {
       const { data, error } = await cliente.rpc('crear_pedido', {
         p_nombre_cliente: pedido.nombreCliente,
         p_telefono: pedido.telefono,
@@ -62,7 +62,6 @@ export function crearRepoPedidos(cliente: SupabaseClient): PedidosRepo {
         p_total_centavos: pedido.totalCentavos,
         p_renglones: renglonesParaSql(pedido.renglones),
         p_minutos_duplicado: minutosDuplicado,
-        p_ahora: ahora.toISOString(),
       });
       if (error) throw new Error(`No se pudo guardar el pedido: ${error.message}`);
 

@@ -62,7 +62,7 @@ confirmado → (esperando_pago) → en_cola → preparando → listo → entrega
 | → cancelado          | Cliente vía agente (solo antes de `preparando`) o empleado            |
 | → expirado           | Sistema, si una transferencia no llega a tiempo                       |
 
-- Cada transición guarda su hora exacta (se usa para el tiempo estimado que aprende).
+- Cada transición guarda su hora exacta, puesta por Postgres ([D42](decisiones.md)); se usa para el tiempo estimado que aprende.
 - `modo_envio_cocina` es configuración del restaurante: `al_confirmar` o `al_pagar`.
 
 ## Pagos
