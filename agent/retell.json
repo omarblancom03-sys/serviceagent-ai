@@ -22,7 +22,7 @@
     "model": "gpt-6-luna",
     "model_temperature": null,
     "start_speaker": "agent",
-    "begin_message": null,
+    "begin_message": "¡Hola! Soy el asistente virtual de El Granero. ¿En qué te puedo ayudar?",
     "general_prompt": "agent/prompt.md",
     "general_tools": [
       {

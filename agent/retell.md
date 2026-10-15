@@ -17,35 +17,34 @@ Usa los nombres de campo de la API de Retell, para que no haya duda de a qué aj
 
 ## Valores y dónde se configuran
 
-| Campo                            | Dónde está en el dashboard                              | Notas                                                                                                                                                                                                    |
-| -------------------------------- | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `agent_name`                     | Nombre del agente                                       | Nombre interno; el cliente no lo ve.                                                                                                                                                                     |
-| `language`                       | Selector de idioma                                      | Retell ofrece `es-ES` y `es-419` (español de Latinoamérica); no existe una opción para México.                                                                                                           |
-| `model`                          | Selector de modelo                                      | Se elige con la regla de [Modelo](#modelo).                                                                                                                                                              |
-| `model_temperature`              | Engrane del modelo                                      | Solo aparece con algunos modelos: con `gpt-4.1-nano` sí; con `gpt-6-luna` y `gpt-5-nano` no (su engrane solo muestra "Structured Output"). Acordado: 0.2 si el modelo la admite (`gpt-6-luna` no).       |
-| `start_speaker`, `begin_message` | Welcome Message → "AI speaks first" + "Dynamic message" | `begin_message` en `null`: el saludo lo redacta el modelo con la sección "Tu primer mensaje" del prompt. Un saludo fijo solo se puede poner por API.                                                     |
-| `handbook_config`                | Botón "Agent Handbook", debajo del selector de modelo   | Preajustes de Retell que agregan texto propio al prompt. Apagados: el comportamiento se define solo en `prompt.md`.                                                                                      |
-| `general_tools`                  | Lista de funciones del agente                           | Una custom function por herramienta ([Custom functions](#custom-functions)). Retell agrega `end_call` por defecto y se quita: el prompt atiende al cliente si escribe después de la despedida.           |
-| `knowledge_base_ids`             | Knowledge base                                          | Vacía: el menú se consulta con RAG propio (D3).                                                                                                                                                          |
-| `end_chat_after_silence_ms`      | Chat settings → Auto-Close Inactive Chats               | Va en milisegundos: 360000 son 6 minutos. El control solo avanza por saltos (6, 12, 30 minutos…).                                                                                                        |
-| `auto_close_message`             | Chat settings                                           | Sin mensaje de cierre.                                                                                                                                                                                   |
-| `timezone`                       | No aparece en el dashboard                              | Queda en `America/Los_Angeles`, el valor por defecto. El valor acordado es `America/Chihuahua`. Solo afecta a las variables de fecha y hora de Retell, que el prompt no usa.                             |
-| `post_chat_analysis_model`       | Post chat extraction (panel derecho del agente)         | Retell resume cada chat al terminar y no se puede apagar. Se usa `gpt-5-nano`, que el dashboard muestra como gratuito ([D22](../docs/decisiones.md)). El valor por defecto de Retell es `gpt-5.6-terra`. |
-| `data_storage_setting`           | Security & fallback settings → Data Storage Settings    | `everything`, el valor por defecto: guarda las transcripciones completas.                                                                                                                                |
-| `data_storage_retention_days`    | Security & fallback settings → Data Storage Settings    | Retell borra los datos de cada chat a los 30 días. El valor por defecto es "Keep forever".                                                                                                               |
-| `contact_memory_config`          | Ajustes de memoria de contacto                          | Valores por defecto. Según la documentación solo aplica a llamadas y SMS identificados por teléfono, no a chats web.                                                                                     |
-| `webhook_url`                    | Webhook                                                 | Sin webhook: todavía no hay un endpoint que lo reciba.                                                                                                                                                   |
+| Campo                            | Dónde está en el dashboard                             | Notas                                                                                                                                                                                                    |
+| -------------------------------- | ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `agent_name`                     | Nombre del agente                                      | Nombre interno; el cliente no lo ve.                                                                                                                                                                     |
+| `language`                       | Selector de idioma                                     | Retell ofrece `es-ES` y `es-419` (español de Latinoamérica); no existe una opción para México.                                                                                                           |
+| `model`                          | Selector de modelo                                     | Se elige con la regla de [Modelo](#modelo).                                                                                                                                                              |
+| `model_temperature`              | Engrane del modelo                                     | Solo aparece con algunos modelos: con `gpt-4.1-nano` sí; con `gpt-6-luna` y `gpt-5-nano` no (su engrane solo muestra "Structured Output"). Acordado: 0.2 si el modelo la admite (`gpt-6-luna` no).       |
+| `start_speaker`, `begin_message` | Welcome Message → "AI speaks first" + "Custom message" | `begin_message` es el saludo fijo, igual para todos: se pega tal cual en "Custom message". La sección "Tu primer mensaje" del prompt le dice al modelo que ese saludo ya se dio.                         |
+| `handbook_config`                | Botón "Agent Handbook", debajo del selector de modelo  | Preajustes de Retell que agregan texto propio al prompt. Apagados: el comportamiento se define solo en `prompt.md`.                                                                                      |
+| `general_tools`                  | Lista de funciones del agente                          | Una custom function por herramienta ([Custom functions](#custom-functions)). Retell agrega `end_call` por defecto y se quita: el prompt atiende al cliente si escribe después de la despedida.           |
+| `knowledge_base_ids`             | Knowledge base                                         | Vacía: el menú se consulta con RAG propio (D3).                                                                                                                                                          |
+| `end_chat_after_silence_ms`      | Chat settings → Auto-Close Inactive Chats              | Va en milisegundos: 360000 son 6 minutos. El control solo avanza por saltos (6, 12, 30 minutos…).                                                                                                        |
+| `auto_close_message`             | Chat settings                                          | Sin mensaje de cierre.                                                                                                                                                                                   |
+| `timezone`                       | No aparece en el dashboard                             | Queda en `America/Los_Angeles`, el valor por defecto. El valor acordado es `America/Chihuahua`. Solo afecta a las variables de fecha y hora de Retell, que el prompt no usa.                             |
+| `post_chat_analysis_model`       | Post chat extraction (panel derecho del agente)        | Retell resume cada chat al terminar y no se puede apagar. Se usa `gpt-5-nano`, que el dashboard muestra como gratuito ([D22](../docs/decisiones.md)). El valor por defecto de Retell es `gpt-5.6-terra`. |
+| `data_storage_setting`           | Security & fallback settings → Data Storage Settings   | `everything`, el valor por defecto: guarda las transcripciones completas.                                                                                                                                |
+| `data_storage_retention_days`    | Security & fallback settings → Data Storage Settings   | Retell borra los datos de cada chat a los 30 días. El valor por defecto es "Keep forever".                                                                                                               |
+| `contact_memory_config`          | Ajustes de memoria de contacto                         | Valores por defecto. Según la documentación solo aplica a llamadas y SMS identificados por teléfono, no a chats web.                                                                                     |
+| `webhook_url`                    | Webhook                                                | Sin webhook: todavía no hay un endpoint que lo reciba.                                                                                                                                                   |
 
 ### Solo por API (decide Omar)
 
-Dos valores acordados no se pueden fijar desde el dashboard. Se fijan con la API de Retell, que necesita la llave de la cuenta; usarla o no es decisión de Omar.
+Un valor acordado no se puede fijar desde el dashboard. Se fija con la API de Retell, que necesita la llave de la cuenta; usarla o no es decisión de Omar.
 
-| Valor acordado                   | Campo y endpoint                                       |
-| -------------------------------- | ------------------------------------------------------ |
-| Saludo fijo, igual para todos    | `begin_message` en `PATCH /update-retell-llm/{llm_id}` |
-| Zona horaria `America/Chihuahua` | `timezone` en `PATCH /update-chat-agent/{agent_id}`    |
+| Valor acordado                   | Campo y endpoint                                    |
+| -------------------------------- | --------------------------------------------------- |
+| Zona horaria `America/Chihuahua` | `timezone` en `PATCH /update-chat-agent/{agent_id}` |
 
-Los dos se atenderán en [esta tarjeta de Trello](https://trello.com/c/Lc0BqqO4). El saludo fijo reemplaza al "Dynamic message", principal sospechoso del saludo duplicado.
+Se atenderá en [esta tarjeta de Trello](https://trello.com/c/Lc0BqqO4).
 
 El dashboard también tiene "Import" (en la lista de agentes), pero la documentación de Retell no describe qué campos respeta al importar un agente, así que no se usa.
 
@@ -84,7 +83,8 @@ Precio de `gpt-6-luna`: $0.001 por mensaje del agente, según el dashboard de Re
 
 ## Observaciones pendientes
 
-- Con "Dynamic message", el saludo de apertura apareció duplicado en el chat de prueba: 2 o 3 veces en las cuatro corridas, con `gpt-5-nano` y con `gpt-6-luna`; 1 o 2 en la corrida final. Causa sin confirmar. A qué caso afecta y por qué no se repitió la prueba: [tests/corrida.md](./tests/corrida.md). Se atenderá en [la tarjeta de Trello](https://trello.com/c/Lc0BqqO4).
+- Con "Dynamic message", el saludo de apertura apareció duplicado en el chat de prueba: 2 o 3 veces en las cuatro corridas, con `gpt-5-nano` y con `gpt-6-luna`; 1 o 2 en la corrida final. Causa sin confirmar. A qué caso afecta y por qué no se repitió la prueba: [tests/corrida.md](./tests/corrida.md).
+- En la corrida 1 de US-07-P2 (`gpt-6-luna`), el saludo dinámico salió raro en 6 de 35 conversaciones: en lugar de saludar, el agente decía que no podía iniciar o simular una llamada. Por eso el saludo se cambió a fijo ("Custom message"). Falta confirmar en la corrida 2 que ya no se duplica ni sale raro.
 
 ## Límite de mensajes por conversación
 
@@ -97,7 +97,7 @@ No se configura en Retell: el cierre por inactividad (`end_chat_after_silence_ms
 3. Prompt: copiar el contenido completo de `prompt.md`, sin quitar ni agregar nada.
 4. Modelo: `model`. Si el engrane del modelo muestra la temperatura, poner 0.2.
 5. **Agent Handbook** (debajo del selector de modelo): apagar "Default Tone — Professional" y "AI Disclosure When Asked". Los demás quedan apagados.
-6. **Welcome Message:** "AI speaks first" con "Dynamic message".
+6. **Welcome Message:** "AI speaks first" con "Custom message"; pegar el texto de `begin_message` tal cual.
 7. Idioma: `language`.
 8. Funciones: quitar `end_call`, que viene agregada por defecto. Por cada entrada de `general_tools`, **Add → Custom Function** con los valores de [Custom functions](#custom-functions); en Parameters, pegar el archivo de `functions/` completo y dejar **"Payload: args only" apagado**. No agregar knowledge base ni webhook.
 9. **Chat settings → Auto-Close Inactive Chats:** el valor de `end_chat_after_silence_ms`.
