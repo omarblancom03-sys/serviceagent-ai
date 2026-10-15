@@ -41,7 +41,7 @@ Secreto que se mezcla con cada PIN (HMAC) antes del hash (D13). No vive en la ba
 
 ### `RETELL_API_KEY` (firma de Retell)
 
-Verifica `X-Retell-Signature` en las peticiones que manda Retell a la API (custom functions). Debe ser la API key de Retell que tiene el **badge de webhook**: con otra llave, ninguna firma coincide y la API responde 401. Si falta o está en blanco, esas rutas responden 500. La revisa el middleware `requiereFirmaRetell`; hoy lo usa `POST /pedidos/cotizar` (`cotizar_pedido`).
+Verifica `X-Retell-Signature` en las peticiones que manda Retell a la API (custom functions). Debe ser la API key de Retell que tiene el **badge de webhook**: con otra llave, ninguna firma coincide y la API responde 401. Si falta o está en blanco, esas rutas responden 500. La revisa el middleware `requiereFirmaRetell`; hoy lo usan `POST /pedidos/cotizar` (`cotizar_pedido`) y `POST /pedidos` (`crear_pedido`).
 
 El chat web usa la misma llave para llamar a la API de Retell (`Authorization: Bearer`). Si falta, `POST /chat/...` responde 503 `servicio_no_disponible` sin abrir conversaciones ni contar mensajes.
 

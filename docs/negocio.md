@@ -39,6 +39,11 @@ Fuera de alcance: delivery a domicilio.
 - El cliente puede nombrar un extra o un ingrediente con otras palabras ("salsa BBQ", "chile morrón"), pero una palabra suelta dentro de otra frase ("sin bbq", "camarones al ajillo") no pide el extra: [D31](decisiones.md).
 - **Quitar ingredientes:** solo los de `ingrediente_removible` de ese platillo, sin cambio de precio. La lista la aprueba el PO ([D29](decisiones.md)) y vive en `supabase/seed/04_ingrediente_removible.sql`.
 
+## Pedido confirmado
+
+- `crear_pedido` recibe el mismo pedido que se cotizó más nombre y teléfono; el backend vuelve a cotizar y guarda con estado `confirmado` ([D35](decisiones.md)).
+- Teléfono de México a 10 dígitos y nombre de 2 a 60 letras ([D32](decisiones.md)); folio creciente desde 1001 ([D33](decisiones.md)); el mismo pedido con el mismo teléfono y nombre dos veces en 10 minutos no se duplica ([D34](decisiones.md)).
+
 ## Estados del pedido
 
 ```
@@ -57,7 +62,7 @@ confirmado → (esperando_pago) → en_cola → preparando → listo → entrega
 | → cancelado          | Cliente vía agente (solo antes de `preparando`) o empleado            |
 | → expirado           | Sistema, si una transferencia no llega a tiempo                       |
 
-- Cada transición guarda su hora exacta (se usa para el tiempo estimado que aprende).
+- Cada transición guarda su hora exacta, puesta por Postgres ([D42](decisiones.md)); se usa para el tiempo estimado que aprende.
 - `modo_envio_cocina` es configuración del restaurante: `al_confirmar` o `al_pagar`.
 
 ## Pagos

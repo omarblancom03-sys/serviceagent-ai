@@ -24,7 +24,7 @@ Todo lo del agente de Retell, **versionado en Git** y no solo en el dashboard de
 - El menú completo **no** va en el prompt: se consulta con `buscar_menu`.
 - El enlace del menú del prompt es la URL de producción de la web ([docs/despliegue.md](../docs/despliegue.md)); si cambia el dominio, se cambia el prompt.
 - El prompt nunca pide al modelo calcular montos; los montos vienen de `cotizar_pedido`.
-- La sección "Lo que puedes hacer hoy" del prompt dice qué hace el agente con lo que aún no tiene herramienta. La historia que agrega una custom function reemplaza ahí su línea y ajusta los casos `sin_inventar` que correspondan. Con el menú es la sección "El menú" (enlace a `/menu`, [D41](../docs/decisiones.md)): la ajusta la historia de `buscar_menu`.
+- La sección "Lo que puedes hacer hoy" del prompt dice qué hace el agente con lo que aún no tiene herramienta. La historia que agrega una custom function reemplaza ahí su línea y ajusta los casos `sin_inventar` que correspondan. Con el menú es la sección "El menú" (enlace a `/menu`, [D43](../docs/decisiones.md)): la ajusta la historia de `buscar_menu`.
 - El archivo que descarga "Export" en Retell **nunca entra al repo**: trae ids de la cuenta y una copia del prompt. Se guarda fuera del proyecto y solo se usa para comparar ([retell.md → Export del agente](./retell.md#export-del-agente)).
 - `retell.json` no lleva ids de la cuenta ni llaves. El modelo se elige con la regla de [retell.md → Modelo](./retell.md#modelo).
 
