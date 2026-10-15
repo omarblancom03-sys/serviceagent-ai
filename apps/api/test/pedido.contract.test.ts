@@ -37,6 +37,7 @@ const renglonPlatillo = {
   cantidad: 2,
   sinIngredientes: [],
   extras: [extraEspuelas],
+  extrasDisponibles: [],
   precioUnitarioCentavos: 40300,
   precioUnitarioTexto: '$403.00',
   subtotalCentavos: 91600,

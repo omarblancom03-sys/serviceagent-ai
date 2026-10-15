@@ -94,3 +94,42 @@ export function palabras(texto: string): string[] {
 export function normalizarSinRelleno(texto: string): string {
   return palabras(texto).join(' ');
 }
+
+const sinAcentos = (texto: string) => texto.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+
+/**
+ * Cómo se entrega ("para llevar", "para aquí", "para comer acá"): no es un platillo ni una
+ * presentación, y todo pedido se recoge (D44). Se quita del texto antes de buscar. Devuelve el texto
+ * en minúsculas y sin acentos; quien lo use lo normaliza igual que cualquier otro.
+ */
+export function sinModoDeEntrega(texto: string): string {
+  return sinAcentos(texto)
+    .replace(/\bpara\s+(comer\s+)?(llevar|aqui|aca)\b/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/** Palabras con que se empieza a pedir algo, antes del nombre: "una orden de", "porciones de". */
+const PREFIJO_DE_PEDIDO: ReadonlySet<string> = new Set([
+  'un',
+  'una',
+  'unos',
+  'unas',
+  'orden',
+  'ordenes',
+  'porcion',
+  'porciones',
+  'de',
+]);
+
+/**
+ * Quita solo el prefijo con que se pide ("orden de El Granero" → "el granero") y deja los artículos
+ * del nombre, que el relleno sí quitaría (D44). Si no queda nada, devuelve el texto como venía.
+ */
+export function sinPrefijoDePedido(texto: string): string {
+  const palabrasDichas = sinAcentos(texto)
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean);
+  const inicio = palabrasDichas.findIndex((palabra) => !PREFIJO_DE_PEDIDO.has(palabra));
+  return inicio <= 0 ? texto : palabrasDichas.slice(inicio).join(' ');
+}
