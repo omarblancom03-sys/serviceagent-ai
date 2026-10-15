@@ -4,6 +4,7 @@ import { NOMBRE_ROL, PANTALLAS_EMPLEADO, puedeVer } from './auth/permisos';
 import { RutaProtegida } from './auth/RutaProtegida';
 import { useSesion } from './auth/SesionContext';
 import { AdminMenu } from './pages/AdminMenu';
+import { Cocina } from './pages/Cocina';
 import { Login } from './pages/Login';
 import { MenuCliente } from './pages/MenuCliente';
 import { PaginaPlaceholder } from './pages/PaginaPlaceholder';
@@ -12,6 +13,7 @@ import { PedirChat } from './pages/PedirChat';
 /** Pantallas internas que ya tienen página real; las demás muestran el placeholder. */
 const PAGINA_EMPLEADO: Partial<Record<string, ReactNode>> = {
   '/admin': <AdminMenu />,
+  '/cocina': <Cocina />,
 };
 
 const claseEnlace = ({ isActive }: { isActive: boolean }) =>

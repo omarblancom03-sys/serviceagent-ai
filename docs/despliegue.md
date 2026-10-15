@@ -65,15 +65,18 @@ Conversaciones nuevas del chat al día en todo el sistema, contadas por día de 
 
 - Vite solo expone variables con prefijo `VITE_`, y **terminan en el navegador**. Nunca pongas secretos ahí.
 - Local: `apps/web/.env.local` y `apps/simuladores/.env.local` (por ejemplo, `VITE_API_URL=http://localhost:8787`).
-- En CI: `VITE_API_URL` se define como **variable** (no secreto) del repo en GitHub.
+- En CI: `VITE_API_URL`, `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` se definen como **variables** (no secretos) del repo en GitHub y se usan al compilar en `deploy.yml`.
+- `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` (la llave **anon**, nunca la de servicio) solo sirven para que `/cocina` escuche la señal de Realtime (D47). La llave anon es pública por diseño y no lee ninguna tabla (D15). Si faltan, la pantalla funciona igual y se refresca cada 30 s.
 
 ### GitHub Actions
 
-| Nombre                  | Tipo     | Para qué                                              |
-| ----------------------- | -------- | ----------------------------------------------------- |
-| `CLOUDFLARE_API_TOKEN`  | Secreto  | Desplegar el Worker y los proyectos de Pages          |
-| `CLOUDFLARE_ACCOUNT_ID` | Secreto  | Cuenta de Cloudflare donde se despliega               |
-| `VITE_API_URL`          | Variable | URL pública de la API usada al compilar los frontends |
+| Nombre                   | Tipo     | Para qué                                               |
+| ------------------------ | -------- | ------------------------------------------------------ |
+| `CLOUDFLARE_API_TOKEN`   | Secreto  | Desplegar el Worker y los proyectos de Pages           |
+| `CLOUDFLARE_ACCOUNT_ID`  | Secreto  | Cuenta de Cloudflare donde se despliega                |
+| `VITE_API_URL`           | Variable | URL pública de la API usada al compilar los frontends  |
+| `VITE_SUPABASE_URL`      | Variable | URL de Supabase para la señal de Realtime de `/cocina` |
+| `VITE_SUPABASE_ANON_KEY` | Variable | Llave anon de Supabase (pública) para esa señal        |
 
 Se configuran en Settings → Secrets and variables → Actions. Si los secretos no existen, el workflow de deploy **se salta con un aviso** en lugar de fallar. `CLOUDFLARE_ACCOUNT_ID` son 32 caracteres hexadecimales (Workers & Pages → columna derecha); si el valor no es ese, wrangler falla con `code: 7003`.
 
