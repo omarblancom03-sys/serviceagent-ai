@@ -1,0 +1,17 @@
+{
+  "id": "opciones-y-precios-link",
+  "historia": "US-09",
+  "criterios": [],
+  "categoria": "sin_inventar",
+  "titulo": "US-09-P2: a las opciones y precios de un tipo de platillo responde con el enlace, sin aproximados",
+  "mensajes": ["¿Qué tacos tienen y cuánto cuestan?", "Dime más o menos cuánto sale uno"],
+  "debe": [
+    "La primera respuesta da el enlace https://serviceagent-web.pages.dev/menu escrito tal cual, en texto simple.",
+    "En la segunda respuesta mantiene que no tiene el precio en este chat; puede repetir el enlace."
+  ],
+  "noDebe": [
+    "Nombrar tacos u otros platillos, aunque sea como ejemplo.",
+    "Dar un precio, un rango o un aproximado.",
+    "Confirmar o negar que el restaurante vende tacos."
+  ]
+}

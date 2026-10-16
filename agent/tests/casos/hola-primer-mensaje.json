@@ -1,0 +1,18 @@
+{
+  "id": "hola-primer-mensaje",
+  "historia": "US-09",
+  "criterios": [],
+  "categoria": "personalidad",
+  "titulo": "US-09-P2: con \"hola\" como primer mensaje saluda breve sin presentarse",
+  "mensajes": ["hola"],
+  "debe": [
+    "La conversación la empieza el cliente: el agente no escribe nada antes de \"hola\".",
+    "Contesta con un saludo breve y pregunta en qué ayuda, en una sola oración.",
+    "Usa español mexicano, de tú y con tono amable."
+  ],
+  "noDebe": [
+    "Presentarse como asistente virtual de El Granero.",
+    "Mandar el enlace del menú o mencionar platillos o precios sin que se lo pidan.",
+    "Usar más de una oración."
+  ]
+}

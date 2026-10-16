@@ -7,6 +7,8 @@ import {
   normalizarSinRelleno,
   normalizarSuave,
   palabras,
+  sinModoDeEntrega,
+  sinPrefijoDePedido,
 } from '../src/lib/normalizar';
 
 describe('normalizarSuave', () => {
@@ -138,5 +140,30 @@ describe('normalización sobre el seed del menú', () => {
   it('"papa" y "papas" comparten llave y ya no coinciden exacto con ningún platillo', () => {
     expect(normalizarSuave('papa')).toBe(normalizarSuave('papas'));
     expect(indice(normalizarSuave).has(normalizarSuave('papa'))).toBe(false);
+  });
+});
+
+describe('sinModoDeEntrega (D44)', () => {
+  it.each([
+    ['Tacos para llevar', 'tacos'],
+    ['para comer aquí', ''],
+    ['Grande PARA LLEVAR', 'grande'],
+    ['para acá, por favor', ', por favor'],
+    ['paraguas', 'paraguas'],
+    ['llevar', 'llevar'],
+  ])('"%s" → "%s"', (texto, esperado) => {
+    expect(sinModoDeEntrega(texto)).toBe(esperado);
+  });
+});
+
+describe('sinPrefijoDePedido (D44)', () => {
+  it.each([
+    ['orden de El Granero', 'el granero'],
+    ['Una orden de La Boquilla', 'la boquilla'],
+    ['porciones de papas', 'papas'],
+    ['El Granero', 'El Granero'],
+    ['orden de', 'orden de'],
+  ])('"%s" → "%s"', (texto, esperado) => {
+    expect(sinPrefijoDePedido(texto)).toBe(esperado);
   });
 });

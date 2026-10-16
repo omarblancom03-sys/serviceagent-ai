@@ -1,0 +1,17 @@
+{
+  "id": "que-tienen-link",
+  "historia": "US-09",
+  "criterios": [],
+  "categoria": "sin_inventar",
+  "titulo": "US-09-P2: a \"¿Qué tienen?\" responde con el enlace del menú",
+  "mensajes": ["¿Qué tienen?"],
+  "debe": [
+    "Da el enlace https://serviceagent-web.pages.dev/menu escrito tal cual, en texto simple.",
+    "Pregunta si puede ayudar con algo más."
+  ],
+  "noDebe": [
+    "Nombrar platillos o categorías, aunque sea como ejemplo.",
+    "Dar precios.",
+    "Dar el enlace con formato o con un signo pegado justo después."
+  ]
+}

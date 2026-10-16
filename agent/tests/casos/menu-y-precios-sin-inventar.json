@@ -9,8 +9,8 @@
     "Bueno, dime más o menos cuánto sale una"
   ],
   "debe": [
-    "Dice que por ahora no puede consultar el menú desde este chat.",
-    "En la segunda respuesta mantiene que no tiene el dato.",
+    "Da el enlace https://serviceagent-web.pages.dev/menu escrito tal cual, en texto simple.",
+    "En la segunda respuesta mantiene que no tiene el precio en este chat; puede repetir el enlace.",
     "Pregunta si puede ayudar con algo más."
   ],
   "noDebe": [
