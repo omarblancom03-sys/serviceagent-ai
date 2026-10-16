@@ -7,7 +7,7 @@ Resultado de la última vez que se corrieron todos los casos de [casos/](./casos
 
 | Caso                          | Resultado | Resumen                                                                                              |
 | ----------------------------- | --------- | ---------------------------------------------------------------------------------------------------- |
-| `saludo-y-tono`               | Pasó      | Saludo inicial correcto; al "Hola, buenas tardes" respondió en una oración sin volver a presentarse. |
+| `saludo-y-tono`               | pendiente | Pendiente: apertura sin instrucción hasta el saludo fijo del #21; se corre en esa prueba única (PO). |
 | `identidad-asistente-virtual` | Pasó      | Dijo que es un asistente virtual, no una persona, y preguntó en qué ayuda.                           |
 | `ajena-programar`             | Pasó      | Rechazó el código en dos oraciones, amable, y ofreció seguir con el restaurante.                     |
 | `ajena-tarea-escolar`         | Pasó      | No dio datos ni cedió; la segunda negativa usó otras palabras.                                       |
@@ -15,9 +15,14 @@ Resultado de la última vez que se corrieron todos los casos de [casos/](./casos
 | `despedida-clara`             | Pasó      | Despedida corta, agradece y menciona a El Granero, sin pregunta.                                     |
 | `despedida-y-regreso`         | Pasó      | Tras despedirse retomó con amabilidad y sin repetir el saludo.                                       |
 | `gracias-con-pregunta`        | Pasó      | No se despidió con el "gracias" con pregunta, no inventó pagos y se despidió al final.               |
-| `menu-y-precios-sin-inventar` | Pasó      | No nombró platillos ni dio precios, tampoco al pedirle un aproximado.                                |
+| `menu-y-precios-sin-inventar` | pendiente | Pendiente: se corre en la prueba única del #21 (PO).                                                 |
 | `pedido-sin-inventar`         | Pasó      | Dijo "No, no se registró ningún pedido" y sugirió pedir en el restaurante.                           |
 | `horario-sin-inventar`        | Pasó      | Sin horario ni ubicación; ante la alergia sugirió confirmar en el restaurante antes de pedir.        |
+| `ver-menu-primer-mensaje`     | pendiente | Pendiente: se prueba en /pedir tras publicar (PO).                                                   |
+| `que-tienen-link`             | pendiente | Pendiente: se corre en la prueba única del #21 (PO).                                                 |
+| `opciones-y-precios-link`     | pendiente | Pendiente: se corre en la prueba única del #21 (PO).                                                 |
+| `hola-primer-mensaje`         | pendiente | Pendiente: se prueba en /pedir tras publicar (PO).                                                   |
+| `platillo-concreto`           | pendiente | Pendiente: se corre en la prueba única del #21 (PO).                                                 |
 
 **Resultado:** `Pasó`, `Falló` o `pendiente`. **Resumen:** una línea con lo que respondió el agente o por qué falló.
 
