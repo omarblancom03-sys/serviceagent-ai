@@ -20,6 +20,11 @@ Ningún caso se ha corrido con el prompt actual, que ya usa `cotizar_pedido`. `P
 | `menu-y-precios-sin-inventar`         | pendiente | Sin correr |
 | `pedido-sin-inventar`                 | pendiente | Sin correr |
 | `horario-sin-inventar`                | pendiente | Sin correr |
+| `ver-menu-primer-mensaje`             | pendiente | Sin correr |
+| `que-tienen-link`                     | pendiente | Sin correr |
+| `opciones-y-precios-link`             | pendiente | Sin correr |
+| `hola-primer-mensaje`                 | pendiente | Sin correr |
+| `platillo-concreto`                   | pendiente | Sin correr |
 | `pedido-simple-total`                 | pendiente | Sin correr |
 | `pedido-corte-ofrece-espuelas`        | pendiente | Sin correr |
 | `pedido-cowboy-sin-espuelas`          | pendiente | Sin correr |

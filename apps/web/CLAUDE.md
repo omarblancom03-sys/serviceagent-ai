@@ -6,7 +6,8 @@ SPA en React + Vite + Tailwind + React Router para clientes y empleados. Se desp
 
 | Ruta      | Para quién     | Historia                        |
 | --------- | -------------- | ------------------------------- |
-| `/pedir`  | Cliente (chat) | Pendiente: se define en US-09   |
+| `/pedir`  | Cliente (público, sin login) | US-09-P2: chat con el asistente sobre `POST /chat/...`; la conversación se crea al primer mensaje y no se guarda en el navegador (D40) |
+| `/menu`   | Cliente (público, sin login) | US-09-P2: el menú de `/admin` sin conteos, tiempos ni errores técnicos; busca también por categoría |
 | `/cocina` | Rol `cocina` (y `admin`) | Protegida en US-04; pantalla real en US-10 |
 | `/caja`   | Rol `caja` (y `admin`) | Protegida en US-04; pantalla real en US-20 |
 | `/admin`  | Rol `admin` | US-05: menú de solo lectura (`GET /menu`) con búsqueda y filtro por categoría |
@@ -15,15 +16,20 @@ SPA en React + Vite + Tailwind + React Router para clientes y empleados. Se desp
 ## Cómo está organizado
 
 - `src/main.tsx`: monta `<App />` dentro de `BrowserRouter` y `SesionProvider`.
-- `src/App.tsx`: barra de navegación (solo pantallas permitidas, nombre del empleado y **Cerrar sesión**) y tabla de rutas (`/` redirige a `/pedir`). `PAGINA_EMPLEADO` dice qué pantalla interna ya tiene página real; las demás muestran `PaginaPlaceholder`.
-- `src/pages/`: una página por ruta. Reales: `Login.tsx` y `AdminMenu.tsx` (`/admin`); las demás usan `PaginaPlaceholder` hasta que su historia las reemplace.
+- `src/App.tsx`: barra de navegación (solo pantallas permitidas, nombre del empleado y **Cerrar sesión**) y tabla de rutas (`/` redirige a `/pedir`). `PAGINA_EMPLEADO` dice qué pantalla interna ya tiene página real; las demás muestran `PaginaPlaceholder`. Las rutas públicas (`/pedir`, `/menu`, `/login`) van fuera de `PANTALLAS_EMPLEADO` y sin `RutaProtegida`.
+- `src/pages/`: una página por ruta. Reales: `Login.tsx`, `AdminMenu.tsx` (`/admin`), `MenuCliente.tsx` (`/menu`) y `PedirChat.tsx` (`/pedir`); las demás usan `PaginaPlaceholder` hasta que su historia las reemplace.
+- `src/components/ListadoMenu.tsx`: el listado del menú que comparten `/admin` y `/menu` (carga, error con **Reintentar**, buscador, selector, tarjetas y extras sueltos). Recibe `modo` y solo lee las opciones de `opcionesVista(modo)`.
 - `src/auth/`: sesión del empleado.
   - `SesionContext.tsx`: `useSesion()` con `sesion`, `iniciarSesion`, `cerrarSesion` y `pedirConSesion`.
   - `RutaProtegida.tsx`: guarda por rol de cada pantalla interna.
   - `permisos.ts`: `PANTALLAS_EMPLEADO` (ruta → roles), `puedeVer`, `pantallaInicial`, `destinoTrasLogin`.
   - `token.ts` y `mensajes.ts`: lógica pura (leer el JWT, guardar la sesión, textos de error del login).
 - `src/lib/api.ts`: `pedirApi(ruta, esquema, opciones)` llama a `VITE_API_URL`, valida la respuesta con zod y lanza `ErrorApi` si no es 2xx. Si el contrato no coincide, lanza el error de zod (se reconoce por `error.name === 'ZodError'`, porque zod no es dependencia directa de la web).
-- `src/lib/menuAdmin.ts`: lógica pura del menú de `/admin` (`formatearPesos` sin `Intl` y con la validación de la API, `normalizarTexto` sin acentos ni puntuación, búsqueda por palabras que ignora una "s" final en las de más de 3 letras, `filtrarMenu`, `resumirMenu`, `formatearHora`).
+- `src/lib/menuAdmin.ts`: lógica pura del menú de `/admin` (`formatearPesos` sin `Intl` y con la validación de la API, `normalizarTexto` sin acentos ni puntuación, búsqueda por palabras que ignora una "s" final en las de más de 3 letras, `filtrarMenu` con la opción `buscarPorCategoria`, `resumirMenu`, `formatearHora`).
+- `src/lib/menuVista.ts`: qué muestra cada modo del menú (`opcionesVista('admin' | 'cliente')`: banderas, textos y clases), `nombreVarianteVisible` (una sola variante "Único" muestra solo el precio) y `mensajeErrorMenu` (detallado en admin; uno solo y sin códigos para el cliente). Lo que cambie entre modos se agrega aquí, no con condiciones en el componente.
+- `src/lib/chat.ts`: lógica pura del chat de `/pedir`: estado y `reducirChat` (fases `listo`, `enviando`, `error`, `terminada`, `limite`, `tope_diario`), `validarTexto` con el esquema de shared y `clasificarErrorChat` (error y paso → fase y aviso, sin códigos HTTP). Solo en `listo` se puede escribir; en `error` la única acción es **Reintentar**, que reenvía `pendiente` sin otra burbuja; en `terminada` y `limite`, **Iniciar otra**.
+- **Tope diario del chat:** comparte el 503 `servicio_no_disponible` con una falla de Retell. Se reconoce porque solo ocurre al crear la conversación y el `error` contiene "límite de hoy" (texto de `apps/api/src/routes/chat.ts`); si ese texto cambia, cae al 503 genérico con Reintentar.
+- `src/lib/enlaces.ts`: `separarEnlaces` parte un mensaje en texto y URLs http/https (sin la puntuación final). Los mensajes se pintan como texto de React, nunca con `dangerouslySetInnerHTML`.
 - `src/index.css`: solo `@import 'tailwindcss'` (Tailwind 4, sin archivo de configuración).
 
 ## Convenciones de esta área
@@ -48,7 +54,7 @@ pnpm --filter @serviceagent/web build
 pnpm --filter @serviceagent/web test        # Vitest (test/*.test.ts)
 ```
 
-- **Tests:** solo lógica pura en `test/` (token, permisos, mensajes, menú de admin), sin DOM ni dependencias extra.
+- **Tests:** solo lógica pura en `test/` (token, permisos, mensajes, menú de admin, vista del menú por modo, estado del chat y enlaces), sin DOM ni dependencias extra.
 - **Probar el login a mano:** levanta la API con su `.dev.vars` (ver [apps/api/CLAUDE.md](../api/CLAUDE.md)) y la web. Luego entra a `/login` con los empleados de prueba de [supabase/CLAUDE.md](../../supabase/CLAUDE.md#empleados-de-prueba-solo-desarrollo).
 
 ## Reglas que aplican
@@ -57,4 +63,5 @@ pnpm --filter @serviceagent/web test        # Vitest (test/*.test.ts)
 - [docs/negocio.md](../../docs/negocio.md): estados del pedido (botones de cocina y caja) y autenticación por PIN (roles, bloqueo, duración del JWT).
 - [docs/despliegue.md](../../docs/despliegue.md): variables `VITE_*` y despliegue en Pages.
 - [docs/decisiones.md](../../docs/decisiones.md): D9, D12 (JWT propio; Realtime solo como señal).
-- Menú de `/admin`: D18 (tiempo base), D19 (extras), D20 (agotado) y D23 (usa el `GET /menu` público) en [decisiones.md](../../docs/decisiones.md).
+- Menú de `/admin` y `/menu`: D18 (tiempo base), D19 (extras), D20 (agotado) y D23 (usa el `GET /menu` público) en [decisiones.md](../../docs/decisiones.md).
+- Chat de `/pedir`: D21, D36 (límite de mensajes), D38 (tope diario), D39 (fallas de Retell) y D40 en [decisiones.md](../../docs/decisiones.md).

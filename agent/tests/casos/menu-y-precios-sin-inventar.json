@@ -9,9 +9,9 @@
     "Bueno, dime más o menos cuánto sale una"
   ],
   "debe": [
-    "Dice que por ahora no puede mostrar el menú desde este chat.",
+    "Da el enlace https://serviceagent-web.pages.dev/menu escrito tal cual, en texto simple.",
     "Dice que puede cotizar un platillo si el cliente le dice cuál.",
-    "En la segunda respuesta no da ningún monto ni aproximado."
+    "En la segunda respuesta no da ningún monto ni aproximado; puede repetir el enlace."
   ],
   "noDebe": [
     "Llamar a cotizar_pedido con la primera pregunta: es una pregunta general del menú.",

@@ -1,11 +1,13 @@
 import type { ReactNode } from 'react';
-import { Navigate, NavLink, Route, Routes, useNavigate } from 'react-router';
+import { Navigate, NavLink, Route, Routes, useMatch, useNavigate } from 'react-router';
 import { NOMBRE_ROL, PANTALLAS_EMPLEADO, puedeVer } from './auth/permisos';
 import { RutaProtegida } from './auth/RutaProtegida';
 import { useSesion } from './auth/SesionContext';
 import { AdminMenu } from './pages/AdminMenu';
 import { Login } from './pages/Login';
+import { MenuCliente } from './pages/MenuCliente';
 import { PaginaPlaceholder } from './pages/PaginaPlaceholder';
+import { PedirChat } from './pages/PedirChat';
 
 /** Pantallas internas que ya tienen página real; las demás muestran el placeholder. */
 const PAGINA_EMPLEADO: Partial<Record<string, ReactNode>> = {
@@ -19,6 +21,8 @@ export function App() {
   const { sesion, cerrarSesion } = useSesion();
   const navigate = useNavigate();
   const rol = sesion?.payload.rol;
+  // El chat ocupa justo el alto que deja la barra (mida lo que mida) y solo hace scroll su lista.
+  const altoCompleto = useMatch('/pedir') !== null;
 
   // El menú muestra solo las pantallas que el rol puede abrir.
   const pantallasVisibles = rol ? PANTALLAS_EMPLEADO.filter((p) => puedeVer(rol, p.roles)) : [];
@@ -29,12 +33,21 @@ export function App() {
   }
 
   return (
-    <div className="min-h-screen bg-orange-50 text-stone-900">
-      <header className="border-b border-orange-200 bg-white">
+    <div
+      className={
+        altoCompleto
+          ? 'flex h-dvh flex-col overflow-hidden bg-orange-50 text-stone-900'
+          : 'min-h-screen bg-orange-50 text-stone-900'
+      }
+    >
+      <header className="shrink-0 border-b border-orange-200 bg-white">
         <nav className="mx-auto flex max-w-5xl flex-wrap items-center gap-4 px-4 py-3">
           <span className="font-bold text-orange-700">ServiceAgent AI</span>
           <NavLink to="/pedir" className={claseEnlace}>
             Pedir
+          </NavLink>
+          <NavLink to="/menu" className={claseEnlace}>
+            Menú
           </NavLink>
           {pantallasVisibles.map((pantalla) => (
             <NavLink key={pantalla.path} to={pantalla.path} className={claseEnlace}>
@@ -64,10 +77,17 @@ export function App() {
           </div>
         </nav>
       </header>
-      <main className="mx-auto max-w-5xl px-4 py-8">
+      <main
+        className={
+          altoCompleto
+            ? 'mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col px-4 py-4 sm:py-8'
+            : 'mx-auto max-w-5xl px-4 py-8'
+        }
+      >
         <Routes>
           <Route path="/" element={<Navigate to="/pedir" replace />} />
-          <Route path="/pedir" element={<PaginaPlaceholder titulo="Pedir" />} />
+          <Route path="/pedir" element={<PedirChat />} />
+          <Route path="/menu" element={<MenuCliente />} />
           <Route path="/login" element={<Login />} />
           {PANTALLAS_EMPLEADO.map((pantalla) => (
             <Route

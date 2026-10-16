@@ -1,7 +1,7 @@
 import type { CategoriaMenu, Extra, RespuestaMenu } from '@serviceagent/shared';
 
 /*
- * Lógica pura de la pantalla del menú en /admin (US-05): formato, búsqueda, filtro y resumen.
+ * Lógica pura del menú de /admin (US-05) y /menu (US-09-P2): formato, búsqueda, filtro y resumen.
  * Nunca calcula montos: solo da formato a los centavos que manda la API (D7).
  */
 
@@ -54,10 +54,27 @@ export function coincideNombre(nombre: string, busqueda: string): boolean {
   return palabras.every((palabra) => normalizado.includes(palabra));
 }
 
+/**
+ * Como `coincideNombre`, pero con `porCategoria` el nombre del platillo y el de su categoría se
+ * toman juntos: "hamburguesa pollo" encuentra el platillo "Pollo" de la categoría "Hamburguesas",
+ * y no "Tiras de pollo" de otra categoría.
+ */
+export function coincidePlatillo(
+  nombrePlatillo: string,
+  nombreCategoria: string,
+  busqueda: string,
+  porCategoria: boolean,
+): boolean {
+  const texto = porCategoria ? `${nombrePlatillo} ${nombreCategoria}` : nombrePlatillo;
+  return coincideNombre(texto, busqueda);
+}
+
 export interface FiltroMenu {
   busqueda: string;
   /** `null` = todas las categorías. */
   idCategoria: number | null;
+  /** También busca en el nombre de la categoría (menú del cliente). Por defecto, `false`. */
+  buscarPorCategoria?: boolean;
 }
 
 export interface MenuFiltrado {
@@ -69,14 +86,14 @@ export interface MenuFiltrado {
 /** Aplica el selector de categoría y la búsqueda; quita las categorías que quedan vacías. */
 export function filtrarMenu(
   menu: RespuestaMenu,
-  { busqueda, idCategoria }: FiltroMenu,
+  { busqueda, idCategoria, buscarPorCategoria = false }: FiltroMenu,
 ): MenuFiltrado {
   const categorias = menu.categorias
     .filter((categoria) => idCategoria === null || categoria.id === idCategoria)
     .map((categoria) => ({
       ...categoria,
       platillos: categoria.platillos.filter((platillo) =>
-        coincideNombre(platillo.nombre, busqueda),
+        coincidePlatillo(platillo.nombre, categoria.nombre, busqueda, buscarPorCategoria),
       ),
     }))
     .filter((categoria) => categoria.platillos.length > 0);

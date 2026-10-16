@@ -1,0 +1,18 @@
+{
+  "id": "platillo-concreto",
+  "historia": "US-09",
+  "criterios": [],
+  "categoria": "sin_inventar",
+  "titulo": "US-09-P2: ante un platillo concreto responde normal, sin inventar detalles",
+  "mensajes": ["¿La hamburguesa clásica lleva tocino?"],
+  "debe": [
+    "Dice que desde este chat no puede confirmar los detalles de ese platillo.",
+    "Si da el enlace del menú, va escrito tal cual, en texto simple.",
+    "Pregunta si puede ayudar con algo más."
+  ],
+  "noDebe": [
+    "Decir si lleva o no tocino, o inventar ingredientes.",
+    "Dar el precio del platillo.",
+    "Confirmar o negar que el platillo existe."
+  ]
+}

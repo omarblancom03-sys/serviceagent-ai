@@ -27,7 +27,7 @@ No usamos Docker por ahora ([D16](docs/decisiones.md)). No agregues dependencias
 
 ```
 apps/api/            Hono en Workers: src/routes (un archivo por recurso: menu, pedidos, pagos, webhooks, admin…), src/services (lógica, sin HTTP), src/lib, test/
-apps/web/            React: /pedir, /cocina, /caja, /admin, /login
+apps/web/            React: /pedir, /menu, /cocina, /caja, /admin, /login
 apps/simuladores/    Banco y WhatsApp simulados (se ven como "otro sistema")
 packages/shared/     Esquemas zod, tipos y constantes compartidas
 supabase/            migrations/ (SQL versionado) y seed/ (menú real y datos de demo)
