@@ -38,7 +38,7 @@ export interface NuevoPedido {
 export interface PedidoGuardado {
   folio: number;
   totalCentavos: number;
-  /** 'confirmado' si es nuevo; si ya existía, el estado que tiene ahora. */
+  /** 'en_cola' si es nuevo (modo al confirmar, D46); si ya existía, el estado que tiene ahora. */
   estado: EstadoPedido;
   yaExistia: boolean;
 }
@@ -46,7 +46,7 @@ export interface PedidoGuardado {
 /** Interfaz de datos de pedidos. La implementa `lib/repoPedidos.ts` (Supabase) o un repo en memoria. */
 export interface PedidosRepo {
   /**
-   * Guarda el pedido con estado `confirmado` en una sola transacción, o devuelve el que ya existe
+   * Guarda el pedido ya en la cola de cocina (`en_cola`, D46) en una sola transacción, o devuelve el que ya existe
    * si el mismo teléfono mandó la misma huella hace menos de `minutosDuplicado` minutos. La hora
    * la pone la base, no la API (D42).
    */

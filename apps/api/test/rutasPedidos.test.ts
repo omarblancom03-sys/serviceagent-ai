@@ -207,7 +207,7 @@ describe('POST /pedidos', () => {
       ok: true,
       folio: 1001,
       folioTexto: '#1001',
-      estado: 'confirmado',
+      estado: 'en_cola',
       yaExistia: false,
       totalTexto: '$916.00',
     });
