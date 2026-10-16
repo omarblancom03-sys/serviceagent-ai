@@ -184,6 +184,32 @@ describe('resolverPlatillo sobre el seed real', () => {
   });
 });
 
+describe('resolverPlatillo: prefijo de pedido y modo de entrega (D44)', () => {
+  it.each([
+    ['orden de El Granero', 'El Granero'],
+    ['una orden de El Granero', 'El Granero'],
+    ['Orden de el granero', 'El Granero'],
+    ['El Granero para llevar', 'El Granero'],
+    ['una orden de El Granero para comer aquí', 'El Granero'],
+    ['Orden de salchichas', 'Orden de salchichas'],
+    ['orden de salchichas para llevar', 'Orden de salchichas'],
+    ['una porción de guacamole', 'Guacamole'],
+  ])('"%s" → %s', (texto, nombre) => {
+    expect(resumen(buscar(texto))).toBe(nombre);
+  });
+
+  it('el prefijo no vuelve exacto un nombre genérico: "una orden de granero" sigue siendo ambiguo', () => {
+    expect(resumen(buscar('una orden de granero'))).toEqual({
+      tipo: 'ambiguo',
+      opciones: GRANEROS,
+    });
+  });
+
+  it('"para llevar" solo no es un platillo', () => {
+    expect(resumen(buscar('para llevar'))).toEqual({ tipo: 'no_existe' });
+  });
+});
+
 describe('resolverPlatillo con un menú de prueba', () => {
   const sinonimo = (idPlatillo: number, frase: string, activo = true) => ({
     idPlatillo,
@@ -316,6 +342,7 @@ describe('cotizarPedido: los 14 casos acordados', () => {
               precioUnitarioTexto: '$55.00',
             },
           ],
+          extrasDisponibles: [],
           precioUnitarioCentavos: 40300,
           precioUnitarioTexto: '$403.00',
           subtotalCentavos: 91600,
@@ -515,6 +542,27 @@ describe('cotizarPedido: extras', () => {
   });
 });
 
+describe('cotizarPedido: extrasDisponibles (lo único que el agente puede ofrecer, D44)', () => {
+  const disponibles = (pedido: Parameters<typeof cotizar>[0]) => {
+    const respuesta = cotizar(pedido);
+    if (!respuesta.ok) throw new Error('Se esperaba una cotización ok');
+    return respuesta.renglones.map((r) => (r.tipo === 'platillo' ? r.extrasDisponibles : null));
+  };
+
+  it('un corte sin espuelas las ofrece; con espuelas ya no', () => {
+    expect(disponibles(uno('t-bone'))).toEqual([['Espuelas (camarones)']]);
+    expect(
+      disponibles({ productos: [{ producto: 't-bone', cantidad: 1, ...espuelas(1) }] }),
+    ).toEqual([[]]);
+  });
+
+  it('el Cowboy y el guacamole no tienen nada que ofrecer', () => {
+    expect(
+      disponibles({ productos: [...uno('cowboy').productos, ...uno('guacamole').productos] }),
+    ).toEqual([[], []]);
+  });
+});
+
 describe('cotizarPedido: cantidades (enteras de 1 a 20, D30)', () => {
   const invalida = (origen: 'producto' | 'extraSuelto', producto: string) => ({
     tipo: 'cantidad_invalida',
@@ -610,6 +658,29 @@ describe('cotizarPedido: variantes', () => {
     expect(cotizar(uno('taquiza sirloin', { variante: 'charros' }))).toMatchObject({
       ok: true,
       renglones: [{ variante: 'Con frijoles charros', subtotalCentavos: 60900 }],
+    });
+  });
+
+  it('"para llevar" como variante no cuenta: con una sola variante se cotiza (D44)', () => {
+    expect(total(uno('guacamole', { variante: 'para llevar' }))).toBe(12300);
+  });
+
+  it('"para llevar" como variante con varias variantes → falta_variante sin detalle (D44)', () => {
+    expect(aclaraciones(uno('taquiza sirloin', { variante: 'para llevar' }))).toEqual([
+      {
+        tipo: 'falta_variante',
+        origen: 'producto',
+        indice: 0,
+        producto: 'taquiza sirloin',
+        opciones: ['Con frijoles charros', 'Con frijoles refritos'],
+      },
+    ]);
+  });
+
+  it('la variante con "para llevar" se busca sin esas palabras: "charros para llevar"', () => {
+    expect(cotizar(uno('taquiza sirloin', { variante: 'charros para llevar' }))).toMatchObject({
+      ok: true,
+      renglones: [{ variante: 'Con frijoles charros' }],
     });
   });
 

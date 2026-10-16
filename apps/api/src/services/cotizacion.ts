@@ -14,7 +14,7 @@ import {
   type RespuestaMenu,
   type Variante,
 } from '@serviceagent/shared';
-import { normalizarSuave, palabras } from '../lib/normalizar';
+import { normalizarSuave, palabras, sinModoDeEntrega, sinPrefijoDePedido } from '../lib/normalizar';
 import { formatearPesos } from '../lib/pesos';
 import { armarMenu, type MenuRepo, type Sinonimo } from './menu';
 
@@ -24,8 +24,10 @@ import { armarMenu, type MenuRepo, type Sinonimo } from './menu';
  * Supabase.
  *
  * Búsqueda de un platillo en dos pasos (D26), sobre nombres y sinónimos, nunca la descripción:
- * - Paso 1, coincidencia exacta: primero en el nivel suave y luego sin relleno (lib/normalizar.ts).
- *   Si la llave lleva a dos platillos → ambiguo.
+ * - Antes de buscar se quita el modo de entrega ("para llevar", D44).
+ * - Paso 1, coincidencia exacta: primero en el nivel suave, luego en el suave sin el prefijo con que
+ *   se pide ("orden de El Granero" → "el granero", D44) y por último sin relleno
+ *   (lib/normalizar.ts). Si la llave lleva a dos platillos → ambiguo.
  * - Paso 2: los platillos que contienen TODAS las palabras del texto → ambiguo, aunque sea uno
  *   (una coincidencia parcial siempre se pregunta). Ninguno → no_existe.
  */
@@ -106,13 +108,15 @@ export function armarCatalogo(menu: RespuestaMenu, sinonimos: Sinonimo[]): Catal
 }
 
 /** Busca lo que dijo el cliente con las reglas de arriba. */
-export function resolverPlatillo(catalogo: Catalogo, texto: string): ResultadoPlatillo {
+export function resolverPlatillo(catalogo: Catalogo, dicho: string): ResultadoPlatillo {
+  const texto = sinModoDeEntrega(dicho);
   const buscadas = palabras(texto);
   // "???" o "la de": sin palabras, el paso 2 coincidiría con todos los platillos.
   if (buscadas.length === 0) return { tipo: 'no_existe' };
 
   const exactos =
     catalogo.indiceSuave.get(normalizarSuave(texto)) ??
+    catalogo.indiceSuave.get(normalizarSuave(sinPrefijoDePedido(texto))) ??
     catalogo.indiceSinRelleno.get(buscadas.join(' '));
   if (exactos) {
     const platillos = catalogo.platillos.filter((p) => exactos.includes(p.id));
@@ -196,6 +200,16 @@ export function resolverVariante(platillo: Platillo, pedida?: string): Resultado
         });
   const [unica] = contienen;
   return contienen.length === 1 && unica ? { tipo: 'encontrada', variante: unica } : faltante;
+}
+
+/**
+ * Variante pedida sin el modo de entrega (D44): "para llevar" no es una presentación. Si no queda
+ * nada, cuenta como que no se pidió variante. `null`, `""` y espacios ya llegan como `undefined`.
+ */
+export function limpiarVariante(pedida: string | undefined): string | undefined {
+  if (pedida === undefined) return undefined;
+  const limpia = sinModoDeEntrega(pedida);
+  return normalizarSuave(limpia) === '' ? undefined : limpia;
 }
 
 /**
@@ -340,12 +354,13 @@ function cotizarProducto(
   if (encontrado.tipo !== 'encontrado') return null;
   const { platillo } = encontrado;
 
-  const variante = resolverVariante(platillo, pedido.variante);
+  const varianteDicha = limpiarVariante(pedido.variante);
+  const variante = resolverVariante(platillo, varianteDicha);
   if (variante.tipo === 'falta_variante') {
     aclararYMarcar({
       tipo: 'falta_variante',
       opciones: variante.opciones,
-      ...(pedido.variante === undefined ? {} : { detalle: pedido.variante }),
+      ...(varianteDicha === undefined ? {} : { detalle: pedido.variante }),
     });
   }
 
@@ -396,6 +411,9 @@ function cotizarProducto(
     cantidad: pedido.cantidad,
     sinIngredientes: quitados,
     extras,
+    extrasDisponibles: platillo.extrasPermitidos
+      .filter((e) => !extras.some((pedido) => pedido.idExtra === e.id))
+      .map((e) => e.nombre),
     ...montos(elegida.precioCentavos, (elegida.precioCentavos + precioExtras) * pedido.cantidad),
   };
 }
