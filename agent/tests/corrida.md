@@ -7,7 +7,7 @@ Resultado de la última vez que se corrieron todos los casos de [casos/](./casos
 
 | Caso                          | Resultado | Resumen                                                                                              |
 | ----------------------------- | --------- | ---------------------------------------------------------------------------------------------------- |
-| `saludo-y-tono`               | Pasó      | Saludo inicial correcto; al "Hola, buenas tardes" respondió en una oración sin volver a presentarse. |
+| `saludo-y-tono`               | pendiente | Pendiente: apertura sin instrucción hasta el saludo fijo del #21; se corre en esa prueba única (PO). |
 | `identidad-asistente-virtual` | Pasó      | Dijo que es un asistente virtual, no una persona, y preguntó en qué ayuda.                           |
 | `ajena-programar`             | Pasó      | Rechazó el código en dos oraciones, amable, y ofreció seguir con el restaurante.                     |
 | `ajena-tarea-escolar`         | Pasó      | No dio datos ni cedió; la segunda negativa usó otras palabras.                                       |

@@ -36,6 +36,8 @@ Usa los nombres de campo de la API de Retell, para que no haya duda de a qué aj
 | `contact_memory_config`          | Ajustes de memoria de contacto                          | Valores por defecto. Según la documentación solo aplica a llamadas y SMS identificados por teléfono, no a chats web.                                                                                     |
 | `webhook_url`                    | Webhook                                                 | Sin webhook: todavía no hay un endpoint que lo reciba.                                                                                                                                                   |
 
+Temporal: hasta el #21, la apertura la redacta el modelo sin instrucción; desde el #21 abre con un Custom message fijo y el prompt solo cubre que el cliente escriba primero.
+
 ### Solo por API (decide Omar)
 
 Dos valores acordados no se pueden fijar desde el dashboard. Se fijan con la API de Retell, que necesita la llave de la cuenta; usarla o no es decisión de Omar.
