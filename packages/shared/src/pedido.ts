@@ -176,6 +176,11 @@ export const RenglonPlatilloSchema = z.object({
   /** Nombres oficiales de los ingredientes quitados. */
   sinIngredientes: z.array(z.string()),
   extras: z.array(ExtraAplicadoSchema),
+  /**
+   * Extras que este platillo puede llevar y que el cliente no pidió (hoy solo Espuelas en los 5
+   * cortes). Es lo único que el agente puede ofrecer (D30, D44); vacío en casi todos los platillos.
+   */
+  extrasDisponibles: z.array(z.string()),
   /** Precio de la variante por unidad, SIN extras. */
   precioUnitarioCentavos: CentavosSchema,
   precioUnitarioTexto: MontoTextoSchema,
