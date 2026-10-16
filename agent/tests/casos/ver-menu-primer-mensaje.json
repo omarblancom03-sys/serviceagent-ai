@@ -1,0 +1,20 @@
+{
+  "id": "ver-menu-primer-mensaje",
+  "historia": "US-09",
+  "criterios": [],
+  "categoria": "sin_inventar",
+  "titulo": "US-09-P2: con \"Ver menú\" como primer mensaje da el enlace del menú sin saludar",
+  "mensajes": ["Ver menú"],
+  "debe": [
+    "La conversación la empieza el cliente: el agente no escribe nada antes de \"Ver menú\".",
+    "Responde directo con el enlace https://serviceagent-web.pages.dev/menu escrito tal cual.",
+    "El enlace va en texto simple, sin punto, coma ni signo pegado justo después.",
+    "Pregunta si puede ayudar con algo más."
+  ],
+  "noDebe": [
+    "Saludar o presentarse como asistente virtual de El Granero.",
+    "Dar el enlace con formato (asteriscos, corchetes o paréntesis).",
+    "Nombrar platillos o dar precios.",
+    "Decir que no puede mostrar el menú desde este chat."
+  ]
+}
