@@ -53,15 +53,15 @@ El caso **pasa** si se cumple todo `debe` y nada de `noDebe`. No se compara text
    - Empezar una conversación nueva.
    - Enviar los `mensajes` en orden, uno por uno.
    - Revisar las respuestas contra `debe` y `noDebe`, y los args de cada llamada contra `argsEsperados`: se compara el sentido, no el texto ("hamburguesa" y "hamburguesas" valen igual).
-3. Si un caso falla, se corrige el prompt y se corren **todos** los casos otra vez: un arreglo puede romper otro caso.
+3. Si un caso falla, se repite dos veces más y pasa con 2 de 3; mientras se ajusta el prompt, se repiten solo los que fallan. La que cuenta es una corrida final completa, con cero tolerancia en las reglas duras ([D43](../docs/decisiones.md)).
 4. El resultado se anota en `tests/corrida.md`, que se reemplaza completo en cada corrida (guarda la última, no un historial). Se actualiza en el mismo PR cada vez que cambia `prompt.md`, `retell.json` o un caso. Un caso nuevo agrega su fila.
 5. No se usan las simulaciones de Retell: cobran por mensaje. Quién prueba en Retell, cuándo y cómo se anotan los mensajes usados: [D22](../docs/decisiones.md).
 
-Todo cambio al prompt debe pasar todos los casos antes de fusionarse (Definition of Done).
+Todo cambio al prompt pasa la corrida final antes de fusionarse (Definition of Done); se admiten hasta 2 casos menores pendientes, anotados en `tests/corrida.md` y en Trello ([D43](../docs/decisiones.md)).
 
 ## Reglas que aplican
 
 - [docs/agente.md](../docs/agente.md): custom functions, comportamiento y seguridad del agente.
 - [docs/negocio.md](../docs/negocio.md): dinero, estados del pedido y cancelación.
 - [docs/proceso.md → Definition of Done](../docs/proceso.md#definition-of-done) (punto 6).
-- [docs/decisiones.md](../docs/decisiones.md): D3, D4, D21, D22.
+- [docs/decisiones.md](../docs/decisiones.md): D3, D4, D21, D22, D25, D43, D44, D45.

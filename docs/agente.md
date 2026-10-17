@@ -104,4 +104,4 @@ Lógica en `apps/api/src/services/chat.ts`; Retell se llama con `fetch` directo 
 - Límites fuera de la IA: Turnstile, conversaciones por IP/teléfono por hora, mensajes por conversación, duración máxima y tope de gasto diario. Dónde se aplican: [D21](decisiones.md).
 - El conteo de mensajes del cliente por conversación, las conversaciones que abrió nuestra API y el tope diario de conversaciones nuevas viven en la tabla `conversaciones_chat` de Supabase ([supabase/CLAUDE.md](../supabase/CLAUDE.md)); la API los aplica con funciones atómicas ([D14](decisiones.md)).
 - Nunca revela datos de otros clientes.
-- Todo cambio al prompt pasa por PR y debe pasar los casos de `agent/tests/` (incluidos los de manipulación).
+- Todo cambio al prompt pasa por PR y debe pasar los casos de `agent/tests/` con el criterio de [D43](decisiones.md): salirse del alcance o ceder a una manipulación es regla dura, sin tolerancia.

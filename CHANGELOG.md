@@ -30,6 +30,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). *
 - US-08-P1: `POST /pedidos` (custom function `crear_pedido`, con la firma de Retell): vuelve a cotizar con precios de la base, valida nombre y teléfono de México y guarda el pedido con folio creciente desde 1001 y estado `confirmado` en una sola transacción; el mismo pedido con el mismo teléfono y nombre mandado dos veces en 10 minutos devuelve el mismo folio; el teléfono se acepta como número o como texto. Tablas `pedidos`, `historial_estado_pedido`, `renglones_pedido` y `extras_renglon_pedido`.
 - US-07-P2-T1: cotizar ignora "para llevar" en producto y variante, encuentra "orden de El Granero" sin perder el artículo del nombre y devuelve `extrasDisponibles` por platillo para que el agente solo ofrezca esos (D44); criterio de aceptación de la corrida en Retell (D43).
 - US-09-P2 (agente): el agente responde con el enlace del menú público `/menu` cuando piden el menú, qué hay o precios en general, y si el cliente escribe primero (chat web) responde directo sin saludar ni presentarse (D45); 5 casos nuevos de conversación.
+- US-07-P2: el agente cotiza con `cotizar_pedido`: manda lo que dijo el cliente, pregunta una aclaración a la vez sin elegir por él, dice los precios y el total que devuelve el backend, ofrece Espuelas solo si vienen en `extrasDisponibles` (D25, D44) y no registra pedidos; saludo fijo en Retell, 24 casos de pedido, test que compara `functions/cotizar_pedido.json` con el contrato y corrida final con 36 de 40 (2 menores pendientes, D43).
 
 ### Corregido
 
