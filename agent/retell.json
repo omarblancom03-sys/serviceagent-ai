@@ -28,7 +28,7 @@
       {
         "type": "custom",
         "name": "cotizar_pedido",
-        "description": "Revisa contra el menú lo que pide el cliente y devuelve los nombres oficiales y los precios, o las aclaraciones que hay que preguntarle. No registra ningún pedido. Úsala cada vez que el cliente pida platillos, bebidas o extras, cambie su pedido o pregunte el precio de un platillo concreto. Manda siempre el pedido completo.",
+        "description": "Revisa contra el menú lo que pide el cliente y devuelve los nombres oficiales y los precios, o las aclaraciones que hay que preguntarle. No registra ningún pedido. Úsala cada vez que el cliente pida platillos, bebidas o extras, cambie su pedido o pregunte el precio de un platillo concreto. Manda siempre el pedido completo. No la uses para preguntas generales del menú ni para el precio de un tipo de platillo sin decir cuál (\"¿cuánto sale una?\"), y nunca con argumentos vacíos.",
         "url": "/pedidos/cotizar",
         "method": "POST",
         "parameters": "agent/functions/cotizar_pedido.json",
