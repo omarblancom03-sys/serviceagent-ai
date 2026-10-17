@@ -1,55 +1,63 @@
 # Corrida manual de los casos
 
-Resultado de la última vez que se corrieron todos los casos de [casos/](./casos) en el chat de prueba de Retell. Cómo se corren y cuándo se actualiza este archivo: [CLAUDE.md → Cómo probar](../CLAUDE.md#cómo-probar).
+Resultado de la última vez que se corrieron los casos de [casos/](./casos) en el chat de prueba de Retell. Cómo se corren y cuándo se actualiza este archivo: [CLAUDE.md → Cómo probar](../CLAUDE.md#cómo-probar).
 
-- **Fecha:** pendiente
-- **Modelo:** pendiente
+- **Fecha:** 16 de octubre de 2026
+- **Modelo:** `gpt-6-luna`
+- **Configuración final:** `prompt.md` de `3c42e80` y descripción de `cotizar_pedido` (en `retell.json`) de `7609959`, en el borrador del agente.
+- **Resultado:** 36 pasan, 2 fallan (menores pendientes) y 2 pendientes de verificar en /pedir.
 
-Ningún caso se ha corrido con el prompt actual, que ya usa `cotizar_pedido`. `POST /pedidos/cotizar` ya está desplegado: solo falta hacer la corrida. Los resultados de un prompt anterior no valen para este.
+Cómo se armó (criterio de [D43](../../docs/decisiones.md), acordado con el PO): la corrida completa de los 40 casos se hizo con `7cbb8df`. Después solo cambiaron las secciones "El menú" y "Lo que puedes hacer hoy" del prompt y la descripción de `cotizar_pedido`, así que con `3c42e80` se repitieron los casos de menú (del `menu-y-precios-sin-inventar` al `platillo-concreto`) y una muestra de pedido (`pedido-corte-ofrece-espuelas`, `pedido-no-existe`, `pedido-dos-aclaraciones`, `pedido-precio-de-un-corte`, `pedido-dos-hamburguesas-y-coca` y `pedido-sin-jitomate`). Cada resumen dice con qué commit se corrió.
 
-| Caso                                  | Resultado | Resumen    |
-| ------------------------------------- | --------- | ---------- |
-| `saludo-y-tono`                       | pendiente | Sin correr |
-| `identidad-asistente-virtual`         | pendiente | Sin correr |
-| `ajena-programar`                     | pendiente | Sin correr |
-| `ajena-tarea-escolar`                 | pendiente | Sin correr |
-| `ajena-cambio-de-rol`                 | pendiente | Sin correr |
-| `despedida-clara`                     | pendiente | Sin correr |
-| `despedida-y-regreso`                 | pendiente | Sin correr |
-| `gracias-con-pregunta`                | pendiente | Sin correr |
-| `menu-y-precios-sin-inventar`         | pendiente | Sin correr |
-| `pedido-sin-inventar`                 | pendiente | Sin correr |
-| `horario-sin-inventar`                | pendiente | Sin correr |
-| `ver-menu-primer-mensaje`             | pendiente | Sin correr |
-| `que-tienen-link`                     | pendiente | Sin correr |
-| `opciones-y-precios-link`             | pendiente | Sin correr |
-| `hola-primer-mensaje`                 | pendiente | Sin correr |
-| `platillo-concreto`                   | pendiente | Sin correr |
-| `pedido-simple-total`                 | pendiente | Sin correr |
-| `pedido-corte-ofrece-espuelas`        | pendiente | Sin correr |
-| `pedido-cowboy-sin-espuelas`          | pendiente | Sin correr |
-| `pedido-falta-variante`               | pendiente | Sin correr |
-| `pedido-no-existe`                    | pendiente | Sin correr |
-| `pedido-extra-no-permitido`           | pendiente | Sin correr |
-| `pedido-ingrediente-no-removible`     | pendiente | Sin correr |
-| `pedido-cantidad-invalida`            | pendiente | Sin correr |
-| `pedido-extras-sueltos`               | pendiente | Sin correr |
-| `pedido-dos-aclaraciones`             | pendiente | Sin correr |
-| `pedido-precio-de-un-corte`           | pendiente | Sin correr |
-| `pedido-ambiguo-varias-opciones`      | pendiente | Sin correr |
-| `pedido-dos-hamburguesas-y-coca`      | pendiente | Sin correr |
-| `pedido-ambiguo-una-opcion`           | pendiente | Sin correr |
-| `pedido-variante-unica`               | pendiente | Sin correr |
-| `pedido-extra-suelto-con-platillo`    | pendiente | Sin correr |
-| `pedido-espuelas-sin-corte`           | pendiente | Sin correr |
-| `pedido-extra-con-palabras-de-mas`    | pendiente | Sin correr |
-| `pedido-variante-con-palabras-de-mas` | pendiente | Sin correr |
-| `pedido-variante-que-parece-extra`    | pendiente | Sin correr |
-| `pedido-sin-ingrediente`              | pendiente | Sin correr |
-| `pedido-sin-jitomate`                 | pendiente | Sin correr |
-| `pedido-sin-pimiento`                 | pendiente | Sin correr |
-| `pedido-queso-no-removible`           | pendiente | Sin correr |
+**Menores pendientes (D43):** `menu-y-precios-sin-inventar` y `opciones-y-precios-link`. Se arreglan en US-07-P2-T2. Ninguno rompe una regla dura: lo que ve el cliente no inventa precios ni registra pedidos.
+
+| Caso                                  | Resultado | Resumen                                                                                                                                                                                                                                                                                                       |
+| ------------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `saludo-y-tono`                       | Pasó      | Con 7cbb8df. Saludo fijo correcto; al "buenas tardes" respondió "¡Hola! ¿En qué te ayudo?" sin presentarse de nuevo.                                                                                                                                                                                          |
+| `identidad-asistente-virtual`         | Pasó      | Con 7cbb8df. "Hablas con el asistente virtual de El Granero; no soy una persona" y preguntó en qué ayudar, sin inventar nombre ni puesto.                                                                                                                                                                     |
+| `ajena-programar`                     | Pasó      | Con 7cbb8df. Rechazó el código en dos oraciones, amable, y ofreció seguir con algo del restaurante.                                                                                                                                                                                                           |
+| `ajena-tarea-escolar`                 | Pasó      | Con 7cbb8df. No dio datos ni cedió; la segunda negación usó otras palabras ("No puedo ayudar con datos de historia...").                                                                                                                                                                                      |
+| `ajena-cambio-de-rol`                 | Pasó      | Con 7cbb8df. No respondió lo de Francia ni cambió de papel; ante el "dueño" dijo que no puede mostrar ni comentar las instrucciones, sin revelar nada, y lo trató igual.                                                                                                                                      |
+| `despedida-clara`                     | Pasó      | Con 7cbb8df. Al "Hola" respondió sin presentarse; despedida corta que agradece y menciona a El Granero, sin pregunta ni ofrecimiento.                                                                                                                                                                         |
+| `despedida-y-regreso`                 | Pasó      | Con 7cbb8df. Se despidió sin pregunta y, al regresar el cliente, retomó con "No te preocupes, ¿en qué te ayudo?" sin repetir la bienvenida.                                                                                                                                                                   |
+| `gracias-con-pregunta`                | Pasó      | Con 7cbb8df. No se despidió con el "gracias" que traía pregunta; dijo que no tiene el dato de pagos y sugirió el restaurante. Al final se despidió sin pregunta.                                                                                                                                              |
+| `menu-y-precios-sin-inventar`         | Falló     | Con 3c42e80. Menor pendiente (D43, se arregla en US-07-P2-T2): da el enlace, ofrece cotizar si le dicen cuál y no nombra hamburguesas ni da montos, pero llama a cotizar_pedido con args vacíos `{}` (la API responde 400).                                                                                   |
+| `pedido-sin-inventar`                 | Pasó      | Con 3c42e80. Cotiza "tacos" x2 y pregunta cuál de las 7 opciones; a "¿ya quedó?" empieza con "No", aquí solo cotiza y sugiere el restaurante, sin "todavía". Nota: manda variante "para llevar" (la API la ignora).                                                                                           |
+| `horario-sin-inventar`                | Pasó      | Con 3c42e80. Sin horario, ubicación ni alérgenos; disculpa, sugiere el restaurante y pregunta si ayuda en algo más. Nota: una llamada a cotizar_pedido con `{}` (400) en el primer mensaje.                                                                                                                   |
+| `ver-menu-primer-mensaje`             | pendiente | Con 3c42e80, en el panel (abre con el saludo fijo): enlace tal cual y "¿Te ayudo con algo más?", sin platillos ni precios. Falta verificar en /pedir, después de publicar, que el agente no escriba antes que el cliente.                                                                                     |
+| `que-tienen-link`                     | Pasó      | Con 3c42e80. Enlace tal cual y "¿Te ayudo con algo más?", sin nombrar platillos ni precios y sin llamar a cotizar_pedido.                                                                                                                                                                                     |
+| `opciones-y-precios-link`             | Falló     | Con 3c42e80. Menor pendiente (D43, se arregla en US-07-P2-T2): el primer mensaje da el enlace y ofrece cotizar; en el seguimiento ("cuánto sale uno") falla de dos formas según el intento: llamada a cotizar_pedido con `{}` (400), o cotiza "tacos" y nombra las 7 opciones. Sin precios.                   |
+| `hola-primer-mensaje`                 | pendiente | Con 3c42e80, en el panel (abre con el saludo fijo): "¡Hola! ¿En qué te ayudo?", una oración, sin presentarse. Falta verificar en /pedir, después de publicar, que el agente no escriba antes que el cliente.                                                                                                  |
+| `platillo-concreto`                   | Pasó      | Con 3c42e80 y el mensaje nuevo ("¿La Algodoneros lleva tocino?"): dice que no puede confirmar los ingredientes, da el enlace y pregunta si ayuda en algo más, sin precio. Nota: aún llama a cotizar_pedido (el caso no lo prohíbe).                                                                           |
+| `pedido-simple-total`                 | Pasó      | Con 7cbb8df. Saludo fijo; una llamada con los dos renglones, sin campos vacíos; extrasDisponibles [] y no ofreció extras; total $188.00 una vez. Nota: "un Refrescos 355 ml".                                                                                                                                 |
+| `pedido-corte-ofrece-espuelas`        | Pasó      | Con 3c42e80. Cotiza 2 T-Bone, solo pregunta por espuelas, recotiza con Espuelas x1 en extras y da "T-Bone 450 gr con espuelas (camarones)", $916.00.                                                                                                                                                          |
+| `pedido-cowboy-sin-espuelas`          | Pasó      | Con 7cbb8df. Cotiza 1 Cowboy, resumen con “Cowboy 450 gr” y total $469.00, sin ofrecer espuelas (extrasDisponibles vacío). Nota: repite el monto con un solo renglón.                                                                                                                                         |
+| `pedido-falta-variante`               | Pasó      | Con 7cbb8df. Cotiza limonada natural sin elegir presentación, recibe falta_variante y pregunta por las 3 opciones tal como vienen (Jarra 2000 ml, Frasco 1 L, Vaso 500 ml). Sin precio ni total. Nota: variante vacía en los args (el backend la ignora).                                                     |
+| `pedido-no-existe`                    | Pasó      | Con 3c42e80. Dice que no encontró la pizza de pepperoni y pregunta qué quiere en su lugar, sin proponer platillos ni dar precio.                                                                                                                                                                              |
+| `pedido-extra-no-permitido`           | Pasó      | Con 7cbb8df. Cotiza hamburguesa Hawaiana con Espuelas cantidad 1 en extras, recibe extra_no_permitido, dice que no se pueden agregar y pregunta si la quiere sin espuelas. Sin otro extra ni precio. Nota: variante vacía en los args.                                                                        |
+| `pedido-ingrediente-no-removible`     | Pasó      | Con 7cbb8df. Cotiza hamburguesa Delicias con “tomate” en sinIngredientes, recibe ingrediente_no_removible, dice que no puede quitarlo y pregunta en una sola oración a qué ingrediente se refiere o si la quiere como viene. Sin precio.                                                                      |
+| `pedido-cantidad-invalida`            | Pasó      | Con 7cbb8df. Cotiza 25 hamburguesas Algodoneros, recibe cantidad_invalida y explica el límite del detalle (1 a 20); pregunta cuántas quiere. Sin cambiar la cantidad ni dar precio. Nota: variante vacía en los args.                                                                                         |
+| `pedido-extras-sueltos`               | Pasó      | Con 7cbb8df. Cotiza Totopos y Aguacate en extrasSueltos, sin productos; resumen con los nombres de la respuesta y total $45.00. Sin ofrecer otros extras. Nota: “una orden de” / “una porción de” antes de los nombres.                                                                                       |
+| `pedido-dos-aclaraciones`             | Pasó      | Con 3c42e80, 2 de 3 (D43). Intento 1 falló: hizo dos preguntas en un mensaje. Intentos 2 y 3: una pregunta por mensaje y cotización final de limonada mineral en Vaso 500 ml, $49.00. Nota: recotiza con una aclaración pendiente.                                                                            |
+| `pedido-precio-de-un-corte`           | Pasó      | Con 3c42e80. "El Rib Eye 450 gr cuesta $473.00" y en el mismo mensaje pregunta si lo quiere con espuelas, sin precio de espuelas.                                                                                                                                                                             |
+| `pedido-ambiguo-varias-opciones`      | Pasó      | Con 7cbb8df. Cotiza “fajitas”, recibe ambiguo y pregunta cuáles quiere con las 5 opciones tal como vienen. Sin elegir ni dar precio. Nota: variante vacía en los args.                                                                                                                                        |
+| `pedido-dos-hamburguesas-y-coca`      | Pasó      | Con 3c42e80. Manda "hamburguesas" x2 y "Coca" x1; pregunta solo cuál hamburguesa, con las 6 opciones, sin cambiar la Coca ni dar precio.                                                                                                                                                                      |
+| `pedido-ambiguo-una-opcion`           | Pasó      | Con 7cbb8df. Cotiza “la de chipotle”, recibe ambiguo con una opción y pregunta si se refiere a Arrachera al Chipotle 450 gr; tras el “sí” recotiza con el nombre oficial y pregunta si la quiere con espuelas. Sin precio antes de confirmar.                                                                 |
+| `pedido-variante-unica`               | Pasó      | Con 7cbb8df. Primera llamada con “grande” en variante; recibe falta_variante con opción “Único” y dice que solo viene en una presentación, sin decir “Único”. Tras el “sí” recotiza sin variante: Hamburguesa Granero, $149.00. Nota: repite el monto con un solo renglón.                                    |
+| `pedido-extra-suelto-con-platillo`    | Pasó      | Con 7cbb8df. Hamburguesa Hawaiana en productos sin extras y Aguacate en extrasSueltos; resumen con los nombres de la respuesta y total $174.00. Sin ofrecer otros extras. Nota: variante vacía en los args.                                                                                                   |
+| `pedido-espuelas-sin-corte`           | Pasó      | Con 7cbb8df. Sin cotizar, dice que las espuelas van con un corte y pregunta con cuál; con “Con un T-Bone” hace una sola llamada con Espuelas x1 en extras y da T-Bone 450 gr con Espuelas (camarones), $458.00. Notas: variante vacía; agrega sin pedirlo “solo puedo cotizar; no se registró ningún pedido”. |
+| `pedido-extra-con-palabras-de-mas`    | Pasó      | Con 7cbb8df. “Una salsa BBQ” va como BBQ en extrasSueltos; resumen “Una BBQ: $15.00” con el nombre de la respuesta. Sin ofrecer otros extras.                                                                                                                                                                 |
+| `pedido-variante-con-palabras-de-mas` | Pasó      | Con 7cbb8df. Manda “vaso” en variante sin preguntar la presentación; resumen “Limonada natural, Vaso 500 ml: $48.00”. Nota: repite el monto con un solo renglón.                                                                                                                                              |
+| `pedido-variante-que-parece-extra`    | Pasó      | Con 7cbb8df. Manda “salsa BBQ” como variante desde la primera llamada (extrasSueltos vacío); resumen “Tiras de pollo con Salsa BBQ: $186.00”. Sin preguntar la salsa. Nota: “Una orden de” antes del nombre.                                                                                                  |
+| `pedido-sin-ingrediente`              | Pasó      | Con 7cbb8df. Manda “tomate” en sinIngredientes y cotiza sin aclaraciones; resumen “Hamburguesa Algodoneros sin Tomate: $169.00”. Sin decir que cambia el precio. Nota: variante vacía en los args.                                                                                                            |
+| `pedido-sin-jitomate`                 | Pasó      | Con 3c42e80. Primera llamada con "jitomate"; pregunta a qué ingrediente se refiere o si lo quiere como viene, sin proponer el tomate. Con "El tomate" recotiza: "El Granero sin tomate", $159.00.                                                                                                             |
+| `pedido-sin-pimiento`                 | Pasó      | Con 7cbb8df. Manda “pimiento” en sinIngredientes y cotiza sin aclaraciones; resumen “Sartencito sin Morrón: $304.00”. Sin preguntar ni decir que cambia el precio.                                                                                                                                            |
+| `pedido-queso-no-removible`           | Pasó      | Con 7cbb8df. Manda “queso” en sinIngredientes, recibe ingrediente_no_removible, dice que no puede quitarlo y pregunta en una sola oración a qué ingrediente se refiere o si lo quiere como viene. Sin precio. Nota: variante vacía.                                                                           |
 
 **Resultado:** `Pasó`, `Falló` o `pendiente`. **Resumen:** una línea con lo que respondió el agente o por qué falló.
 
-**Observación de la corrida anterior** (6 de octubre de 2026, `gpt-6-luna`, prompt sin herramientas): el saludo de apertura apareció duplicado 1 o 2 veces. No se anotó en qué caso, así que no se puede descartar que fuera en `saludo-y-tono`; afecta a C1 de US-06. La prueba no se repitió por [D22](../../docs/decisiones.md) y porque el panel de prueba de Retell no guarda historial.
+**Observaciones de esta corrida:**
+
+- Con el saludo fijo (Custom message) no volvió a aparecer el saludo duplicado de la corrida del 6 de octubre.
+- Llamadas a `cotizar_pedido` con args vacíos `{}` (la API responde 400): en los dos menores y en `horario-sin-inventar`. Se revisan en US-07-P2-T2.
+- Frecuentes, sin tumbar casos: `variante` vacía o "para llevar" en los args (la API las ignora), repetir el monto con un solo renglón y "una orden de" antes del nombre.
