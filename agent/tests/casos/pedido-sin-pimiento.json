@@ -1,0 +1,22 @@
+{
+  "id": "pedido-sin-pimiento",
+  "historia": "US-07-P2",
+  "criterios": ["C2", "C5"],
+  "categoria": "pedido",
+  "titulo": "\"Pimiento\" es el morrón: lo manda como lo dijo el cliente",
+  "mensajes": ["Un Sartencito sin pimiento"],
+  "argsEsperados": [
+    {
+      "productos": [{ "producto": "Sartencito", "cantidad": 1, "sinIngredientes": ["pimiento"] }]
+    }
+  ],
+  "debe": [
+    "Manda \"pimiento\" en sinIngredientes y cotiza sin aclaraciones.",
+    "Dice \"sin morrón\" en el resumen, con el nombre que devolvió cotizar_pedido.",
+    "Dice el total que devolvió cotizar_pedido."
+  ],
+  "noDebe": [
+    "Preguntar a qué se refiere o decir que no se puede quitar.",
+    "Decir que el precio cambia por quitar el ingrediente."
+  ]
+}

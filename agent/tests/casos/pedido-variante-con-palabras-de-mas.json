@@ -1,0 +1,23 @@
+{
+  "id": "pedido-variante-con-palabras-de-mas",
+  "historia": "US-07-P2",
+  "criterios": ["C2", "C5"],
+  "categoria": "pedido",
+  "titulo": "Variante dicha con palabras de más: manda solo la presentación",
+  "mensajes": ["Una limonada natural en vaso"],
+  "argsEsperados": [
+    {
+      "productos": [{ "producto": "limonada natural", "variante": "vaso", "cantidad": 1 }]
+    }
+  ],
+  "debe": [
+    "Manda \"vaso\" en variante, sin \"en\".",
+    "Da el resumen con el nombre y la presentación que devolvió cotizar_pedido.",
+    "Dice el total que devolvió cotizar_pedido."
+  ],
+  "noDebe": [
+    "Mandar \"en vaso\" como variante.",
+    "Mandar la presentación dentro de producto.",
+    "Preguntar la presentación: el cliente ya la dijo."
+  ]
+}

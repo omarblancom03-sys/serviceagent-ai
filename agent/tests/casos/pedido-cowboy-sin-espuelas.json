@@ -1,0 +1,27 @@
+{
+  "id": "pedido-cowboy-sin-espuelas",
+  "historia": "US-07-P2",
+  "criterios": ["C3", "C5"],
+  "categoria": "pedido",
+  "titulo": "No ofrece espuelas con un corte que no las lleva",
+  "mensajes": ["Un Cowboy"],
+  "argsEsperados": [
+    {
+      "productos": [
+        {
+          "producto": "Cowboy",
+          "cantidad": 1
+        }
+      ]
+    }
+  ],
+  "debe": [
+    "Cotiza y da el resumen con el nombre que devolvió cotizar_pedido.",
+    "Dice el total que devolvió cotizar_pedido."
+  ],
+  "noDebe": [
+    "Ofrecer espuelas.",
+    "Ofrecer o mencionar otros extras.",
+    "Decir que el pedido quedó registrado, o dar número de pedido o tiempo de espera."
+  ]
+}

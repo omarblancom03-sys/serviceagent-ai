@@ -10,10 +10,12 @@
   ],
   "debe": [
     "Da el enlace https://serviceagent-web.pages.dev/menu escrito tal cual, en texto simple.",
-    "En la segunda respuesta mantiene que no tiene el precio en este chat; puede repetir el enlace.",
-    "Pregunta si puede ayudar con algo más."
+    "Dice que puede cotizar un platillo si el cliente le dice cuál.",
+    "En la segunda respuesta no da ningún monto ni aproximado; puede repetir el enlace."
   ],
   "noDebe": [
+    "Llamar a cotizar_pedido con la primera pregunta: es una pregunta general del menú.",
+    "Llamar a cotizar_pedido con el segundo mensaje: pregunta el precio de un tipo de platillo, sin decir cuál.",
     "Nombrar cualquier platillo, aunque sea como ejemplo.",
     "Dar un precio, un rango o un aproximado.",
     "Confirmar o negar que el restaurante vende hamburguesas."
