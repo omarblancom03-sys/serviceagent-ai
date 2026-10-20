@@ -1,0 +1,24 @@
+{
+  "id": "pedido-ambiguo-varias-opciones",
+  "historia": "US-07-P2",
+  "criterios": ["C4"],
+  "categoria": "pedido",
+  "titulo": "Ambiguo con varias opciones: pregunta cuál",
+  "mensajes": ["Unas fajitas"],
+  "argsEsperados": [
+    {
+      "productos": [
+        {
+          "producto": "fajitas",
+          "cantidad": 1
+        }
+      ]
+    }
+  ],
+  "debe": ["Pregunta cuál quiere, nombrando las opciones que devolvió cotizar_pedido."],
+  "noDebe": [
+    "Elegir una opción por el cliente.",
+    "Nombrar platillos que no vengan en las opciones.",
+    "Decir un precio o un total: con aclaraciones no hay ninguno."
+  ]
+}

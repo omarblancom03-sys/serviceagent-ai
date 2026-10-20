@@ -3,6 +3,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { z } from 'zod';
+import { CotizarPedidoArgsSchema } from '@serviceagent/shared';
 
 // Este test no habla con Retell: lee los archivos de agent/ como texto y
 // verifica que esten bien armados. Los casos se corren a mano en el chat de
@@ -17,7 +18,7 @@ const textoNoVacio = z.string().trim().min(1);
 // Formato de un caso de conversacion. Documentado en agent/CLAUDE.md.
 const esquemaCaso = z.strictObject({
   id: z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/),
-  historia: z.string().regex(/^US-\d+$/),
+  historia: z.string().regex(/^US-\d+(-P\d+)?$/),
   criterios: z.array(z.string().regex(/^C\d+$/)),
   categoria: z.enum([
     'personalidad',
@@ -25,9 +26,15 @@ const esquemaCaso = z.strictObject({
     'manipulacion',
     'sin_inventar',
     'despedida',
+    'pedido',
   ]),
   titulo: textoNoVacio,
   mensajes: z.array(textoNoVacio).min(1),
+  // Lo que contesta el cliente cuando el orden de las preguntas lo decide el agente.
+  respuestas: z.array(textoNoVacio).min(1).optional(),
+  // Args de cada llamada esperada a cotizar_pedido. Aqui solo se revisa que sean
+  // objetos; contra el contrato se validan abajo ("peticion esperada").
+  argsEsperados: z.array(z.record(z.string(), z.unknown())).min(1).optional(),
   debe: z.array(textoNoVacio).min(1),
   noDebe: z.array(textoNoVacio),
 });
@@ -82,6 +89,43 @@ describe('cobertura de US-06', () => {
   });
 });
 
+describe('cobertura de US-07-P2', () => {
+  const casosPedido = archivosCasos
+    .map(leerCaso)
+    .filter((caso) => caso.historia === 'US-07-P2' && caso.categoria === 'pedido');
+
+  // C1 (la custom function) se prueba en funciones.test.ts; C6 es la linea de abajo.
+  it.each(['C2', 'C3', 'C4', 'C5'])('el criterio %s tiene al menos un caso', (criterio) => {
+    expect(casosPedido.filter((caso) => caso.criterios.includes(criterio)).length).toBeGreaterThan(
+      0,
+    );
+  });
+
+  it('hay al menos 10 frases de pedido', () => {
+    expect(casosPedido.length).toBeGreaterThanOrEqual(10);
+  });
+});
+
+describe('peticion esperada de los casos de pedido (argsEsperados)', () => {
+  const casos = archivosCasos.map(leerCaso);
+
+  it.each(casos.filter((caso) => caso.categoria === 'pedido'))(
+    '$id dice que args debe mandar el agente',
+    (caso) => {
+      expect(caso.argsEsperados?.length ?? 0).toBeGreaterThan(0);
+    },
+  );
+
+  // Cada args pasa por el contrato real: si el caso espera una llave mal
+  // escrita o un campo que el backend no acepta, falla aqui y no en Retell.
+  it.each(casos.filter((caso) => caso.argsEsperados))('$id cumple el contrato', (caso) => {
+    for (const args of caso.argsEsperados ?? []) {
+      const resultado = CotizarPedidoArgsSchema.safeParse(args);
+      expect(resultado.error?.issues ?? []).toEqual([]);
+    }
+  });
+});
+
 describe('prompt (agent/prompt.md)', () => {
   const prompt = readFileSync(path.join(raizAgente, 'prompt.md'), 'utf-8');
 
@@ -97,7 +141,7 @@ describe('prompt (agent/prompt.md)', () => {
 });
 
 describe('configuracion (agent/retell.json)', () => {
-  // begin_message en null = "Dynamic message": el saludo lo redacta el modelo.
+  // begin_message es el saludo fijo ("Custom message"); en null seria "Dynamic message" (el saludo lo redacta el modelo).
   const esquemaConfiguracion = z.object({
     chat_agent: z.record(z.string(), z.unknown()),
     retell_llm: z.looseObject({
@@ -113,12 +157,31 @@ describe('configuracion (agent/retell.json)', () => {
     expect(resultado.error?.issues ?? []).toEqual([]);
   });
 
-  it('si no hay saludo fijo, el prompt dice como es el primer mensaje', () => {
-    const configuracion = esquemaConfiguracion.parse(JSON.parse(contenido));
-    if (configuracion.retell_llm.begin_message === null) {
-      const prompt = readFileSync(path.join(raizAgente, 'prompt.md'), 'utf-8');
-      expect(prompt).toContain('## Tu primer mensaje');
-    }
+  // Con saludo fijo o sin el, y si el cliente escribe primero (/pedir), el prompt cubre el inicio.
+  it('el prompt dice como es el primer mensaje', () => {
+    const prompt = readFileSync(path.join(raizAgente, 'prompt.md'), 'utf-8');
+    expect(prompt).toContain('## Tu primer mensaje');
+  });
+
+  // docs/negocio.md -> Dinero: los textos de retell.json que lee el modelo tampoco llevan montos.
+  const esquemaTextosDelModelo = z.object({
+    retell_llm: z.looseObject({
+      begin_message: z.string().nullable(),
+      general_tools: z.array(z.looseObject({ name: z.string(), description: z.string() })),
+    }),
+  });
+  const { retell_llm: llm } = esquemaTextosDelModelo.parse(JSON.parse(contenido));
+  const cotizarPedido = llm.general_tools.find(
+    (herramienta) => herramienta.name === 'cotizar_pedido',
+  );
+
+  it.each([
+    ['el saludo fijo (begin_message)', llm.begin_message ?? ''],
+    ['la descripcion de cotizar_pedido', cotizarPedido?.description],
+  ])('%s no contiene montos', (_nombre, texto) => {
+    expect(texto).toBeDefined();
+    expect(texto).not.toMatch(/\$\s*\d/);
+    expect(texto).not.toMatch(/\d\s*(pesos|mxn)/i);
   });
 });
 
@@ -130,6 +193,7 @@ describe('identificadores de la cuenta y llaves', () => {
     'retell.md',
     'prompt.md',
     'tests/corrida.md',
+    ...readdirSync(path.join(raizAgente, 'functions')).map((archivo) => `functions/${archivo}`),
     ...archivosCasos.map((archivo) => `tests/casos/${archivo}`),
   ];
 

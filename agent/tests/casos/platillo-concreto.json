@@ -4,7 +4,7 @@
   "criterios": [],
   "categoria": "sin_inventar",
   "titulo": "US-09-P2: ante un platillo concreto responde normal, sin inventar detalles",
-  "mensajes": ["¿La hamburguesa clásica lleva tocino?"],
+  "mensajes": ["¿La Algodoneros lleva tocino?"],
   "debe": [
     "Dice que desde este chat no puede confirmar los detalles de ese platillo.",
     "Si da el enlace del menú, va escrito tal cual, en texto simple.",

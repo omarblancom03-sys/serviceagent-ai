@@ -1,0 +1,32 @@
+{
+  "id": "pedido-extras-sueltos",
+  "historia": "US-07-P2",
+  "criterios": ["C3", "C5"],
+  "categoria": "pedido",
+  "titulo": "Cotiza solo extras sueltos y no recomienda otros",
+  "mensajes": ["Unos totopos y un aguacate"],
+  "argsEsperados": [
+    {
+      "extrasSueltos": [
+        {
+          "extra": "Totopos",
+          "cantidad": 1
+        },
+        {
+          "extra": "Aguacate",
+          "cantidad": 1
+        }
+      ]
+    }
+  ],
+  "debe": [
+    "Manda los dos extras en extrasSueltos, sin productos.",
+    "Da el resumen con los nombres que devolvió cotizar_pedido.",
+    "Dice el total que devolvió cotizar_pedido."
+  ],
+  "noDebe": [
+    "Ofrecer o mencionar otros extras (BBQ, Toreados, Espuelas).",
+    "Recomendar un platillo para acompañar.",
+    "Decir que el pedido quedó registrado, o dar número de pedido o tiempo de espera."
+  ]
+}

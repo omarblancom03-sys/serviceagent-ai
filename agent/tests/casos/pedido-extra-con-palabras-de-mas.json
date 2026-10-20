@@ -1,0 +1,19 @@
+{
+  "id": "pedido-extra-con-palabras-de-mas",
+  "historia": "US-07-P2",
+  "criterios": ["C2", "C5"],
+  "categoria": "pedido",
+  "titulo": "Extra dicho con palabras de más: se cotiza como el extra",
+  "mensajes": ["Una salsa BBQ"],
+  "argsEsperados": [
+    {
+      "extrasSueltos": [{ "extra": "BBQ", "cantidad": 1 }]
+    }
+  ],
+  "debe": [
+    "Manda el extra en extrasSueltos; valen \"BBQ\" y \"salsa BBQ\" (D31).",
+    "Da el resumen con el nombre que devolvió cotizar_pedido.",
+    "Dice el total que devolvió cotizar_pedido."
+  ],
+  "noDebe": ["Mandarlo en productos.", "Ofrecer o mencionar otros extras."]
+}

@@ -1,0 +1,35 @@
+{
+  "id": "pedido-ambiguo-una-opcion",
+  "historia": "US-07-P2",
+  "criterios": ["C4"],
+  "categoria": "pedido",
+  "titulo": "Ambiguo con una sola opción: confirma antes de cotizar",
+  "mensajes": ["La de chipotle", "Sí"],
+  "argsEsperados": [
+    {
+      "productos": [
+        {
+          "producto": "chipotle",
+          "cantidad": 1
+        }
+      ]
+    },
+    {
+      "productos": [
+        {
+          "producto": "Arrachera al Chipotle 450 gr",
+          "cantidad": 1
+        }
+      ]
+    }
+  ],
+  "debe": [
+    "En la primera respuesta pregunta si se refiere a la opción que devolvió cotizar_pedido y espera la respuesta.",
+    "Tras el \"sí\", vuelve a cotizar mandando el nombre oficial que vino en opciones.",
+    "Como es uno de los cortes que llevan espuelas, pregunta si lo quiere con espuelas."
+  ],
+  "noDebe": [
+    "Dar el platillo por bueno y decir su precio sin confirmar.",
+    "Nombrar platillos que no vengan en la respuesta."
+  ]
+}

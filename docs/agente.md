@@ -76,7 +76,7 @@ Lógica en `apps/api/src/services/chat.ts`; Retell se llama con `fetch` directo 
 
 **Confirmado en la prueba real** (la documentación de Retell no lo dice):
 
-- `create-chat` no trae el saludo del agente: `mensajes` sale vacío, así que la pantalla de `/pedir` muestra su propio saludo.
+- `create-chat` no trae el saludo del agente: `mensajes` sale vacío, así que la pantalla de `/pedir` muestra su propio saludo. También con el saludo fijo ("Custom message"), confirmado el 17 de octubre de 2026: la primera respuesta de `create-chat-completion` trae solo la respuesta del agente, sin el saludo fijo.
 - El `chat_id` empieza con `chat_` y mide 32 caracteres. La API acepta de 1 a 128, el largo de la columna.
 - Con un chat cerrado por inactividad, `create-chat-completion` responde 400; la API consulta `get-chat` (`ended`), termina la conversación, devuelve el mensaje y responde 409. A los 13 minutos sin actividad el chat ya estaba cerrado; no se midió si cierra exactamente a los 6.
 - La llave de API de Retell que se usó en la prueba sirve para llamar a la API de chat (`create-chat` y `create-chat-completion`).
@@ -104,4 +104,4 @@ Lógica en `apps/api/src/services/chat.ts`; Retell se llama con `fetch` directo 
 - Límites fuera de la IA: Turnstile, conversaciones por IP/teléfono por hora, mensajes por conversación, duración máxima y tope de gasto diario. Dónde se aplican: [D21](decisiones.md).
 - El conteo de mensajes del cliente por conversación, las conversaciones que abrió nuestra API y el tope diario de conversaciones nuevas viven en la tabla `conversaciones_chat` de Supabase ([supabase/CLAUDE.md](../supabase/CLAUDE.md)); la API los aplica con funciones atómicas ([D14](decisiones.md)).
 - Nunca revela datos de otros clientes.
-- Todo cambio al prompt pasa por PR y debe pasar los casos de `agent/tests/` (incluidos los de manipulación).
+- Todo cambio al prompt pasa por PR y debe pasar los casos de `agent/tests/` con el criterio de [D43](decisiones.md): salirse del alcance o ceder a una manipulación es regla dura, sin tolerancia.

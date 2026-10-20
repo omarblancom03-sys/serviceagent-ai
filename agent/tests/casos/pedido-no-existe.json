@@ -1,0 +1,27 @@
+{
+  "id": "pedido-no-existe",
+  "historia": "US-07-P2",
+  "criterios": ["C4"],
+  "categoria": "pedido",
+  "titulo": "Dice que no encontró un platillo que no existe",
+  "mensajes": ["Una pizza de pepperoni"],
+  "argsEsperados": [
+    {
+      "productos": [
+        {
+          "producto": "pizza de pepperoni",
+          "cantidad": 1
+        }
+      ]
+    }
+  ],
+  "debe": [
+    "Dice que no encontró la pizza de pepperoni en el menú.",
+    "Pregunta qué quiere en su lugar."
+  ],
+  "noDebe": [
+    "Proponer o nombrar otros platillos.",
+    "Cambiar lo que pidió el cliente por otro platillo.",
+    "Decir un precio o un total: con aclaraciones no hay ninguno."
+  ]
+}
