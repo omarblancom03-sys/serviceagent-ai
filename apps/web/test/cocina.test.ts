@@ -1,7 +1,10 @@
 import type { TicketCocina } from '@serviceagent/shared';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ErrorApi } from '../src/lib/api';
 import {
+  ESPERA_AGRUPAR_SENALES_MS,
+  ESPERA_MAXIMA_SENALES_MS,
+  crearRecargador,
   estadoConexionDe,
   foliosNuevos,
   lineaDe,
@@ -120,5 +123,106 @@ describe('mensajeErrorCocina', () => {
       expect(mensaje).toMatch(/reintent|vuelve a intentar/i);
       expect(mensaje).not.toMatch(/\d{3}|fetch/i);
     }
+  });
+});
+
+describe('crearRecargador', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  /** Una carga que termina cuando el test llama a `terminar()`, para simular la API tardando. */
+  function cargaControlada() {
+    const pendientes: (() => void)[] = [];
+    const cargar = vi.fn(
+      () =>
+        new Promise<void>((resolver) => {
+          pendientes.push(resolver);
+        }),
+    );
+    const terminar = async () => {
+      pendientes.shift()?.();
+      await vi.advanceTimersByTimeAsync(0);
+    };
+    return { cargar, terminar };
+  }
+
+  it('varias señales juntas se atienden con una sola petición', async () => {
+    const cargar = vi.fn(() => Promise.resolve());
+    const recarga = crearRecargador(cargar);
+    recarga.senal();
+    await vi.advanceTimersByTimeAsync(100);
+    recarga.senal();
+    await vi.advanceTimersByTimeAsync(100);
+    recarga.senal();
+    expect(cargar).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(ESPERA_AGRUPAR_SENALES_MS);
+    expect(cargar).toHaveBeenCalledTimes(1);
+  });
+
+  it('con señales continuas pide la lista a más tardar 2 s después de la primera', async () => {
+    const cargar = vi.fn(() => Promise.resolve());
+    const recarga = crearRecargador(cargar);
+    // Una señal cada 300 ms: sin tope, la espera de 400 ms se reiniciaría para siempre.
+    for (let t = 0; t < ESPERA_MAXIMA_SENALES_MS; t += 300) {
+      recarga.senal();
+      await vi.advanceTimersByTimeAsync(300);
+    }
+    expect(cargar).toHaveBeenCalledTimes(1);
+  });
+
+  it('después de atender un grupo, la siguiente señal vuelve a esperar desde cero', async () => {
+    const cargar = vi.fn(() => Promise.resolve());
+    const recarga = crearRecargador(cargar);
+    recarga.senal();
+    await vi.advanceTimersByTimeAsync(ESPERA_AGRUPAR_SENALES_MS);
+    recarga.senal();
+    await vi.advanceTimersByTimeAsync(ESPERA_AGRUPAR_SENALES_MS - 1);
+    expect(cargar).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(cargar).toHaveBeenCalledTimes(2);
+  });
+
+  it('nunca hay dos peticiones a la vez; lo que llega mientras carga se pide una vez al terminar', async () => {
+    const { cargar, terminar } = cargaControlada();
+    const recarga = crearRecargador(cargar);
+    void recarga.recargar();
+    void recarga.recargar();
+    void recarga.recargar();
+    expect(cargar).toHaveBeenCalledTimes(1);
+    await terminar();
+    expect(cargar).toHaveBeenCalledTimes(2);
+    await terminar();
+    expect(cargar).toHaveBeenCalledTimes(2);
+  });
+
+  it('se pone al día al volver la conexión, no mientras sigue en vivo', async () => {
+    const cargar = vi.fn(() => Promise.resolve());
+    const recarga = crearRecargador(cargar);
+    recarga.conexion('en_vivo');
+    await vi.advanceTimersByTimeAsync(0);
+    recarga.conexion('en_vivo');
+    await vi.advanceTimersByTimeAsync(0);
+    expect(cargar).toHaveBeenCalledTimes(1);
+    recarga.conexion('reconectando');
+    await vi.advanceTimersByTimeAsync(0);
+    expect(cargar).toHaveBeenCalledTimes(1);
+    recarga.conexion('en_vivo');
+    await vi.advanceTimersByTimeAsync(0);
+    expect(cargar).toHaveBeenCalledTimes(2);
+  });
+
+  it('al detenerse no pide nada más, ni lo que estaba agrupando', async () => {
+    const cargar = vi.fn(() => Promise.resolve());
+    const recarga = crearRecargador(cargar);
+    recarga.senal();
+    recarga.detener();
+    await vi.advanceTimersByTimeAsync(ESPERA_MAXIMA_SENALES_MS);
+    await recarga.recargar();
+    recarga.conexion('en_vivo');
+    expect(cargar).not.toHaveBeenCalled();
   });
 });

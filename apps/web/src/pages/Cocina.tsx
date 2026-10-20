@@ -3,15 +3,17 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSesion } from '../auth/SesionContext';
 import {
   DURACION_RESALTE_MS,
-  ESPERA_AGRUPAR_SENALES_MS,
   ETIQUETA_ESTADO,
   INTERVALO_REFRESCO_MS,
   TEXTO_CONEXION,
+  ZONA_HORARIA_RESTAURANTE,
+  crearRecargador,
   foliosNuevos,
   mensajeErrorCocina,
   separarRenglones,
   type EstadoConexion,
   type LineaTicket,
+  type Recargador,
 } from '../lib/cocina';
 import { formatearHora } from '../lib/menuAdmin';
 import { escucharSenalPedidos, hayRealtime } from '../lib/senalPedidos';
@@ -32,8 +34,7 @@ export function Cocina() {
   const [aviso, setAviso] = useState('');
 
   const anteriores = useRef<TicketCocina[] | null>(null);
-  const cargando = useRef(false);
-  const otraVez = useRef(false);
+  const recargador = useRef<Recargador | null>(null);
   const temporizadores = useRef(new Set<ReturnType<typeof setTimeout>>());
 
   const despues = useCallback((ms: number, accion: () => void) => {
@@ -64,51 +65,31 @@ export function Cocina() {
     }
   }, [pedirConSesion, despues]);
 
-  // Una sola petición a la vez: si llega otra señal mientras carga, se vuelve a pedir al terminar.
-  const cargar = useCallback(async () => {
-    if (cargando.current) {
-      otraVez.current = true;
-      return;
-    }
-    cargando.current = true;
-    try {
-      do {
-        otraVez.current = false;
-        await cargarUnaVez();
-      } while (otraVez.current);
-    } finally {
-      cargando.current = false;
-    }
-  }, [cargarUnaVez]);
-
   useEffect(() => {
-    void cargar();
-    const refresco = setInterval(() => void cargar(), INTERVALO_REFRESCO_MS);
+    // Cuándo pedir la lista (agrupar señales, una petición a la vez, ponerse al día): lib/cocina.ts.
+    const recarga = crearRecargador(cargarUnaVez);
+    recargador.current = recarga;
+    void recarga.recargar();
+    const refresco = setInterval(() => void recarga.recargar(), INTERVALO_REFRESCO_MS);
 
-    let agrupando: ReturnType<typeof setTimeout> | null = null;
-    let estabaEnVivo = false;
     const dejarDeEscuchar = escucharSenalPedidos(
-      () => {
-        if (agrupando) clearTimeout(agrupando);
-        agrupando = setTimeout(() => void cargar(), ESPERA_AGRUPAR_SENALES_MS);
-      },
+      () => recarga.senal(),
       (estado) => {
         setConexion(estado);
-        // Al volver la conexión puede haberse perdido alguna señal: se pone al día.
-        if (estado === 'en_vivo' && !estabaEnVivo) void cargar();
-        estabaEnVivo = estado === 'en_vivo';
+        recarga.conexion(estado);
       },
     );
 
     const pendientes = temporizadores.current;
     return () => {
       clearInterval(refresco);
-      if (agrupando) clearTimeout(agrupando);
+      recarga.detener();
+      recargador.current = null;
       pendientes.forEach(clearTimeout);
       pendientes.clear();
       dejarDeEscuchar?.();
     };
-  }, [cargar]);
+  }, [cargarUnaVez]);
 
   return (
     <section>
@@ -129,7 +110,11 @@ export function Cocina() {
       {error && (
         <div role="alert" className="mt-6 rounded-xl bg-red-50 p-4 text-red-800">
           {error}{' '}
-          <button type="button" className="font-semibold underline" onClick={() => void cargar()}>
+          <button
+            type="button"
+            className="font-semibold underline"
+            onClick={() => void recargador.current?.recargar()}
+          >
             Reintentar ahora
           </button>
         </div>
@@ -183,7 +168,8 @@ function Ticket({ ticket, nuevo }: { ticket: TicketCocina; nuevo: boolean }) {
         </span>
       </div>
       <p className="mt-1 text-stone-600">
-        {ticket.nombreCliente} · entró a las {formatearHora(ticket.enColaDesde)}
+        {ticket.nombreCliente} · entró a las{' '}
+        {formatearHora(ticket.enColaDesde, ZONA_HORARIA_RESTAURANTE)}
       </p>
 
       <Lineas lineas={platillos} />

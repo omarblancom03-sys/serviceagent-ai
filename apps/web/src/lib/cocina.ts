@@ -10,8 +10,12 @@ import { ErrorApi } from './api';
 export const INTERVALO_REFRESCO_MS = 30_000;
 /** Señales que llegan juntas (varios cambios seguidos) se atienden con una sola petición. */
 export const ESPERA_AGRUPAR_SENALES_MS = 400;
+/** Tope de la espera: con señales continuas, la lista se pide a más tardar 2 s después de la primera. */
+export const ESPERA_MAXIMA_SENALES_MS = 2_000;
 /** Cuánto tiempo se resalta un pedido que acaba de llegar. */
 export const DURACION_RESALTE_MS = 15_000;
+/** Zona del restaurante: la hora del ticket no depende de cómo esté configurada la tablet. */
+export const ZONA_HORARIA_RESTAURANTE = 'America/Chihuahua';
 
 export type EstadoConexion = 'conectando' | 'en_vivo' | 'reconectando' | 'sin_tiempo_real';
 
@@ -87,5 +91,83 @@ export function mensajeErrorCocina(error: unknown): string {
   if (error instanceof ErrorApi && error.status === 403) {
     return 'Tu usuario no tiene acceso a cocina.';
   }
-  return 'No se pudieron cargar los pedidos. Se vuelve a intentar sola en unos segundos.';
+  return 'No se pudieron cargar los pedidos. Se vuelve a intentar sola cada 30 segundos.';
+}
+
+/** Cuándo se vuelve a pedir la lista. La página lo crea al montarse y lo detiene al salir. */
+export interface Recargador {
+  /** Pide la lista. Nunca hay dos peticiones a la vez: si ya hay una, se repite al terminar. */
+  recargar(): Promise<void>;
+  /**
+   * Llegó una señal de Realtime. Las que llegan juntas se atienden con una sola petición
+   * (`ESPERA_AGRUPAR_SENALES_MS`), pero con señales continuas no se espera más de
+   * `ESPERA_MAXIMA_SENALES_MS` desde la primera (D47: a lo más, recargas de más).
+   */
+  senal(): void;
+  /** Cambió el canal. Al volver a "en vivo" pudo perderse una señal: se pone al día. */
+  conexion(estado: EstadoConexion): void;
+  /** Cancela lo pendiente; después ya no pide nada. */
+  detener(): void;
+}
+
+export function crearRecargador(
+  cargar: () => Promise<void>,
+  espera = ESPERA_AGRUPAR_SENALES_MS,
+  esperaMaxima = ESPERA_MAXIMA_SENALES_MS,
+): Recargador {
+  let cargando = false;
+  let otraVez = false;
+  let detenido = false;
+  let agrupando: ReturnType<typeof setTimeout> | null = null;
+  let primeraSenal: number | null = null;
+  let estabaEnVivo = false;
+
+  async function recargar(): Promise<void> {
+    if (detenido) return;
+    if (cargando) {
+      otraVez = true;
+      return;
+    }
+    cargando = true;
+    try {
+      do {
+        otraVez = false;
+        await cargar();
+      } while (otraVez && !detenido);
+    } finally {
+      cargando = false;
+    }
+  }
+
+  function cancelarAgrupado() {
+    if (agrupando) clearTimeout(agrupando);
+    agrupando = null;
+    primeraSenal = null;
+  }
+
+  return {
+    recargar,
+    senal() {
+      if (detenido) return;
+      const ahora = Date.now();
+      primeraSenal ??= ahora;
+      if (agrupando) clearTimeout(agrupando);
+      const restante = Math.min(espera, primeraSenal + esperaMaxima - ahora);
+      agrupando = setTimeout(
+        () => {
+          cancelarAgrupado();
+          void recargar();
+        },
+        Math.max(0, restante),
+      );
+    },
+    conexion(estado) {
+      if (estado === 'en_vivo' && !estabaEnVivo) void recargar();
+      estabaEnVivo = estado === 'en_vivo';
+    },
+    detener() {
+      detenido = true;
+      cancelarAgrupado();
+    },
+  };
 }

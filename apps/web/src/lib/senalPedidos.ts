@@ -1,5 +1,5 @@
 import { CANAL_SENAL_PEDIDOS, EVENTO_SENAL_PEDIDOS } from '@serviceagent/shared';
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { createClient, type RealtimeChannel, type SupabaseClient } from '@supabase/supabase-js';
 import { estadoConexionDe, type EstadoConexion } from './cocina';
 
 /*
@@ -9,6 +9,20 @@ import { estadoConexionDe, type EstadoConexion } from './cocina';
  */
 
 let cliente: SupabaseClient | null | undefined;
+
+/*
+ * Un solo canal para toda la app, que se abre la primera vez y no se cierra: cada pantalla solo
+ * agrega y quita su oyente. Si se cerrara al salir, volver en los ~100 ms que tarda en cerrarse
+ * devolvería el canal que se está cerrando (`channel()` reutiliza el del mismo nombre) y la
+ * pantalla se quedaría en "Conectando…".
+ */
+interface Oyente {
+  alCambiar: () => void;
+  alCambiarConexion: (estado: EstadoConexion) => void;
+}
+const oyentes = new Set<Oyente>();
+let canal: RealtimeChannel | null = null;
+let ultimoEstado: EstadoConexion | null = null;
 
 /** `null` si faltan `VITE_SUPABASE_URL` o `VITE_SUPABASE_ANON_KEY`: la pantalla vive del refresco. */
 function clienteRealtime(): SupabaseClient | null {
@@ -42,12 +56,25 @@ export function escucharSenalPedidos(
   const realtime = clienteRealtime();
   if (!realtime) return null;
 
-  const canal = realtime
-    .channel(CANAL_SENAL_PEDIDOS)
-    .on('broadcast', { event: EVENTO_SENAL_PEDIDOS }, () => alCambiar())
-    .subscribe((estado) => alCambiarConexion(estadoConexionDe(estado)));
+  const oyente: Oyente = { alCambiar, alCambiarConexion };
+  oyentes.add(oyente);
+  if (canal === null) {
+    canal = realtime
+      .channel(CANAL_SENAL_PEDIDOS)
+      .on('broadcast', { event: EVENTO_SENAL_PEDIDOS }, () => {
+        oyentes.forEach((o) => o.alCambiar());
+      })
+      .subscribe((estado) => {
+        const conexion = estadoConexionDe(estado);
+        ultimoEstado = conexion;
+        oyentes.forEach((o) => o.alCambiarConexion(conexion));
+      });
+  } else if (ultimoEstado !== null) {
+    // El canal ya estaba abierto: la pantalla recibe su estado actual.
+    alCambiarConexion(ultimoEstado);
+  }
 
   return () => {
-    void realtime.removeChannel(canal);
+    oyentes.delete(oyente);
   };
 }
