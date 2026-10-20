@@ -5,6 +5,7 @@ import path from 'node:path';
 import { z } from 'zod';
 import {
   CotizarPedidoArgsSchema,
+  CrearPedidoArgsSchema,
   ExtraPedidoSchema,
   ExtraSueltoPedidoSchema,
   ProductoPedidoSchema,
@@ -67,12 +68,18 @@ function sinLlave(objeto: unknown, llave: string): unknown {
   return Object.fromEntries(Object.entries(objeto as object).filter(([k]) => k !== llave));
 }
 
-describe('cotizar_pedido: el JSON Schema coincide con el contrato', () => {
-  const raiz = esquemaNodo.parse(leerJson('functions/cotizar_pedido.json'));
+// Las dos funciones del pedido llevan el mismo pedido; crear_pedido suma nombre y telefono.
+const funciones = [
+  { nombre: 'cotizar_pedido', url: '/pedidos/cotizar', contrato: CotizarPedidoArgsSchema },
+  { nombre: 'crear_pedido', url: '/pedidos', contrato: CrearPedidoArgsSchema },
+];
+
+describe.each(funciones)('$nombre: el JSON Schema coincide con el contrato', (funcion) => {
+  const raiz = esquemaNodo.parse(leerJson(`functions/${funcion.nombre}.json`));
   const producto = elemento(propiedad(raiz, 'productos'));
 
   const niveles = [
-    { nombre: 'args', nodo: raiz, contrato: CotizarPedidoArgsSchema },
+    { nombre: 'args', nodo: raiz, contrato: funcion.contrato },
     { nombre: 'producto', nodo: producto, contrato: ProductoPedidoSchema },
     {
       nombre: 'extra de un platillo',
@@ -119,7 +126,7 @@ describe('cotizar_pedido: el JSON Schema coincide con el contrato', () => {
   });
 });
 
-describe('cotizar_pedido en agent/retell.json', () => {
+describe('las funciones en agent/retell.json', () => {
   // url lleva solo la ruta: la base es la URL de la API (docs/despliegue.md).
   // parameters apunta al archivo de functions/, como general_prompt a prompt.md.
   const esquemaHerramienta = z.looseObject({
@@ -129,26 +136,33 @@ describe('cotizar_pedido en agent/retell.json', () => {
     url: z.string().startsWith('/'),
     method: z.literal('POST'),
     args_at_root: z.literal(false),
+    max_retry: z.literal(0),
     parameters: z.string(),
   });
   const configuracion = z
     .object({ retell_llm: z.looseObject({ general_tools: z.array(esquemaHerramienta) }) })
     .parse(leerJson('retell.json'));
-  const herramienta = configuracion.retell_llm.general_tools.find(
-    (tool) => tool.name === 'cotizar_pedido',
-  );
+  const herramientas = configuracion.retell_llm.general_tools;
 
-  it('esta declarada y llama a POST /pedidos/cotizar', () => {
-    expect(herramienta?.url).toBe('/pedidos/cotizar');
+  it('solo estan las funciones que tienen archivo y contrato', () => {
+    expect(herramientas.map((h) => h.name).sort()).toEqual(funciones.map((f) => f.nombre).sort());
   });
 
-  // El contrato espera el sobre { name, call, args }: "Payload: args only" apagado.
-  it('manda el sobre completo (args_at_root en false)', () => {
-    expect(herramienta?.args_at_root).toBe(false);
-  });
+  describe.each(funciones)('$nombre', (funcion) => {
+    const herramienta = herramientas.find((h) => h.name === funcion.nombre);
 
-  it('sus parametros son el archivo de functions/', () => {
-    expect(herramienta?.parameters).toBe('agent/functions/cotizar_pedido.json');
-    expect(existsSync(path.join(raizAgente, 'functions', 'cotizar_pedido.json'))).toBe(true);
+    it(`llama a POST ${funcion.url}`, () => {
+      expect(herramienta?.url).toBe(funcion.url);
+    });
+
+    // El contrato espera el sobre { name, call, args }: "Payload: args only" apagado.
+    it('manda el sobre completo (args_at_root en false)', () => {
+      expect(herramienta?.args_at_root).toBe(false);
+    });
+
+    it('sus parametros son el archivo de functions/', () => {
+      expect(herramienta?.parameters).toBe(`agent/functions/${funcion.nombre}.json`);
+      expect(existsSync(path.join(raizAgente, 'functions', `${funcion.nombre}.json`))).toBe(true);
+    });
   });
 });

@@ -1,0 +1,53 @@
+{
+  "id": "pedido-confirmar-ya-existia",
+  "historia": "US-08-P2",
+  "criterios": ["C5"],
+  "categoria": "pedido",
+  "titulo": "El mismo pedido otra vez en 10 minutos: avisa que ya estaba registrado",
+  "mensajes": [
+    "Una hamburguesa Granero y un refresco",
+    "Es todo",
+    "Prueba Agente, 614 123 4567",
+    "Sí"
+  ],
+  "argsEsperados": [
+    {
+      "productos": [
+        {
+          "producto": "hamburguesa Granero",
+          "cantidad": 1
+        },
+        {
+          "producto": "refresco",
+          "cantidad": 1
+        }
+      ]
+    }
+  ],
+  "argsCrearPedido": [
+    {
+      "productos": [
+        {
+          "producto": "hamburguesa Granero",
+          "cantidad": 1
+        },
+        {
+          "producto": "refresco",
+          "cantidad": 1
+        }
+      ],
+      "nombre": "Prueba Agente",
+      "telefono": "614 123 4567"
+    }
+  ],
+  "debe": [
+    "Se corre justo después de pedido-confirmar-completo, en otra conversación y con los mismos datos.",
+    "crear_pedido responde yaExistia en verdadero: dice que ese pedido ya estaba registrado con ese número.",
+    "Da el número de pedido y el total que devolvió crear_pedido."
+  ],
+  "noDebe": [
+    "Dar a entender que se registró un pedido nuevo.",
+    "Llamar a crear_pedido más de una vez.",
+    "Despedirse con el \"Es todo\" en lugar de registrar el pedido."
+  ]
+}

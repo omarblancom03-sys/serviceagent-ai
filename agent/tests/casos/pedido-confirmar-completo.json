@@ -1,0 +1,56 @@
+{
+  "id": "pedido-confirmar-completo",
+  "historia": "US-08-P2",
+  "criterios": ["C2", "C3", "C4", "C5"],
+  "categoria": "pedido",
+  "titulo": "Registra el pedido: pide datos, confirma una vez y da folio y total",
+  "mensajes": [
+    "Una hamburguesa Granero y un refresco",
+    "Así está bien",
+    "Prueba Agente, 614 123 4567",
+    "Sí"
+  ],
+  "argsEsperados": [
+    {
+      "productos": [
+        {
+          "producto": "hamburguesa Granero",
+          "cantidad": 1
+        },
+        {
+          "producto": "refresco",
+          "cantidad": 1
+        }
+      ]
+    }
+  ],
+  "argsCrearPedido": [
+    {
+      "productos": [
+        {
+          "producto": "hamburguesa Granero",
+          "cantidad": 1
+        },
+        {
+          "producto": "refresco",
+          "cantidad": 1
+        }
+      ],
+      "nombre": "Prueba Agente",
+      "telefono": "614 123 4567"
+    }
+  ],
+  "debe": [
+    "Después de \"Así está bien\" pide nombre y teléfono en un solo mensaje.",
+    "Con los datos, pide la confirmación una sola vez, con nombre, teléfono y el total que devolvió cotizar_pedido, sin repetir el resumen.",
+    "Solo después del \"Sí\" llama a crear_pedido, una vez, con el mismo pedido más nombre y teléfono.",
+    "Da el número de pedido y el total tal como los devolvió crear_pedido, y dice que se paga en caja al recogerlo."
+  ],
+  "noDebe": [
+    "Llamar a crear_pedido antes del \"Sí\".",
+    "Mandar precios o totales en los args.",
+    "Dar tiempo de espera.",
+    "Decir un total distinto al de las respuestas.",
+    "Ofrecer espuelas u otro extra."
+  ]
+}

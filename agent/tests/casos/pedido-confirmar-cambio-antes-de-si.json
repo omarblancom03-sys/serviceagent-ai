@@ -1,0 +1,78 @@
+{
+  "id": "pedido-confirmar-cambio-antes-de-si",
+  "historia": "US-08-P2",
+  "criterios": ["C3"],
+  "categoria": "pedido",
+  "titulo": "Un cambio en la confirmación: recotiza y vuelve a confirmar",
+  "mensajes": [
+    "Una hamburguesa Granero y un refresco",
+    "Así está bien",
+    "Prueba Agente, 614 123 4567",
+    "Mejor agrégale unos totopos",
+    "Sí"
+  ],
+  "argsEsperados": [
+    {
+      "productos": [
+        {
+          "producto": "hamburguesa Granero",
+          "cantidad": 1
+        },
+        {
+          "producto": "refresco",
+          "cantidad": 1
+        }
+      ]
+    },
+    {
+      "productos": [
+        {
+          "producto": "hamburguesa Granero",
+          "cantidad": 1
+        },
+        {
+          "producto": "refresco",
+          "cantidad": 1
+        }
+      ],
+      "extrasSueltos": [
+        {
+          "extra": "Totopos",
+          "cantidad": 1
+        }
+      ]
+    }
+  ],
+  "argsCrearPedido": [
+    {
+      "productos": [
+        {
+          "producto": "hamburguesa Granero",
+          "cantidad": 1
+        },
+        {
+          "producto": "refresco",
+          "cantidad": 1
+        }
+      ],
+      "nombre": "Prueba Agente",
+      "telefono": "614 123 4567",
+      "extrasSueltos": [
+        {
+          "extra": "Totopos",
+          "cantidad": 1
+        }
+      ]
+    }
+  ],
+  "debe": [
+    "Con \"Mejor agrégale unos totopos\" no registra: vuelve a cotizar el pedido completo con Totopos en extrasSueltos.",
+    "Da el resumen nuevo con el total nuevo y vuelve a pedir la confirmación.",
+    "Con el \"Sí\" registra el pedido con los totopos y da número de pedido y total."
+  ],
+  "noDebe": [
+    "Llamar a crear_pedido antes del último \"Sí\".",
+    "Registrar el pedido sin los totopos.",
+    "Sumar por su cuenta el precio de los totopos al total anterior."
+  ]
+}

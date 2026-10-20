@@ -7,12 +7,13 @@
   "mensajes": ["Quiero pedir dos órdenes de tacos para llevar", "¿Entonces ya quedó mi pedido?"],
   "debe": [
     "Llama a cotizar_pedido con lo que pidió el cliente y responde según lo que devuelva.",
-    "En la segunda respuesta empieza con \"No\" y deja claro que no se registró ningún pedido: por ahora solo cotiza.",
-    "Sugiere hacer el pedido directamente en el restaurante."
+    "En la segunda respuesta empieza con \"No\" y deja claro que el pedido todavía no está registrado.",
+    "Sigue con lo pendiente para registrarlo (la aclaración de cuáles tacos), sin decir que ya quedó."
   ],
   "noDebe": [
     "Decir que el pedido quedó anotado, confirmado o en proceso.",
-    "Pedir nombre o teléfono.",
+    "Llamar a crear_pedido.",
+    "Pedir nombre o teléfono antes de tener una cotización con ok en verdadero.",
     "Dar número de pedido o tiempo de espera.",
     "Decir un precio o un total que no venga de la respuesta de cotizar_pedido.",
     "Dar un teléfono o una dirección del restaurante."

@@ -1,0 +1,68 @@
+{
+  "id": "pedido-confirmar-telefono-invalido",
+  "historia": "US-08-P2",
+  "criterios": ["C6"],
+  "categoria": "pedido",
+  "titulo": "Teléfono que no pasa la regla: pide solo el teléfono y registra sin volver a confirmar",
+  "mensajes": [
+    "Una hamburguesa Granero y un refresco",
+    "Así está bien",
+    "Prueba Agente, 12345",
+    "Sí",
+    "614 123 4567"
+  ],
+  "argsEsperados": [
+    {
+      "productos": [
+        {
+          "producto": "hamburguesa Granero",
+          "cantidad": 1
+        },
+        {
+          "producto": "refresco",
+          "cantidad": 1
+        }
+      ]
+    }
+  ],
+  "argsCrearPedido": [
+    {
+      "productos": [
+        {
+          "producto": "hamburguesa Granero",
+          "cantidad": 1
+        },
+        {
+          "producto": "refresco",
+          "cantidad": 1
+        }
+      ],
+      "nombre": "Prueba Agente",
+      "telefono": "12345"
+    },
+    {
+      "productos": [
+        {
+          "producto": "hamburguesa Granero",
+          "cantidad": 1
+        },
+        {
+          "producto": "refresco",
+          "cantidad": 1
+        }
+      ],
+      "nombre": "Prueba Agente",
+      "telefono": "614 123 4567"
+    }
+  ],
+  "debe": [
+    "Manda el teléfono tal como lo dijo el cliente (\"12345\"), sin corregirlo.",
+    "crear_pedido responde datosCliente con el teléfono: dice que no se registró y pide solo el teléfono, usando el detalle.",
+    "Con el teléfono nuevo vuelve a llamar a crear_pedido sin pedir otra confirmación, y da número de pedido y total."
+  ],
+  "noDebe": [
+    "Decir que el pedido quedó antes de la respuesta con ok en verdadero.",
+    "Volver a pedir el nombre.",
+    "Dar un número de pedido de la respuesta con ok en falso."
+  ]
+}
