@@ -7,6 +7,8 @@
   "compatibility_date": "2026-09-20",
   "compatibility_flags": ["nodejs_compat"],
   "observability": { "enabled": true },
+  // Workers AI: embeddings de la búsqueda semántica del menú (US-16, D50). No es un secreto.
+  "ai": { "binding": "AI" },
   "dev": { "port": 8787 },
   // IMPORTANTE: aquí NO van secretos. "vars" es solo para valores públicos.
   // Los secretos se cargan con `wrangler secret put <NOMBRE>` (producción)

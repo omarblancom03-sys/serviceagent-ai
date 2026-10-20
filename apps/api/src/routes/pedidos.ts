@@ -6,12 +6,12 @@ import {
   RespuestaCotizarPedidoSchema,
   RespuestaCrearPedidoSchema,
 } from '@serviceagent/shared';
-import type { z } from 'zod';
 import type { AppEnv, Bindings } from '../lib/env';
 import { requiereFirmaRetell } from '../lib/firmaRetell';
 import { mensajesDeLaLlamada } from '../services/confirmacion';
 import { obtenerCotizacion } from '../services/cotizacion';
 import { crearPedido, type PedidosRepo } from '../services/pedido';
+import { errorDeFormato, FIRMA_RETELL, json } from './funcionesRetell';
 import type { DependenciasMenu } from './menu';
 
 /** Cotizar y crear leen el mismo menú que `GET /menu`: usan el mismo repo. */
@@ -20,10 +20,6 @@ export type DependenciasPedidos = DependenciasMenu & {
 };
 
 const tags = ['Pedidos'];
-const json = <T extends z.ZodType>(schema: T) => ({ 'application/json': { schema } });
-
-const FIRMA_RETELL =
-  'Solo para Retell: exige `X-Retell-Signature` (firma del cuerpo con `RETELL_API_KEY`). ';
 
 const respuestasDeError = (al: string) => ({
   400: { content: json(ErrorPedidoSchema), description: 'Cuerpo mal formado' },
@@ -33,29 +29,6 @@ const respuestasDeError = (al: string) => ({
     description: `Falta \`RETELL_API_KEY\` o falló ${al}`,
   },
 });
-
-/**
- * Texto del 400: mismo formato de error que el resto de la API. Nombra los campos que fallaron
- * (sin sus valores), para que el agente pueda corregir la llamada. Con una llave que no existe, zod
- * pone la ruta en el padre y la llave en `keys`: se nombra "args.totalCentavos", no "args".
- */
-function errorDeFormato(
-  funcion: string,
-  issues: { code: string; path: PropertyKey[]; keys?: string[] }[],
-) {
-  const campos = [
-    ...new Set(
-      issues.flatMap((i) =>
-        i.code === 'unrecognized_keys' && i.keys
-          ? i.keys.map((llave) => [...i.path, llave].join('.'))
-          : [i.path.join('.') || 'cuerpo'],
-      ),
-    ),
-  ].slice(0, 5);
-  return {
-    error: `La petición de ${funcion} no tiene el formato esperado. Revisa: ${campos.join(', ')}.`,
-  };
-}
 
 export const cotizarPedidoRoute = createRoute({
   method: 'post',

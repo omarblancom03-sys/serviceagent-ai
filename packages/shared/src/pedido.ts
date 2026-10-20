@@ -52,7 +52,7 @@ const TextoClienteSchema = z.string().trim().min(1).max(80);
 const CantidadClienteSchema = z.number();
 
 /** Monto ya formateado por el backend, p. ej. "$1,234.00". */
-const MontoTextoSchema = z.string();
+export const MontoTextoSchema = z.string();
 
 /**
  * `null` y un texto vacío o de solo espacios valen como "no vino": el modelo a
