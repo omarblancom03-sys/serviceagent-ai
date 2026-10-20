@@ -2,10 +2,12 @@ import type {
   CrearPedidoArgs,
   DatoClienteInvalido,
   EstadoPedido,
+  MensajeConversacion,
   RenglonCotizacion,
   RespuestaCrearPedido,
 } from '@serviceagent/shared';
 import { formatearPesos } from '../lib/pesos';
+import { clienteConfirmo } from './confirmacion';
 import { obtenerCotizacion } from './cotizacion';
 import type { MenuRepo } from './menu';
 
@@ -130,15 +132,21 @@ export async function calcularHuella(
 }
 
 /**
- * Cotiza con precios de la base y, si no falta nada, guarda el pedido. Junta en una sola respuesta
- * las aclaraciones del pedido y las de los datos del cliente. Los errores de los repos se propagan
- * (la ruta responde 500).
+ * Si el cliente no confirmó en la conversación (D48), responde `faltaConfirmacion` sin tocar la base.
+ * Si confirmó, cotiza con precios de la base y, si no falta nada, guarda el pedido. Junta en una sola
+ * respuesta las aclaraciones del pedido y las de los datos del cliente. Los errores de los repos se
+ * propagan (la ruta responde 500).
  */
 export async function crearPedido(
   repoMenu: MenuRepo,
   repoPedidos: PedidosRepo,
   args: CrearPedidoArgs,
+  mensajes: readonly MensajeConversacion[],
 ): Promise<RespuestaCrearPedido> {
+  if (!clienteConfirmo(mensajes)) {
+    return { ok: false, faltaConfirmacion: true, aclaraciones: [], datosCliente: [] };
+  }
+
   const datos = validarDatosCliente(args);
   const cotizacion = await obtenerCotizacion(repoMenu, {
     productos: args.productos,
@@ -148,6 +156,7 @@ export async function crearPedido(
   if (!cotizacion.ok || datos.nombre === null || datos.telefono === null) {
     return {
       ok: false,
+      faltaConfirmacion: false,
       aclaraciones: cotizacion.ok ? [] : cotizacion.aclaraciones,
       datosCliente: datos.invalidos,
     };

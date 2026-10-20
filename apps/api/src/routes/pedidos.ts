@@ -1,5 +1,6 @@
 import { createRoute, type OpenAPIHono } from '@hono/zod-openapi';
 import {
+  CallRetellSchema,
   CotizarPedidoPeticionSchema,
   CrearPedidoPeticionSchema,
   ErrorPedidoSchema,
@@ -85,6 +86,9 @@ export const crearPedidoRoute = createRoute({
   summary: 'Crea el pedido confirmado (custom function `crear_pedido` del agente)',
   description:
     FIRMA_RETELL +
+    'Solo crea el pedido si en `call.message_with_tool_calls` el cliente respondió que sí a la ' +
+    'última pregunta de confirmación del agente y no se volvió a cotizar después; si no, responde ' +
+    '200 con `ok: false` y `faltaConfirmacion: true` sin tocar la base (D48). ' +
     'Recibe el mismo pedido que se cotizó más nombre y teléfono, y lo VUELVE a cotizar con ' +
     'precios de la base: nunca recibe montos. Si no falta nada, guarda el pedido con folio en una ' +
     'sola transacción y lo manda a la cola de cocina (estado `en_cola`, modo al confirmar, D46). Si algo del pedido o del cliente no sirve, ' +
@@ -127,12 +131,20 @@ export function registrarPedidos(app: OpenAPIHono<AppEnv>, deps: DependenciasPed
   app.openapi(
     crearPedidoRoute,
     async (c) => {
-      const { args } = c.req.valid('json');
+      const { args, call } = c.req.valid('json');
+      const conversacion = CallRetellSchema.safeParse(call);
+      const mensajes = conversacion.success ? conversacion.data.message_with_tool_calls : [];
+      if (mensajes.length === 0) {
+        // Sin conversación no se puede revisar la confirmación (D48). Solo las llaves, nunca el contenido.
+        const llaves = call !== null && typeof call === 'object' ? Object.keys(call) : [];
+        console.warn('POST /pedidos sin mensajes en call', { llaves });
+      }
       try {
         const respuesta = await crearPedido(
           deps.crearRepoMenu(c.env),
           deps.crearRepoPedidos(c.env),
           args,
+          mensajes,
         );
         return c.json(respuesta, 200);
       } catch (error) {
