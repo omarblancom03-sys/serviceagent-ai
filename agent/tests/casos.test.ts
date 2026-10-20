@@ -164,6 +164,27 @@ describe('configuracion (agent/retell.json)', () => {
       expect(prompt).toContain('## Tu primer mensaje');
     }
   });
+
+  // docs/negocio.md -> Dinero: los textos de retell.json que lee el modelo tampoco llevan montos.
+  const esquemaTextosDelModelo = z.object({
+    retell_llm: z.looseObject({
+      begin_message: z.string().nullable(),
+      general_tools: z.array(z.looseObject({ name: z.string(), description: z.string() })),
+    }),
+  });
+  const { retell_llm: llm } = esquemaTextosDelModelo.parse(JSON.parse(contenido));
+  const cotizarPedido = llm.general_tools.find(
+    (herramienta) => herramienta.name === 'cotizar_pedido',
+  );
+
+  it.each([
+    ['el saludo fijo (begin_message)', llm.begin_message ?? ''],
+    ['la descripcion de cotizar_pedido', cotizarPedido?.description],
+  ])('%s no contiene montos', (_nombre, texto) => {
+    expect(texto).toBeDefined();
+    expect(texto).not.toMatch(/\$\s*\d/);
+    expect(texto).not.toMatch(/\d\s*(pesos|mxn)/i);
+  });
 });
 
 describe('identificadores de la cuenta y llaves', () => {
