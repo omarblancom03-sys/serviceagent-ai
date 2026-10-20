@@ -2,7 +2,7 @@
 
 Resultado de la última vez que se corrieron los casos de [casos/](./casos) en el chat de prueba de Retell. Cómo se corren y cuándo se actualiza este archivo: [CLAUDE.md → Cómo probar](../CLAUDE.md#cómo-probar).
 
-- **Fecha:** 16 al 19 de octubre de 2026
+- **Fecha:** 16 al 20 de octubre de 2026
 - **Modelo:** `gpt-6-luna`
 - **Configuración:** `prompt.md` de `3c42e80` y descripción de `cotizar_pedido` (en `retell.json`) de `7609959`, en el borrador del agente. Los 40 casos se corrieron con esta configuración.
 - **Resultado:** 35 pasan, 3 fallan (menores pendientes) y 2 pendientes de verificar en /pedir.
