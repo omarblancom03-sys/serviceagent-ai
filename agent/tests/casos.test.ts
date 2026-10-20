@@ -141,7 +141,7 @@ describe('prompt (agent/prompt.md)', () => {
 });
 
 describe('configuracion (agent/retell.json)', () => {
-  // begin_message en null = "Dynamic message": el saludo lo redacta el modelo.
+  // begin_message es el saludo fijo ("Custom message"); en null seria "Dynamic message" (el saludo lo redacta el modelo).
   const esquemaConfiguracion = z.object({
     chat_agent: z.record(z.string(), z.unknown()),
     retell_llm: z.looseObject({
@@ -157,12 +157,10 @@ describe('configuracion (agent/retell.json)', () => {
     expect(resultado.error?.issues ?? []).toEqual([]);
   });
 
-  it('si no hay saludo fijo, el prompt dice como es el primer mensaje', () => {
-    const configuracion = esquemaConfiguracion.parse(JSON.parse(contenido));
-    if (configuracion.retell_llm.begin_message === null) {
-      const prompt = readFileSync(path.join(raizAgente, 'prompt.md'), 'utf-8');
-      expect(prompt).toContain('## Tu primer mensaje');
-    }
+  // Con saludo fijo o sin el, y si el cliente escribe primero (/pedir), el prompt cubre el inicio.
+  it('el prompt dice como es el primer mensaje', () => {
+    const prompt = readFileSync(path.join(raizAgente, 'prompt.md'), 'utf-8');
+    expect(prompt).toContain('## Tu primer mensaje');
   });
 
   // docs/negocio.md -> Dinero: los textos de retell.json que lee el modelo tampoco llevan montos.
