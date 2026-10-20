@@ -1,0 +1,22 @@
+{
+  "id": "busqueda-sin-resultados",
+  "historia": "US-16",
+  "criterios": ["C2"],
+  "categoria": "busqueda",
+  "titulo": "Lo que el menú no tiene: dice que no lo encontró, sin proponer",
+  "mensajes": ["Se me antoja algo de comida japonesa"],
+  "argsBuscarMenu": [
+    {
+      "consulta": "algo de comida japonesa"
+    }
+  ],
+  "debe": [
+    "Llama a buscar_menu.",
+    "Dice que eso no lo encontró en el menú o que no lo tienen.",
+    "Da el enlace del menú tal cual y pregunta si le ayuda con algo más."
+  ],
+  "noDebe": [
+    "Ofrecer otros platillos en su lugar, aunque vengan en la respuesta.",
+    "Decir que sí tienen comida japonesa o inventar un platillo."
+  ]
+}
