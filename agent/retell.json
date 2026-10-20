@@ -41,7 +41,7 @@
       {
         "type": "custom",
         "name": "crear_pedido",
-        "description": "Registra el pedido y lo manda a la cocina; devuelve su número de pedido y su total, o lo que hay que corregir. Úsala solo después de que el cliente dio su nombre y su teléfono y respondió que sí a la pregunta de confirmación. Manda el mismo pedido de la última cotización con ok en verdadero, más nombre y teléfono. Nunca la uses para cotizar ni sin esa confirmación.",
+        "description": "Registra el pedido y lo manda a la cocina; devuelve su número de pedido y su total, o lo que hay que corregir. Úsala solo después de que el cliente dio su nombre y su teléfono y, en un mensaje posterior, respondió que sí a la pregunta de confirmación: nunca en el mismo turno en que haces esa pregunta. Manda el mismo pedido de la última cotización con ok en verdadero, más nombre y teléfono. Nunca la uses para cotizar ni sin esa confirmación.",
         "url": "/pedidos",
         "method": "POST",
         "parameters": "agent/functions/crear_pedido.json",
