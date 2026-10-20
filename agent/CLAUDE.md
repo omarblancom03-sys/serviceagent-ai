@@ -65,4 +65,4 @@ Todo cambio al prompt pasa la corrida final antes de fusionarse (Definition of D
 - [docs/agente.md](../docs/agente.md): custom functions, comportamiento y seguridad del agente.
 - [docs/negocio.md](../docs/negocio.md): dinero, estados del pedido y cancelación.
 - [docs/proceso.md → Definition of Done](../docs/proceso.md#definition-of-done) (punto 6).
-- [docs/decisiones.md](../docs/decisiones.md): D3, D4, D21, D22, D25, D34, D43, D44, D45, D46, D48.
+- [docs/decisiones.md](../docs/decisiones.md): D3, D4, D21, D22, D25, D34, D43, D44, D45, D46, D49.
