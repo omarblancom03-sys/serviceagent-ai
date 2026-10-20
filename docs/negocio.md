@@ -41,7 +41,7 @@ Fuera de alcance: delivery a domicilio.
 
 ## Pedido confirmado
 
-- `crear_pedido` recibe el mismo pedido que se cotizó más nombre y teléfono; el backend vuelve a cotizar y guarda con estado `confirmado` ([D35](decisiones.md)).
+- `crear_pedido` recibe el mismo pedido que se cotizó más nombre y teléfono; el backend vuelve a cotizar y guarda el pedido ([D35](decisiones.md)). Mientras no haya pagos, el modo es `al_confirmar`: queda en `en_cola` en la misma transacción ([D46](decisiones.md)).
 - Teléfono de México a 10 dígitos y nombre de 2 a 60 letras ([D32](decisiones.md)); folio creciente desde 1001 ([D33](decisiones.md)); el mismo pedido con el mismo teléfono y nombre dos veces en 10 minutos no se duplica ([D34](decisiones.md)).
 
 ## Estados del pedido
@@ -51,16 +51,16 @@ confirmado → (esperando_pago) → en_cola → preparando → listo → entrega
                                    ↘ cancelado     ↘ expirado
 ```
 
-| Transición           | Quién la hace                                                         |
-| -------------------- | --------------------------------------------------------------------- |
-| → confirmado         | Agente (`crear_pedido`), solo tras confirmación explícita del cliente |
-| → esperando_pago     | Sistema, si el pago es por transferencia                              |
-| → en_cola            | Sistema: al confirmar o al pagar, según `modo_envio_cocina`           |
-| en_cola → preparando | Cocina (botón **Empezar**)                                            |
-| preparando → listo   | Cocina (botón verde **Terminado**) → dispara aviso por WhatsApp       |
-| listo → entregado    | Caja                                                                  |
-| → cancelado          | Cliente vía agente (solo antes de `preparando`) o empleado            |
-| → expirado           | Sistema, si una transferencia no llega a tiempo                       |
+| Transición           | Quién la hace                                                                        |
+| -------------------- | ------------------------------------------------------------------------------------ |
+| → confirmado         | Agente (`crear_pedido`), solo tras confirmación explícita del cliente                |
+| → esperando_pago     | Sistema, si el pago es por transferencia                                             |
+| → en_cola            | Sistema: al confirmar o al pagar, según `modo_envio_cocina` (hoy, al confirmar: D46) |
+| en_cola → preparando | Cocina (botón **Empezar**)                                                           |
+| preparando → listo   | Cocina (botón verde **Terminado**) → dispara aviso por WhatsApp                      |
+| listo → entregado    | Caja                                                                                 |
+| → cancelado          | Cliente vía agente (solo antes de `preparando`) o empleado                           |
+| → expirado           | Sistema, si una transferencia no llega a tiempo                                      |
 
 - Cada transición guarda su hora exacta, puesta por Postgres ([D42](decisiones.md)); se usa para el tiempo estimado que aprende.
 - `modo_envio_cocina` es configuración del restaurante: `al_confirmar` o `al_pagar`.
