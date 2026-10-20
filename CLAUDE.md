@@ -16,7 +16,7 @@ Proyecto académico de Metodologías Ágiles (Scrum). El restaurante es real, pe
 
 - **TypeScript** en todo (modo `strict`) · **pnpm** workspaces · **zod** para validar (esquemas compartidos en `packages/shared`).
 - **API:** Hono + `@hono/zod-openapi` sobre Cloudflare Workers.
-- **Datos:** Supabase (PostgreSQL) · Supabase Realtime (cocina y caja) · RAG con pgvector + embeddings multilingües ([decisiones pendientes](docs/decisiones.md#pendientes-se-resuelven-en-su-historia)).
+- **Datos:** Supabase (PostgreSQL) · Supabase Realtime (cocina y caja) · RAG con pgvector + embeddings multilingües de Workers AI (`bge-m3`, [D50](docs/decisiones.md)).
 - **Frontend:** React + Vite + Tailwind + React Router en Cloudflare Pages.
 - **Agente:** Retell AI, chat primero y voz al final (Sprint 10). **Anti-abuso:** Cloudflare Turnstile + límites de uso en la API.
 - **Calidad:** Vitest · ESLint + Prettier · GitHub Actions (lint, tipos, tests) y despliegue automático a Cloudflare al fusionar a `main`.

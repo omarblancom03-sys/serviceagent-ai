@@ -4,14 +4,17 @@ import { cors } from 'hono/cors';
 import { HTTPException } from 'hono/http-exception';
 import pkg from '../package.json';
 import { crearClienteRetell } from './lib/clienteRetell';
+import { crearEmbedderWorkersAi } from './lib/embedderWorkersAi';
 import type { AppEnv } from './lib/env';
 import { crearRepoCaja } from './lib/repoCaja';
 import { crearRepoChat } from './lib/repoChat';
 import { crearRepoCocina } from './lib/repoCocina';
+import { crearRepoEmbeddings } from './lib/repoEmbeddings';
 import { crearRepoEmpleados } from './lib/repoEmpleados';
 import { crearRepoMenu } from './lib/repoMenu';
 import { crearRepoPedidos } from './lib/repoPedidos';
 import { crearClienteSupabase } from './lib/supabase';
+import { registrarAgente, type DependenciasAgente } from './routes/agente';
 import { registrarAuth, type DependenciasAuth } from './routes/auth';
 import { registrarCaja, type DependenciasCaja } from './routes/caja';
 import { ERROR_PETICION_INVALIDA, registrarChat, type DependenciasChat } from './routes/chat';
@@ -26,7 +29,8 @@ export type Dependencias = DependenciasAuth &
   DependenciasPedidos &
   DependenciasChat &
   DependenciasCocina &
-  DependenciasCaja;
+  DependenciasCaja &
+  DependenciasAgente;
 
 const dependenciasReales: Dependencias = {
   crearRepoEmpleados: (env) => crearRepoEmpleados(crearClienteSupabase(env)),
@@ -36,6 +40,8 @@ const dependenciasReales: Dependencias = {
   crearRepoCocina: (env) => crearRepoCocina(crearClienteSupabase(env)),
   crearRepoCaja: (env) => crearRepoCaja(crearClienteSupabase(env)),
   crearClienteRetell: (llave) => crearClienteRetell(llave),
+  crearRepoEmbeddings: (env) => crearRepoEmbeddings(crearClienteSupabase(env)),
+  crearEmbedder: (env) => (env.AI ? crearEmbedderWorkersAi(env.AI) : null),
 };
 
 /** Cada test pasa solo las dependencias que usa; las demás son las reales. */
@@ -64,6 +70,7 @@ export function crearApp(reemplazos: Partial<Dependencias> = {}) {
   registrarChat(app, dependencias);
   registrarCocina(app, dependencias);
   registrarCaja(app, dependencias);
+  registrarAgente(app, dependencias);
 
   // Igual que el manejador por defecto de Hono, salvo una cosa: en /chat/* el 400 de un cuerpo
   // que no es JSON válido (Hono lo responde en texto) sale con el formato del contrato del chat.

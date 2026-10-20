@@ -1,0 +1,76 @@
+{
+  "nota": "Criterio 5 de US-16: en estas 20 preguntas, uno de los platillos de `correctos` debe salir en el top 3 al menos 18 veces. Las preguntas usan palabras del cliente, no el nombre del platillo. `sinResultados`: cosas que el menú no tiene; no cuentan para la meta y lo ideal es que no devuelvan nada (si devuelven algo, que sea lo más parecido del menú y el agente diga que eso no lo tienen). Lo corre `scripts/evaluarBusqueda.ts`.",
+  "preguntas": [
+    {
+      "consulta": "algo picoso con pollo",
+      "correctos": [
+        "Caldo Granero",
+        "Caldito Granero",
+        "Fajitas de pollo",
+        "Fajitas Trío",
+        "Enchiladas Las Vírgenes",
+        "Tiras de pollo",
+        "Hamburguesa de Pollo",
+        "Boneless",
+        "Fajitas de pollo infantil",
+        "Ensalada Granero"
+      ],
+      "porque": "El ejemplo de la historia. El menú no tiene un platillo de pollo picante: cuenta cualquiera con pollo."
+    },
+    { "consulta": "algo picoso con camarones", "correctos": ["Camarones a la Diabla"] },
+    {
+      "consulta": "unas costillas en salsa barbecue",
+      "correctos": ["Costillas BBQ 450 gr", "Costillas Chihuahua"]
+    },
+    { "consulta": "una hamburguesa con piña", "correctos": ["Hamburguesa Hawaiana"] },
+    { "consulta": "una hamburguesa de doble carne", "correctos": ["Hamburguesa Algodoneros"] },
+    { "consulta": "camarones envueltos en tocino", "correctos": ["Camarones Fiesta"] },
+    { "consulta": "agua de arroz", "correctos": ["Horchata"] },
+    {
+      "consulta": "una chela bien fría",
+      "correctos": [
+        "Cerveza nacional 355 ml",
+        "Cerveza artesanal 355 ml",
+        "Cubetas y cerveza importada"
+      ]
+    },
+    {
+      "consulta": "tacos de carne con chorizo y champiñones",
+      "correctos": ["Tacos Rancheros"]
+    },
+    { "consulta": "una ensalada con pollo", "correctos": ["Ensalada Granero"] },
+    { "consulta": "una sopa caliente de pollo", "correctos": ["Caldo Granero", "Caldito Granero"] },
+    {
+      "consulta": "pescado empanizado",
+      "correctos": ["Filete de pescado empanizado", "Filete de pescado infantil"]
+    },
+    {
+      "consulta": "algo de comer para un niño con pollo",
+      "correctos": ["Fajitas de pollo infantil", "Boneless", "Caldito Granero"]
+    },
+    { "consulta": "mariscos frescos con pulpo", "correctos": ["Torre de mariscos"] },
+    { "consulta": "fajitas mixtas de res, pollo y camarón", "correctos": ["Fajitas Trío"] },
+    { "consulta": "carne seca con chile colorado", "correctos": ["Guisado Abigeo"] },
+    { "consulta": "una papa rellena de arrachera", "correctos": ["Papa con Arrachera"] },
+    {
+      "consulta": "algo dulce de postre con helado",
+      "correctos": ["Tarta de manzana con nieve", "Brownies con nieve", "Cheesecake con nieve"]
+    },
+    {
+      "consulta": "queso derretido para botanear",
+      "correctos": ["Queso fundido", "Rajas con queso", "Luiggi Especial"]
+    },
+    {
+      "consulta": "un corte de carne de res grande",
+      "correctos": [
+        "T-Bone 450 gr",
+        "Rib Eye 450 gr",
+        "Sirloin 450 gr",
+        "Arrachera 450 gr",
+        "Cowboy 450 gr",
+        "Arrachera al Chipotle 450 gr"
+      ]
+    }
+  ],
+  "sinResultados": ["sushi de salmón", "ramen", "lasaña", "pad thai", "croissant"]
+}
