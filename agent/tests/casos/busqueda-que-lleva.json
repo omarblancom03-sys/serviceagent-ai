@@ -1,0 +1,22 @@
+{
+  "id": "busqueda-que-lleva",
+  "historia": "US-16",
+  "criterios": ["C2"],
+  "categoria": "busqueda",
+  "titulo": "Qué lleva un platillo: contesta solo con su descripción",
+  "mensajes": ["¿Qué lleva la Torre de mariscos?"],
+  "argsBuscarMenu": [
+    {
+      "consulta": "Torre de mariscos"
+    }
+  ],
+  "debe": [
+    "Llama a buscar_menu con el nombre del platillo.",
+    "Contesta con lo que dice la descripción que devolvió (camarones, pulpo, callo de hacha…), sin agregar nada."
+  ],
+  "noDebe": [
+    "Mencionar ingredientes que no estén en la descripción.",
+    "Hablar de alérgenos como si los supiera.",
+    "Llamar a cotizar_pedido."
+  ]
+}

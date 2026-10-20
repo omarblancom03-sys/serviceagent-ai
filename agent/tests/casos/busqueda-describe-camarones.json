@@ -1,0 +1,25 @@
+{
+  "id": "busqueda-describe-camarones",
+  "historia": "US-16",
+  "criterios": ["C2"],
+  "categoria": "busqueda",
+  "titulo": "Describe lo que quiere sin nombrar el platillo: busca y nombra opciones",
+  "mensajes": ["Quiero algo picoso con camarones"],
+  "argsBuscarMenu": [
+    {
+      "consulta": "algo picoso con camarones"
+    }
+  ],
+  "debe": [
+    "Llama a buscar_menu con lo que describió el cliente, sin \"quiero\".",
+    "Nombra hasta 5 platillos de la respuesta, con el nombre tal cual y en el orden en que vienen.",
+    "Si da precios, son los precioTexto de la respuesta.",
+    "Pregunta cuál quiere."
+  ],
+  "noDebe": [
+    "Llamar a cotizar_pedido antes de que el cliente elija.",
+    "Decir cuál es mejor o elegir por el cliente.",
+    "Nombrar un platillo que no vino en la respuesta de buscar_menu.",
+    "Dar un precio que no venga de la respuesta."
+  ]
+}
