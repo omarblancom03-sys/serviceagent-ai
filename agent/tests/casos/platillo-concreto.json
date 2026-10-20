@@ -12,8 +12,8 @@
   ],
   "debe": [
     "Llama a buscar_menu con el nombre del platillo.",
-    "Contesta solo con lo que dice la descripción que devolvió (doble carne, lechuga, tomate y queso) y dice que no menciona tocino o que el menú no lo especifica.",
-    "Pregunta si puede ayudar con algo más o si la quiere."
+    "Contesta solo con lo que dice la descripción que devolvió: que no menciona tocino o que el menú no lo especifica (puede decir qué sí lleva: doble carne, lechuga, tomate y queso).",
+    "Pregunta si la quiere o si puede ayudar con algo más."
   ],
   "noDebe": [
     "Decir que lleva tocino.",

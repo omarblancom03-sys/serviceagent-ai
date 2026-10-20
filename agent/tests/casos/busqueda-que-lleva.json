@@ -12,7 +12,8 @@
   ],
   "debe": [
     "Llama a buscar_menu con el nombre del platillo.",
-    "Contesta con lo que dice la descripción que devolvió (camarones, pulpo, callo de hacha…), sin agregar nada."
+    "Contesta con lo que dice la descripción que devolvió (camarones, pulpo, callo de hacha…), sin agregar nada.",
+    "Pregunta si la quiere o si puede ayudar con algo más."
   ],
   "noDebe": [
     "Mencionar ingredientes que no estén en la descripción.",
