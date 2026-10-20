@@ -6,12 +6,14 @@ import pkg from '../package.json';
 import { crearClienteRetell } from './lib/clienteRetell';
 import type { AppEnv } from './lib/env';
 import { crearRepoChat } from './lib/repoChat';
+import { crearRepoCocina } from './lib/repoCocina';
 import { crearRepoEmpleados } from './lib/repoEmpleados';
 import { crearRepoMenu } from './lib/repoMenu';
 import { crearRepoPedidos } from './lib/repoPedidos';
 import { crearClienteSupabase } from './lib/supabase';
 import { registrarAuth, type DependenciasAuth } from './routes/auth';
 import { ERROR_PETICION_INVALIDA, registrarChat, type DependenciasChat } from './routes/chat';
+import { registrarCocina, type DependenciasCocina } from './routes/cocina';
 import { registrarHealth } from './routes/health';
 import { registrarMenu, type DependenciasMenu } from './routes/menu';
 import { registrarPedidos, type DependenciasPedidos } from './routes/pedidos';
@@ -20,13 +22,15 @@ import { registrarPedidos, type DependenciasPedidos } from './routes/pedidos';
 export type Dependencias = DependenciasAuth &
   DependenciasMenu &
   DependenciasPedidos &
-  DependenciasChat;
+  DependenciasChat &
+  DependenciasCocina;
 
 const dependenciasReales: Dependencias = {
   crearRepoEmpleados: (env) => crearRepoEmpleados(crearClienteSupabase(env)),
   crearRepoMenu: (env) => crearRepoMenu(crearClienteSupabase(env)),
   crearRepoPedidos: (env) => crearRepoPedidos(crearClienteSupabase(env)),
   crearRepoChat: (env) => crearRepoChat(crearClienteSupabase(env)),
+  crearRepoCocina: (env) => crearRepoCocina(crearClienteSupabase(env)),
   crearClienteRetell: (llave) => crearClienteRetell(llave),
 };
 
@@ -54,6 +58,7 @@ export function crearApp(reemplazos: Partial<Dependencias> = {}) {
   registrarMenu(app, dependencias);
   registrarPedidos(app, dependencias);
   registrarChat(app, dependencias);
+  registrarCocina(app, dependencias);
 
   // Igual que el manejador por defecto de Hono, salvo una cosa: en /chat/* el 400 de un cuerpo
   // que no es JSON válido (Hono lo responde en texto) sale con el formato del contrato del chat.

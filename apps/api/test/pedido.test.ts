@@ -123,7 +123,7 @@ describe('crearPedido', () => {
       ok: true,
       folio: 1001,
       folioTexto: '#1001',
-      estado: 'confirmado',
+      estado: 'en_cola',
       yaExistia: false,
       totalCentavos: 91600,
       totalTexto: '$916.00',
@@ -296,10 +296,10 @@ describe('crearPedido', () => {
       const repo = crearRepoPedidosEnMemoria();
       await crear({ ...DOS_TBONE, ...CLIENTE }, repo);
       const [primero] = repo.pedidos;
-      if (primero) primero.estado = 'en_cola';
+      if (primero) primero.estado = 'preparando';
 
       const { respuesta } = await crear({ ...DOS_TBONE, ...CLIENTE }, repo, minutosDespues(1));
-      expect(respuesta).toMatchObject({ folio: 1001, yaExistia: true, estado: 'en_cola' });
+      expect(respuesta).toMatchObject({ folio: 1001, yaExistia: true, estado: 'preparando' });
     });
 
     it.each(['entregado', 'expirado'] as const)(

@@ -86,8 +86,8 @@ export const crearPedidoRoute = createRoute({
   description:
     FIRMA_RETELL +
     'Recibe el mismo pedido que se cotizó más nombre y teléfono, y lo VUELVE a cotizar con ' +
-    'precios de la base: nunca recibe montos. Si no falta nada, guarda el pedido con folio y ' +
-    'estado `confirmado` en una sola transacción. Si algo del pedido o del cliente no sirve, ' +
+    'precios de la base: nunca recibe montos. Si no falta nada, guarda el pedido con folio en una ' +
+    'sola transacción y lo manda a la cola de cocina (estado `en_cola`, modo al confirmar, D46). Si algo del pedido o del cliente no sirve, ' +
     'responde 200 con `ok: false` y no guarda nada. El mismo pedido con el mismo teléfono y ' +
     'nombre en los últimos 10 minutos devuelve el folio que ya existe (`yaExistia: true`).',
   security: [{ FirmaRetell: [] }],
