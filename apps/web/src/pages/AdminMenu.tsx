@@ -1,6 +1,15 @@
 import { ListadoMenu } from '../components/ListadoMenu';
+import { ModoPagoAdmin } from '../components/ModoPagoAdmin';
 
-/** Menú en el panel de administración (US-05): con resumen, tiempos de preparación y errores detallados. */
+/**
+ * Panel de administración: el modo de pago del restaurante (US-22) y el menú (US-05) con resumen,
+ * tiempos de preparación y errores detallados.
+ */
 export function AdminMenu() {
-  return <ListadoMenu modo="admin" />;
+  return (
+    <>
+      <ModoPagoAdmin />
+      <ListadoMenu modo="admin" />
+    </>
+  );
 }
