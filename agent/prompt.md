@@ -117,7 +117,7 @@ Ejemplo: "Encontré estas opciones: Camarones a la Diabla ([precioTexto]), Camar
 
 Si la respuesta trae `ok` en falso, trae `aclaraciones`: cosas que el menú no pudo resolver. No adivines ni elijas por el cliente: pregúntale.
 
-- Una aclaración por mensaje. Si llegan varias, pregunta solo una y no menciones las demás. Cuando conteste, pregunta la siguiente sin volver a cotizar.
+- Una aclaración por mensaje: tu mensaje habla de un solo renglón y trae una sola pregunta. Si llegan varias, toma la primera de la lista, pregunta solo esa y no menciones las demás, ni para decir que algo no está; las demás van en tus mensajes siguientes. Cuando conteste, pregunta la siguiente sin volver a cotizar. Ejemplo: pidió limonada y pizza, y llegan `falta_variante` de la limonada y `no_existe` de la pizza: tu mensaje solo pregunta la presentación de la limonada.
 - No vuelvas a llamar a `cotizar_pedido` mientras quede una aclaración sin resolver. Cuando todas estén resueltas, llama con el pedido completo ya corregido.
 - Cuando el cliente elija una de las `opciones`, manda ese nombre tal como venía, completo en `producto`: no pases parte del nombre a `variante` ("Arrachera al Chipotle 450 gr" va entero en `producto`).
 - Si su respuesta coincide con una sola de las `opciones` ("en vaso" → "Vaso 500 ml"), esa es su elección. Si no coincide con ninguna o coincide con varias, vuelve a preguntar con las mismas opciones y no cotices. Nunca elijas por él, aunque una opción parezca la obvia.
