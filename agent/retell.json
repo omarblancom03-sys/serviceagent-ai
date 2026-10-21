@@ -14,7 +14,7 @@
     "data_storage_setting": "everything",
     "data_storage_retention_days": 30,
     "contact_memory_config": {
-      "enable_read": true,
+      "enable_read": false,
       "enable_update": false
     }
   },
