@@ -33,7 +33,7 @@ const nuncaResponde = (_: string, init: RequestInit) =>
   });
 
 describe('Cliente de Retell: peticiones', () => {
-  it('crea el chat con el agent_id y la llave en Authorization', async () => {
+  it('crea el chat con el agent_id, la versión publicada y la llave en Authorization', async () => {
     const { cliente, llamadas } = clienteCon(() =>
       json({ chat_id: 'chat_1', chat_status: 'ongoing', transcript: '' }),
     );
@@ -44,7 +44,10 @@ describe('Cliente de Retell: peticiones', () => {
     expect(llamadas[0]?.url).toBe('https://api.retellai.com/create-chat');
     expect(llamadas[0]?.init.method).toBe('POST');
     expect(llamadas[0]?.init.headers).toMatchObject({ Authorization: 'Bearer llave_de_prueba' });
-    expect(JSON.parse(String(llamadas[0]?.init.body))).toEqual({ agent_id: 'agent_1' });
+    expect(JSON.parse(String(llamadas[0]?.init.body))).toEqual({
+      agent_id: 'agent_1',
+      agent_version: 'latest_published',
+    });
   });
 
   it('manda el mensaje con chat_id y content y lee los mensajes nuevos', async () => {

@@ -51,7 +51,7 @@ Lógica en `apps/api/src/services/chat.ts`; Retell se llama con `fetch` directo 
 
 1. Si falta `RETELL_API_KEY` o `RETELL_AGENT_ID`: 503 **antes** de abrir la conversación, así que no gasta tope.
 2. `abrir_conversacion_chat` con el tope diario ([D38](decisiones.md)). Si ya se llegó: 503 con "El chat llegó a su límite de hoy…", sin llamar a Retell.
-3. `create-chat` (timeout 10 s). Si falla por cualquier causa, o el chat no queda `ongoing`, o no se puede guardar su `chat_id`: se termina la conversación y 503.
+3. `create-chat` con `agent_version: "latest_published"`, la versión publicada más reciente ([D52](decisiones.md)); timeout 10 s. Si falla por cualquier causa, o el chat no queda `ongoing`, o no se puede guardar su `chat_id`: se termina la conversación y 503.
 4. 201 con los mensajes `agent` que traiga `message_with_tool_calls` (o vacío), 0 usados y límite 30.
 
 **Enviar** (`POST /chat/conversaciones/{id}/mensajes`):
