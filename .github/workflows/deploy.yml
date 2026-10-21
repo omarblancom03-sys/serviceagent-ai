@@ -99,6 +99,10 @@ jobs:
           # URL pública de la API. Se define como *variable* (no secreto) del repo:
           # Settings → Secrets and variables → Actions → Variables → VITE_API_URL.
           VITE_API_URL: ${{ vars.VITE_API_URL }}
+          # Señal de Realtime de /cocina (D47). La llave anon es pública por diseño, por eso
+          # también va como *variable*. Si faltan, la pantalla solo se refresca cada 30 s.
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
       - name: Crear proyecto de Pages si no existe
         run: |
           if pnpm exec wrangler pages project list | grep -qw "${{ matrix.proyecto }}"; then
