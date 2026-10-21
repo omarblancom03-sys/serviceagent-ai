@@ -36,3 +36,4 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). *
 ### Corregido
 
 - US-07-P1: los 500 intermitentes de `POST /pedidos/cotizar` y `GET /menu` ("JWT issued at future" de Supabase) se reintentan en el cliente de Supabase, solo ante ese error y hasta ~3 s, para toda la API (D41).
+- US-07-P2: el agente de chat ya no lee la memoria de contacto de Retell (evita mezclar datos entre clientes).
