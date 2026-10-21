@@ -117,4 +117,6 @@ No se configura en Retell: el cierre por inactividad (`end_chat_after_silence_ms
 3. Se corren los casos de `tests/casos/` con el criterio de [D43](../docs/decisiones.md) y se actualiza `tests/corrida.md`.
 4. Con el PR fusionado, se publica la versión.
 
+El chat web (`/pedir`) siempre abre los chats con la versión **publicada** más reciente ([D52](../docs/decisiones.md)), así que lo que está en el borrador no llega a los clientes hasta que se publica.
+
 **Si dos PR cambian el prompt al mismo tiempo:** el borrador del equipo en Retell es para el PR que usa herramientas; el otro prueba en su propia cuenta de Retell o, si no puede, deja sus casos en `pendiente`. El que se fusiona segundo corre todos los casos antes de publicar, y solo se publica lo que ya está en `main`.
