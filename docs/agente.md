@@ -11,7 +11,7 @@ Retell llama a nuestra API. **Toda petición de Retell se verifica con la firma 
 | `buscar_menu`           | `POST /agente/buscar-menu`      | RAG: 3–5 productos relevantes con precio y disponibilidad en vivo |
 | `info_restaurante`      | `POST /agente/info`             | Horario, ubicación, pagos, alérgenos, FAQs                        |
 | `cotizar_pedido`        | `POST /pedidos/cotizar`         | Valida productos y calcula total (sin guardar)                    |
-| `crear_pedido`          | `POST /pedidos`                 | Crea el pedido tras confirmación explícita (D48)                  |
+| `crear_pedido`          | `POST /pedidos`                 | Crea el pedido tras confirmación explícita (D48, D55)             |
 | `modificar_pedido`      | `PATCH /pedidos/:folio`         | Cambios antes de preparación                                      |
 | `cancelar_pedido`       | `POST /pedidos/:folio/cancelar` | Solo antes de `preparando`                                        |
 | `estado_pedido`         | `POST /agente/estado`           | Requiere folio **y** teléfono que coincidan                       |

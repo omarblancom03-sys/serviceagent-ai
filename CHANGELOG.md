@@ -34,6 +34,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). *
 - US-10 (API y base de datos): `GET /cocina/pedidos` (rol cocina y admin) con los tickets en cola o preparándose, del más antiguo al más nuevo y sin precios ni teléfono; `crear_pedido` deja el pedido en cola al confirmarlo (D46) y la base manda una señal de Realtime sin datos cada vez que un pedido se crea o cambia de estado (D47).
 - US-10 (pantalla): `/cocina` muestra los tickets en cola o preparándose con letra grande (folio, nombre, hora, platillos con variante, ingredientes quitados, extras y extras sueltos aparte); los pedidos nuevos aparecen solos con la señal de Realtime, se resaltan unos segundos y la lista se refresca cada 30 s por si se pierde la conexión (D47). Variables `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` en el deploy de la web.
 - US-08-P2-T1: `POST /pedidos` solo crea el pedido si el cliente respondió que sí a la pregunta de confirmación en la conversación que manda Retell; si no, responde `faltaConfirmacion: true` sin guardar nada (D48).
+- US-22: modo de pago del restaurante en `/admin` (solo admin): pago al recoger (el pedido va a cocina al confirmarse) o transferencia (el pedido queda en `esperando_pago` y no llega a cocina hasta que se pague), con confirmación y quién lo cambió; `GET` y `PATCH /admin/configuracion`; `crear_pedido` guarda el modo en cada pedido y lo devuelve como `modoPago` (D55).
 
 ### Corregido
 

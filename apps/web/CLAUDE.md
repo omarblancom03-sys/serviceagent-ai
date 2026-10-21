@@ -10,7 +10,7 @@ SPA en React + Vite + Tailwind + React Router para clientes y empleados. Se desp
 | `/menu`   | Cliente (público, sin login) | US-09-P2: el menú de `/admin` sin conteos, tiempos ni errores técnicos; busca también por categoría |
 | `/cocina` | Rol `cocina` (y `admin`) | US-10: tickets en cola o preparándose (`GET /cocina/pedidos`), del más antiguo al más nuevo; aparecen solos con la señal de Realtime y se refrescan cada 30 s (D47) |
 | `/caja`   | Rol `caja` (y `admin`) | Protegida en US-04; pantalla real en US-20 |
-| `/admin`  | Rol `admin` | US-05: menú de solo lectura (`GET /menu`) con búsqueda y filtro por categoría |
+| `/admin`  | Rol `admin` | US-22: modo de pago (pago al recoger o transferencia) con confirmación y quién lo cambió (`/admin/configuracion`, D55). US-05: menú de solo lectura (`GET /menu`) con búsqueda y filtro por categoría |
 | `/login`  | Empleados | US-04: tarjeta de empleado + teclado de PIN |
 
 ## Cómo está organizado
@@ -18,6 +18,7 @@ SPA en React + Vite + Tailwind + React Router para clientes y empleados. Se desp
 - `src/main.tsx`: monta `<App />` dentro de `BrowserRouter` y `SesionProvider`.
 - `src/App.tsx`: barra de navegación (solo pantallas permitidas, nombre del empleado y **Cerrar sesión**) y tabla de rutas (`/` redirige a `/pedir`). `PAGINA_EMPLEADO` dice qué pantalla interna ya tiene página real; las demás muestran `PaginaPlaceholder`. Las rutas públicas (`/pedir`, `/menu`, `/login`) van fuera de `PANTALLAS_EMPLEADO` y sin `RutaProtegida`.
 - `src/pages/`: una página por ruta. Reales: `Login.tsx`, `AdminMenu.tsx` (`/admin`), `MenuCliente.tsx` (`/menu`), `PedirChat.tsx` (`/pedir`) y `Cocina.tsx` (`/cocina`); las demás usan `PaginaPlaceholder` hasta que su historia las reemplace.
+- `src/components/ModoPagoAdmin.tsx`: interruptor del modo de pago de `/admin`; pide confirmar en la misma tarjeta y, al elegir transferencia, avisa que todavía no hay forma de recibirlas.
 - `src/components/ListadoMenu.tsx`: el listado del menú que comparten `/admin` y `/menu` (carga, error con **Reintentar**, buscador, selector, tarjetas y extras sueltos). Recibe `modo` y solo lee las opciones de `opcionesVista(modo)`.
 - `src/auth/`: sesión del empleado.
   - `SesionContext.tsx`: `useSesion()` con `sesion`, `iniciarSesion`, `cerrarSesion` y `pedirConSesion`.
@@ -31,6 +32,7 @@ SPA en React + Vite + Tailwind + React Router para clientes y empleados. Se desp
 - **Tope diario del chat:** comparte el 503 `servicio_no_disponible` con una falla de Retell. Se reconoce porque solo ocurre al crear la conversación y el `error` contiene "límite de hoy" (texto de `apps/api/src/routes/chat.ts`); si ese texto cambia, cae al 503 genérico con Reintentar.
 - `src/lib/cocina.ts`: lógica pura de `/cocina`: `foliosNuevos` (qué resaltar; nada en la primera carga), `lineaDe` y `separarRenglones` (textos del ticket; extras por unidad con "c/u" si hay más de una; extras sueltos "Aparte"), `estadoConexionDe`, `TEXTO_CONEXION`, `mensajeErrorCocina`, `crearRecargador` (cuándo pedir la lista: señales agrupadas en 400 ms con tope de 2 s desde la primera, una petición a la vez y ponerse al día al reconectar) y los tiempos (refresco cada 30 s, resalte de 15 s; hora en `America/Chihuahua`).
 - `src/lib/senalPedidos.ts`: `escucharSenalPedidos` con `@supabase/supabase-js` y la llave anon (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`): solo escucha el canal `pedidos`, evento `cambio`, sin datos (D12, D47). Sin esas variables, `hayRealtime()` es `false` y la pantalla vive del refresco. Es el único uso de Supabase en la web. Un solo canal para toda la app, que no se cierra: cada pantalla agrega y quita su oyente (cerrarlo al salir y volver enseguida dejaba la pantalla en "Conectando…").
+- `src/lib/configuracion.ts`: lógica pura del modo de pago (`DESCRIPCION_MODO_PAGO`, `AVISO_TRANSFERENCIA`, `textoUltimoCambio` en America/Chihuahua y `mensajeErrorConfiguracion` sin códigos).
 - `src/lib/enlaces.ts`: `separarEnlaces` parte un mensaje en texto y URLs http/https (sin la puntuación final). Los mensajes se pintan como texto de React, nunca con `dangerouslySetInnerHTML`.
 - `src/index.css`: solo `@import 'tailwindcss'` (Tailwind 4, sin archivo de configuración).
 
@@ -56,7 +58,7 @@ pnpm --filter @serviceagent/web build
 pnpm --filter @serviceagent/web test        # Vitest (test/*.test.ts)
 ```
 
-- **Tests:** solo lógica pura en `test/` (token, permisos, mensajes, menú de admin, vista del menú por modo, estado del chat, enlaces y cocina), sin DOM ni dependencias extra.
+- **Tests:** solo lógica pura en `test/` (token, permisos, mensajes, menú de admin, vista del menú por modo, estado del chat, enlaces, cocina y modo de pago), sin DOM ni dependencias extra.
 - **Probar el login a mano:** levanta la API con su `.dev.vars` (ver [apps/api/CLAUDE.md](../api/CLAUDE.md)) y la web. Luego entra a `/login` con los empleados de prueba de [supabase/CLAUDE.md](../../supabase/CLAUDE.md#empleados-de-prueba-solo-desarrollo).
 
 ## Reglas que aplican
