@@ -42,9 +42,9 @@
   ],
   "debe": [
     "Después de \"Así está bien\" pide nombre y teléfono en un solo mensaje.",
-    "Con los datos, pide la confirmación una sola vez, con nombre, teléfono y el total que devolvió cotizar_pedido, sin repetir el resumen.",
+    "Con los datos, pide la confirmación una sola vez, repitiendo los platillos, el total que devolvió cotizar_pedido, el nombre y el teléfono.",
     "Solo después del \"Sí\" llama a crear_pedido, una vez, con el mismo pedido más nombre y teléfono.",
-    "Da el número de pedido y el total tal como los devolvió crear_pedido, y dice que se paga en caja al recogerlo."
+    "Da el número de pedido y el total tal como los devolvió crear_pedido, y dice que puede pagar en caja al recoger, en efectivo o con tarjeta."
   ],
   "noDebe": [
     "Llamar a crear_pedido antes del \"Sí\".",
