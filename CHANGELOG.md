@@ -38,6 +38,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). *
 - US-13: cada ticket de `/cocina` muestra los minutos desde que entró a la cola ("12 min", "1 h 05 min"), que se actualizan solos cada 15 s y al volver a la pestaña; desde los 20 minutos el ticket se pinta en rojo con la etiqueta "Atrasado" (D57).
 - US-16 (API y base de datos): `POST /agente/buscar-menu` (custom function `buscar_menu`, con la firma de Retell) busca en el menú con las palabras del cliente: embeddings de Workers AI (`bge-m3`) en pgvector, hasta 5 platillos con precios y disponibilidad en vivo, umbral para no devolver lo que no se parece y reindexado automático de los platillos que cambian (D50). Evaluación con 20 preguntas: 19 en el top 3.
 - US-22: modo de pago del restaurante en `/admin` (solo admin): pago al recoger (el pedido va a cocina al confirmarse) o transferencia (el pedido queda en `esperando_pago` y no llega a cocina hasta que se pague), con confirmación y quién lo cambió; `GET` y `PATCH /admin/configuracion`; `crear_pedido` guarda el modo en cada pedido y lo devuelve como `modoPago` (D55).
+- US-16 (agente): el agente busca en el menú con `buscar_menu` cuando el cliente describe lo que quiere ("algo picoso con camarones") o pregunta qué lleva un platillo; nombra hasta 5 opciones con su precio, no elige por el cliente y contesta "qué lleva" solo con la descripción (D51). 7 casos de búsqueda, test de que el prompt no trae el menú y corrida con los 47 casos: todos pasan.
 
 ### Corregido
 

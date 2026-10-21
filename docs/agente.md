@@ -89,7 +89,7 @@ Lógica en `apps/api/src/services/chat.ts`; Retell se llama con `fetch` directo 
 - **Repite el resumen del pedido UNA sola vez, al final, antes de confirmar.** No en cada paso.
 - Nunca inventa productos, precios ni ingredientes. Si no sabe, lo dice. Los montos siempre vienen del backend ([negocio.md → Dinero](negocio.md#dinero)).
 - Si no puede resolver algo, usa `transferir_a_empleado`.
-- El menú completo **no** va en el prompt: se consulta con `buscar_menu` (ahorro de tokens).
+- El menú completo **no** va en el prompt: se consulta con `buscar_menu` (ahorro de tokens). Cuándo busca, cómo presenta los resultados y qué no hace: [D51](decisiones.md); cómo busca la API: [D50](decisiones.md).
 
 ## Modelo y costo en Retell
 
