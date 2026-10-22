@@ -9,6 +9,13 @@ import type { ClienteRetell, MensajeRetell, ResultadoRetell } from '../services/
 
 const URL_RETELL = 'https://api.retellai.com';
 
+/**
+ * Versión del agente con la que se abre cada chat: la publicada más reciente. Sin `agent_version`,
+ * Retell usa `latest` (el número de versión más alto, aunque sea el borrador), y un cambio a medio
+ * probar en el borrador llegaría a los clientes de `/pedir` (D52).
+ */
+export const VERSION_AGENTE = 'latest_published';
+
 /** Milisegundos máximos por llamada. La respuesta del agente tarda más si usa herramientas. */
 export const TIMEOUTS_RETELL = {
   crearChat: 10_000,
@@ -138,7 +145,7 @@ export function crearClienteRetell(
     crearChat: (agentId) =>
       llamar(
         '/create-chat',
-        { method: 'POST', body: { agent_id: agentId } },
+        { method: 'POST', body: { agent_id: agentId, agent_version: VERSION_AGENTE } },
         timeouts.crearChat,
         ChatCreadoSchema,
       ),

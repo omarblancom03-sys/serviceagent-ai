@@ -16,7 +16,7 @@ API del sistema: la usan el agente de Retell (custom functions), los frontends y
 | `src/lib/pin.ts`         | Hash y verificación del PIN (HMAC con `PIN_PEPPER` + PBKDF2, D13).                                                       |
 | `src/lib/firmaRetell.ts` | `verificarFirmaRetell` (HMAC-SHA256 del cuerpo crudo + timestamp con `RETELL_API_KEY`, ±5 min, tiempo constante) y middleware `requiereFirmaRetell()`: 401 si la firma no es válida, 500 si falta la llave. |
 | `src/lib/normalizar.ts`  | Llaves para comparar lo que dijo el cliente con nombres y sinónimos: `normalizarSuave` (minúsculas, sin acentos ni signos, plurales), `normalizarSinRelleno` y `palabras`; `sinModoDeEntrega` ("para llevar") y `sinPrefijoDePedido` ("orden de"), D44. |
-| `src/lib/clienteRetell.ts` | `crearClienteRetell(llave)`: API de chat de Retell con `fetch` (sin SDK), timeouts de 10, 30 y 5 s y fallas clasificadas en `rechazo`, `sin_conexion`, `timeout` e `incierta` (D39). Nunca lee el cuerpo de un error de Retell. |
+| `src/lib/clienteRetell.ts` | `crearClienteRetell(llave)`: API de chat de Retell con `fetch` (sin SDK); abre los chats con la versión publicada del agente (D52), timeouts de 10, 30 y 5 s y fallas clasificadas en `rechazo`, `sin_conexion`, `timeout` e `incierta` (D39). Nunca lee el cuerpo de un error de Retell. |
 | `src/lib/pesos.ts`       | `formatearPesos(centavos)`: 40300 → `"$403.00"`. Solo formato; los montos siguen en centavos.                            |
 | `src/lib/supabase.ts`    | `crearClienteSupabase(env)`: cliente con la llave de servicio, uno por petición. Lo reutilizan todas las historias. Su `fetch` (`crearFetchConReintento`) reintenta solo ante 401 `PGRST303` "JWT issued at future" (D41). |
 | `src/lib/repo*.ts`       | Implementación sobre Supabase de las interfaces de `services/`. Hoy: `repoEmpleados.ts`, `repoMenu.ts` (lee las 6 tablas del menú en paralelo), `repoCocina.ts` (pedidos activos con renglones, extras e historial en una sola consulta), `repoPedidos.ts` (llama a la función SQL `crear_pedido` con `rpc()`) y `repoChat.ts` (funciones de `conversaciones_chat` con `rpc()`; sus errores llevan solo el código de Postgres). |
@@ -53,4 +53,4 @@ Los tests usan `crearApp({ ... })` con repos en memoria y `app.request(ruta, ini
 - [docs/negocio.md](../../docs/negocio.md): estados del pedido, pagos, inventario, tiempo estimado, auth y roles.
 - [docs/agente.md](../../docs/agente.md): endpoints de las custom functions y verificación de `X-Retell-Signature`.
 - [docs/despliegue.md](../../docs/despliegue.md): secretos del Worker (`JWT_SECRET`, `PIN_PEPPER`, `RETELL_API_KEY`, `RETELL_AGENT_ID`, `CHAT_TOPE_DIARIO`, `SUPABASE_*`) y despliegue.
-- [docs/decisiones.md](../../docs/decisiones.md): D2, D7, D8, D9, D12, D13, D14, D19, D20, D21, D36, D38, D39, D41, D44, D46, D47, D48.
+- [docs/decisiones.md](../../docs/decisiones.md): D2, D7, D8, D9, D12, D13, D14, D19, D20, D21, D36, D38, D39, D41, D44, D46, D47, D48, D52.

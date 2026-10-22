@@ -32,8 +32,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). *
 - US-09-P2 (agente): el agente responde con el enlace del menú público `/menu` cuando piden el menú, qué hay o precios en general, y si el cliente escribe primero (chat web) responde directo sin saludar ni presentarse (D45); 5 casos nuevos de conversación.
 - US-07-P2: el agente cotiza con `cotizar_pedido`: manda lo que dijo el cliente, pregunta una aclaración a la vez sin elegir por él, dice los precios y el total que devuelve el backend, ofrece Espuelas solo si vienen en `extrasDisponibles` (D25, D44) y no registra pedidos; saludo fijo en Retell, 24 casos de pedido, test que compara `functions/cotizar_pedido.json` con el contrato y corrida final con 35 de 40 (3 menores pendientes: 2 por D43 y 1 como excepción del PO, D43).
 - US-10 (API y base de datos): `GET /cocina/pedidos` (rol cocina y admin) con los tickets en cola o preparándose, del más antiguo al más nuevo y sin precios ni teléfono; `crear_pedido` deja el pedido en cola al confirmarlo (D46) y la base manda una señal de Realtime sin datos cada vez que un pedido se crea o cambia de estado (D47).
+- US-10 (pantalla): `/cocina` muestra los tickets en cola o preparándose con letra grande (folio, nombre, hora, platillos con variante, ingredientes quitados, extras y extras sueltos aparte); los pedidos nuevos aparecen solos con la señal de Realtime, se resaltan unos segundos y la lista se refresca cada 30 s por si se pierde la conexión (D47). Variables `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` en el deploy de la web.
 - US-08-P2-T1: `POST /pedidos` solo crea el pedido si el cliente respondió que sí a la pregunta de confirmación en la conversación que manda Retell; si no, responde `faltaConfirmacion: true` sin guardar nada (D48).
 
 ### Corregido
 
 - US-07-P1: los 500 intermitentes de `POST /pedidos/cotizar` y `GET /menu` ("JWT issued at future" de Supabase) se reintentan en el cliente de Supabase, solo ante ese error y hasta ~3 s, para toda la API (D41).
+- US-07-P2: el agente de chat ya no lee la memoria de contacto de Retell (evita mezclar datos entre clientes).
+- US-08-P2-T2: el chat web abre los chats con la versión publicada del agente (`agent_version: "latest_published"`); antes usaba la más reciente, aunque fuera el borrador (D52).
