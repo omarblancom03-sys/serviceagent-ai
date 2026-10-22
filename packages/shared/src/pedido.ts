@@ -17,6 +17,7 @@
 import { z } from 'zod';
 // Los IDs de pedido usan la misma regla que los del menú (integer de 32 bits,
 // hasta MAX_ID) en lugar de copiarla.
+import { ModoPagoSchema } from './configuracion';
 import { CentavosSchema, IdSchema } from './menu';
 
 // ─── Constantes ─────────────────────────────────────────────────────────────
@@ -341,8 +342,9 @@ export const DatoClienteInvalidoSchema = z.object({
 });
 
 /**
- * Pedido guardado y ya en la cola de cocina (`en_cola`, D46). Los renglones y el total son los de
- * la cotización que hizo el backend al crearlo. `yaExistia`: el mismo pedido
+ * Pedido guardado. Con pago al recoger queda en la cola de cocina (`en_cola`, D46); con pago por
+ * transferencia, en `esperando_pago` (D55). Los renglones y el total son los de la cotización que
+ * hizo el backend al crearlo. `yaExistia`: el mismo pedido
  * con el mismo teléfono y nombre ya se había creado hace poco (D34) y se devuelve ese
  * folio en lugar de crear otro.
  */
@@ -352,6 +354,8 @@ export const PedidoCreadoSchema = z.object({
   /** Para leerlo tal cual: "#1001". */
   folioTexto: z.string(),
   estado: EstadoPedidoSchema,
+  /** Con qué modo de pago se creó: el agente dice cómo pagar según este campo (D55). */
+  modoPago: ModoPagoSchema,
   yaExistia: z.boolean(),
   renglones: z.array(RenglonCotizacionSchema).min(1),
   totalCentavos: CentavosSchema,
