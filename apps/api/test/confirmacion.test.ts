@@ -99,6 +99,11 @@ describe('esPreguntaDeConfirmacion', () => {
     expect(esPreguntaDeConfirmacion('Confirmo tu pedido, algo mas?')).toBe(false);
     expect(esPreguntaDeConfirmacion('Tu pedido: 1 Totopos. Confirmo tu pedido?')).toBe(true);
     expect(esPreguntaDeConfirmacion('Listo! Confirmo tu pedido?')).toBe(true);
+    // Un punto decimal no corta la pregunta.
+    expect(esPreguntaDeConfirmacion('¿Confirmo tu pedido a nombre de Ana, por $916.00?')).toBe(
+      true,
+    );
+    expect(esPreguntaDeConfirmacion('Son $149.00 en total. Confirmo tu pedido?')).toBe(true);
   });
 
   it('no cuenta un mensaje sin pregunta ni otras preguntas', () => {

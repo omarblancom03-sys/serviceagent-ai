@@ -121,9 +121,11 @@ const EXACTA = new RegExp(`^(te )?${FRASE_NORMALIZADA}$`);
 export function esPreguntaDeConfirmacion(texto: string): boolean {
   const recortado = texto.trim();
   if (!recortado.endsWith('?')) return false;
-  // La última pregunta empieza después del último "¿", ".", "!" o "?" anterior al "?" final.
+  // La última pregunta empieza después del último "¿", o del último ".", "!" o "?" seguido de un
+  // espacio (un punto decimal, como en "$149.00", no termina una oración).
   const sinFinal = recortado.slice(0, -1);
-  const corte = Math.max(...['¿', '.', '!', '?'].map((signo) => sinFinal.lastIndexOf(signo)));
+  let corte = -1;
+  for (const signo of sinFinal.matchAll(/¿|[.!?](?=\s)/g)) corte = signo.index;
   const ultimaPregunta = palabrasDe(recortado.slice(corte + 1)).join(' ');
   // Con "¿" basta que empiece con la frase ("¿Confirmo tu pedido a nombre de…?"). Sin "¿" tiene que
   // ser la frase sola: "Confirmo tu pedido, algo más?" escrito sin signos no es la pregunta.
