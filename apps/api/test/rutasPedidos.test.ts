@@ -288,7 +288,6 @@ describe('POST /pedidos', () => {
     ['sin chat ni call', { name: 'crear_pedido', args: PEDIDO }],
     ['chat que no es objeto', { name: 'crear_pedido', chat: 'texto', args: PEDIDO }],
     ['chat en null', { name: 'crear_pedido', chat: null, args: PEDIDO }],
-    ['call que no es objeto', { name: 'crear_pedido', call: 'texto', args: PEDIDO }],
   ])('%s: responde faltaConfirmacion, sin 400 ni 500', async (_caso, cuerpo) => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     const { app: aplicacion, repo } = nuevaApp();
@@ -316,17 +315,21 @@ describe('POST /pedidos', () => {
     expect(registrado).not.toMatch(/María|614|123 4567|confírmalo/);
   });
 
-  it('un agente de voz manda la conversación en call: también se lee', async () => {
+  // Voz: pendiente, Sprint 10 (D48). Qué manda Retell en voz no está comprobado, así que `call` no se lee.
+  it.each([
+    ['solo call', { call: { call_id: 'call_1', message_with_tool_calls: CONFIRMADO } }],
+    [
+      'chat mal formado y call válido',
+      { chat: 'texto', call: { call_id: 'call_1', message_with_tool_calls: CONFIRMADO } },
+    ],
+  ])('%s: no lee call y no crea el pedido', async (_caso, conversacion) => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
     const { app: aplicacion, repo } = nuevaApp();
-    const cuerpo = {
-      name: 'crear_pedido',
-      call: { call_id: 'call_1', message_with_tool_calls: CONFIRMADO },
-      args: PEDIDO,
-    };
+    const cuerpo = { name: 'crear_pedido', ...conversacion, args: PEDIDO };
     const res = await crear(JSON.stringify(cuerpo), { aplicacion });
 
-    expect(await res.json()).toMatchObject({ ok: true, folio: 1001 });
-    expect(repo.pedidos).toHaveLength(1);
+    expect(await res.json()).toMatchObject({ ok: false, faltaConfirmacion: true });
+    expect(repo.pedidos).toHaveLength(0);
   });
 
   it('tras corregir el teléfono vuelve a llamar sin otra pregunta y sí guarda', async () => {
