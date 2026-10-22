@@ -1,13 +1,17 @@
-import type { MensajeConversacion } from '@serviceagent/shared';
+import {
+  CallRetellSchema,
+  MensajeConversacionSchema,
+  type MensajeConversacion,
+} from '@serviceagent/shared';
 
 /*
  * ¿El cliente confirmó el pedido? (D48, US-08-P2-T1). El modelo a veces llama a `crear_pedido` en
  * el mismo turno en que pregunta "¿Confirmo tu pedido…?", sin esperar la respuesta. El prompt no
  * basta para impedirlo, así que el backend lo revisa en la conversación que manda Retell en `call`:
  *
- * 1. Busca la ÚLTIMA pregunta de confirmación del agente (un mensaje con "?" y una palabra que
- *    empieza con "confirm": "¿Confirmo tu pedido a nombre de…?").
- * 2. El primer mensaje del cliente después de esa pregunta debe ser un "sí" claro.
+ * 1. Busca la ÚLTIMA pregunta de confirmación del agente: la frase fija del prompt, "¿Confirmo tu
+ *    pedido?" (`FRASE_PREGUNTA_CONFIRMACION`).
+ * 2. El primer mensaje del cliente después de esa pregunta debe ser un "sí" claro, sin nada más.
  * 3. Después de esa pregunta no puede haber otra llamada a `cotizar_pedido`: el pedido cambió y hay
  *    que volver a confirmarlo.
  *
@@ -25,9 +29,10 @@ function palabrasDe(texto: string): string[] {
     .filter((palabra) => palabra !== '');
 }
 
-/** Respuestas que confirman: "sí", "va", "dale", "adelante", "confírmalo", "de acuerdo"… */
+/** Palabras que confirman por sí solas: "sí", "va", "dale", "adelante", "confírmalo", "órale"… */
 const AFIRMATIVAS: ReadonlySet<string> = new Set([
   'si',
+  'sip',
   'va',
   'dale',
   'adelante',
@@ -44,48 +49,67 @@ const AFIRMATIVAS: ReadonlySet<string> = new Set([
   'exacto',
   'listo',
   'simon',
+  'orale',
+  'andale',
   'acuerdo', // "de acuerdo"
   'bien', // "está bien", "muy bien"
 ]);
 
 /**
- * Palabras que, junto a un "sí", piden otra cosa: "sí, pero sin cebolla", "mejor agrégale…". Con
- * cualquiera de ellas la respuesta no confirma y el agente debe atender eso primero.
+ * Palabras que pueden acompañar a un "sí" sin pedir otra cosa: "sí, así está bien, gracias",
+ * "confírmalo por favor", "claro que sí". Cualquier otra palabra ("sí, y otra horchata", "ok, una
+ * pregunta") hace que la respuesta no confirme: el agente atiende eso y vuelve a preguntar.
  */
-const NO_CONFIRMAN: ReadonlySet<string> = new Set([
-  'no',
-  'pero',
-  'mejor',
-  'espera',
-  'esperate',
-  'aun',
-  'todavia',
-  'cambia',
-  'cambiale',
-  'cambialo',
-  'cambiar',
-  'agrega',
-  'agregale',
-  'agregar',
-  'quita',
-  'quitale',
-  'quitar',
-  'sin',
-  'cancela',
-  'cancelalo',
-  'cobrame',
+const RELLENO: ReadonlySet<string> = new Set([
+  'de',
+  'que',
+  'asi',
+  'esta',
+  'es',
+  'eso',
+  'todo',
+  'muy',
+  'por',
+  'favor',
+  'porfa',
+  'gracias',
+  'muchas',
+  'lo',
+  'el',
+  'mi',
+  'pedido',
+  'pues',
+  'entonces',
 ]);
 
-/** "Sí", "sí, confírmalo", "va", "de acuerdo"; no "sí, pero…", "no" ni "mejor agrégale totopos". */
+/**
+ * "Sí", "sí, confírmalo", "va", "de acuerdo", "así está bien, gracias". Todas las palabras deben ser
+ * de "sí" o de relleno, y al menos una de "sí"; una pregunta nunca confirma. Así "¿Cuánto sale?",
+ * "¿Ya está listo?", "Sí, y otra horchata" o "Sí, pero sin cebolla" no crean el pedido.
+ */
 export function esAfirmativo(texto: string): boolean {
+  if (texto.includes('?') || texto.includes('¿')) return false;
   const palabras = palabrasDe(texto);
-  if (palabras.some((palabra) => NO_CONFIRMAN.has(palabra))) return false;
-  return palabras.some((palabra) => AFIRMATIVAS.has(palabra));
+  return (
+    palabras.some((palabra) => AFIRMATIVAS.has(palabra)) &&
+    palabras.every((palabra) => AFIRMATIVAS.has(palabra) || RELLENO.has(palabra))
+  );
 }
 
-/** Mensaje del agente que pregunta la confirmación: trae "?" y una palabra "confirm…". */
+/**
+ * Frase fija con la que el agente pide la confirmación (agent/prompt.md → "Cómo registras el
+ * pedido"). Si el prompt la cambia, hay que cambiarla aquí: ningún pedido se crearía.
+ */
+export const FRASE_PREGUNTA_CONFIRMACION = '¿Confirmo tu pedido?';
+const FRASE_NORMALIZADA = palabrasDe(FRASE_PREGUNTA_CONFIRMACION).join(' ');
+
+/**
+ * Mensaje del agente que pide la confirmación del pedido: una pregunta con "Confirmo tu pedido".
+ * Otras preguntas con "confirm…" no cuentan ("¿Quieres agregar algo antes de que lo confirme?",
+ * "¿Confirmas que tu teléfono es…?").
+ */
 export function esPreguntaDeConfirmacion(texto: string): boolean {
-  return texto.includes('?') && palabrasDe(texto).some((palabra) => palabra.startsWith('confirm'));
+  return texto.includes('?') && palabrasDe(texto).join(' ').includes(FRASE_NORMALIZADA);
 }
 
 /** `true` si el cliente respondió que sí a la última pregunta de confirmación y nada cambió después. */
@@ -102,4 +126,17 @@ export function clienteConfirmo(mensajes: readonly MensajeConversacion[]): boole
   }
   const respuesta = despues.find((m) => m.role === 'user');
   return respuesta !== undefined && esAfirmativo(respuesta.content ?? '');
+}
+
+/**
+ * Los mensajes de `call.message_with_tool_calls`. Si `call` no trae la lista, no hay mensajes (y el
+ * pedido no se crea). Un mensaje sin `role` o que no es objeto se descarta sin perder los demás.
+ */
+export function mensajesDeLaLlamada(call: unknown): MensajeConversacion[] {
+  const conversacion = CallRetellSchema.safeParse(call);
+  if (!conversacion.success) return [];
+  return conversacion.data.message_with_tool_calls.flatMap((mensaje) => {
+    const leido = MensajeConversacionSchema.safeParse(mensaje);
+    return leido.success ? [leido.data] : [];
+  });
 }

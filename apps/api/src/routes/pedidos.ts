@@ -1,6 +1,5 @@
 import { createRoute, type OpenAPIHono } from '@hono/zod-openapi';
 import {
-  CallRetellSchema,
   CotizarPedidoPeticionSchema,
   CrearPedidoPeticionSchema,
   ErrorPedidoSchema,
@@ -10,6 +9,7 @@ import {
 import type { z } from 'zod';
 import type { AppEnv, Bindings } from '../lib/env';
 import { requiereFirmaRetell } from '../lib/firmaRetell';
+import { mensajesDeLaLlamada } from '../services/confirmacion';
 import { obtenerCotizacion } from '../services/cotizacion';
 import { crearPedido, type PedidosRepo } from '../services/pedido';
 import type { DependenciasMenu } from './menu';
@@ -132,8 +132,7 @@ export function registrarPedidos(app: OpenAPIHono<AppEnv>, deps: DependenciasPed
     crearPedidoRoute,
     async (c) => {
       const { args, call } = c.req.valid('json');
-      const conversacion = CallRetellSchema.safeParse(call);
-      const mensajes = conversacion.success ? conversacion.data.message_with_tool_calls : [];
+      const mensajes = mensajesDeLaLlamada(call);
       if (mensajes.length === 0) {
         // Sin conversación no se puede revisar la confirmación (D48). Solo las llaves, nunca el contenido.
         const llaves = call !== null && typeof call === 'object' ? Object.keys(call) : [];

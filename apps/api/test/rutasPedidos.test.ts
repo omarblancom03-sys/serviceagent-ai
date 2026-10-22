@@ -279,6 +279,37 @@ describe('POST /pedidos', () => {
     expect(repo.pedidos).toHaveLength(0);
   });
 
+  it.each([
+    ['sin call', { name: 'crear_pedido', args: PEDIDO }],
+    ['call que no es objeto', { name: 'crear_pedido', call: 'texto', args: PEDIDO }],
+    ['call en null', { name: 'crear_pedido', call: null, args: PEDIDO }],
+  ])('%s: responde faltaConfirmacion, sin 400 ni 500', async (_caso, cuerpo) => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { app: aplicacion, repo } = nuevaApp();
+    const res = await crear(JSON.stringify(cuerpo), { aplicacion });
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ ok: false, faltaConfirmacion: true });
+    expect(repo.pedidos).toHaveLength(0);
+  });
+
+  it('sin mensajes en call, el log trae solo las llaves de call: ni nombre, ni teléfono, ni texto', async () => {
+    const aviso = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { app: aplicacion } = nuevaApp();
+    const cuerpo = {
+      name: 'crear_pedido',
+      call: { chat_id: 'chat_123', transcript: 'María José 614 123 4567 sí confírmalo' },
+      args: PEDIDO,
+    };
+    await crear(JSON.stringify(cuerpo), { aplicacion });
+
+    expect(aviso).toHaveBeenCalledWith('POST /pedidos sin mensajes en call', {
+      llaves: ['chat_id', 'transcript'],
+    });
+    const registrado = JSON.stringify(aviso.mock.calls);
+    expect(registrado).not.toMatch(/María|614|123 4567|confírmalo/);
+  });
+
   it('tras corregir el teléfono vuelve a llamar sin otra pregunta y sí guarda', async () => {
     const { app: aplicacion, repo } = nuevaApp();
     const mensajes = [

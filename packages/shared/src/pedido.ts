@@ -302,21 +302,24 @@ export const CrearPedidoArgsSchema = z
 
 /**
  * Un mensaje de la conversación que Retell manda en `call.message_with_tool_calls` (chat). Solo se
- * leen `role` (`agent`, `user`, `tool_call_invocation`…), el texto y el nombre de la herramienta.
+ * leen `role` (`agent`, `user`, `tool_call_invocation`…), el texto y el nombre de la herramienta;
+ * los dos últimos pueden faltar o venir en `null` (una invocación de herramienta no trae texto).
  */
 export const MensajeConversacionSchema = z.looseObject({
   role: z.string(),
-  content: z.string().optional(),
-  name: z.string().optional(),
+  content: z.string().nullish(),
+  name: z.string().nullish(),
 });
 
 /**
  * Lo que la API lee de `call`: la conversación hasta el momento de la llamada, para revisar que el
- * cliente confirmó el pedido (D48). La API lo aplica con `safeParse`: si `call` no trae los mensajes
- * o viene con otra forma, queda sin mensajes y el pedido no se crea (`faltaConfirmacion`).
+ * cliente confirmó el pedido (D48). La API lo aplica con `safeParse`: si `call` no trae la lista
+ * o viene con otra forma, queda sin mensajes y el pedido no se crea (`faltaConfirmacion`). Cada
+ * mensaje se valida aparte con `MensajeConversacionSchema`: uno con otra forma se descarta sin
+ * perder los demás.
  */
 export const CallRetellSchema = z.looseObject({
-  message_with_tool_calls: z.array(MensajeConversacionSchema),
+  message_with_tool_calls: z.array(z.unknown()),
 });
 
 /**
