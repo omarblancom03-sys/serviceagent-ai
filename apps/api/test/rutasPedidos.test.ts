@@ -3,7 +3,7 @@ import {
   RespuestaCotizarPedidoSchema,
   RespuestaCrearPedidoSchema,
 } from '@serviceagent/shared';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { crearApp } from '../src/index';
 import type { Bindings } from '../src/lib/env';
 import { firmar } from './firmaDePrueba';
@@ -16,6 +16,11 @@ import { leerSeedMenu } from './seedEnMemoria';
  * (variantes, extras, aclaraciones, duplicados) se prueban en cotizacion.test.ts y pedido.test.ts;
  * aquí, lo que agrega la ruta.
  */
+
+// Los spies de console se restauran después de cada test (vitest.config.ts no lo hace solo).
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 const seed = leerSeedMenu();
 const app = crearApp({ crearRepoMenu: () => crearRepoMenuEnMemoria(seed.filas, seed.sinonimos) });

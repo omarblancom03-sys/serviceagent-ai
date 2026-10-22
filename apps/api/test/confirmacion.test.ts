@@ -34,6 +34,7 @@ describe('esAfirmativo', () => {
     'Ándale pues',
     'Sip',
     'Confírmalo por favor',
+    'Sí, confirma mi pedido',
   ])('"%s" confirma', (texto) => {
     expect(esAfirmativo(texto)).toBe(true);
   });
@@ -56,6 +57,11 @@ describe('esAfirmativo', () => {
     'Sí, gracias, ahí paso',
     'cuanto sale',
     '👍',
+    // Segunda ronda de Jorge: preguntas sin signos.
+    'esta listo el pedido',
+    'mi pedido esta listo',
+    'esta listo',
+    'listo el pedido',
   ])('"%s" no confirma', (texto) => {
     expect(esAfirmativo(texto)).toBe(false);
   });
@@ -66,6 +72,8 @@ describe('esPreguntaDeConfirmacion', () => {
     expect(FRASE_PREGUNTA_CONFIRMACION).toBe('¿Confirmo tu pedido?');
     expect(esPreguntaDeConfirmacion(PREGUNTA.content)).toBe(true);
     expect(esPreguntaDeConfirmacion('¿Confirmo tu pedido a nombre de Ana López?')).toBe(true);
+    expect(esPreguntaDeConfirmacion('Listo. ¿Te confirmo tu pedido?')).toBe(true);
+    expect(esPreguntaDeConfirmacion('¿Confirmo tu pedido?  ')).toBe(true);
   });
 
   it('otras preguntas con "confirm…" no cuentan', () => {
@@ -73,6 +81,10 @@ describe('esPreguntaDeConfirmacion', () => {
     expect(esPreguntaDeConfirmacion('¿Quieres agregar algo antes de que lo confirme?')).toBe(false);
     expect(esPreguntaDeConfirmacion('¿Confirmas que tu teléfono es 614 123 4567?')).toBe(false);
     expect(esPreguntaDeConfirmacion('Confirmo tu pedido en un momento.')).toBe(false);
+    // Segunda ronda de Jorge: la frase debe iniciar la última pregunta del mensaje.
+    expect(esPreguntaDeConfirmacion('Confirmo tu pedido. ¿Algo más?')).toBe(false);
+    expect(esPreguntaDeConfirmacion('¿Reconfirmo tu pedido?')).toBe(false);
+    expect(esPreguntaDeConfirmacion('¿Confirmo tu pedido? Avísame si falta algo.')).toBe(false);
   });
 
   it('no cuenta un mensaje sin pregunta ni otras preguntas', () => {

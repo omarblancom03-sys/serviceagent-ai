@@ -75,7 +75,6 @@ const RELLENO: ReadonlySet<string> = new Set([
   'gracias',
   'muchas',
   'lo',
-  'el',
   'mi',
   'pedido',
   'pues',
@@ -84,12 +83,15 @@ const RELLENO: ReadonlySet<string> = new Set([
 
 /**
  * "Sí", "sí, confírmalo", "va", "de acuerdo", "así está bien, gracias". Todas las palabras deben ser
- * de "sí" o de relleno, y al menos una de "sí"; una pregunta nunca confirma. Así "¿Cuánto sale?",
- * "¿Ya está listo?", "Sí, y otra horchata" o "Sí, pero sin cebolla" no crean el pedido.
+ * de "sí" o de relleno, y al menos una de "sí"; una pregunta nunca confirma, tampoco sin signos
+ * ("está listo", "mi pedido está listo"). Así "¿Cuánto sale?", "¿Ya está listo?", "Sí, y otra
+ * horchata" o "Sí, pero sin cebolla" no crean el pedido.
  */
 export function esAfirmativo(texto: string): boolean {
   if (texto.includes('?') || texto.includes('¿')) return false;
   const palabras = palabrasDe(texto);
+  // "¿Ya está listo?" escrito sin signos: es una pregunta, no un sí.
+  if (palabras.includes('esta') && palabras.includes('listo')) return false;
   return (
     palabras.some((palabra) => AFIRMATIVAS.has(palabra)) &&
     palabras.every((palabra) => AFIRMATIVAS.has(palabra) || RELLENO.has(palabra))
@@ -97,19 +99,26 @@ export function esAfirmativo(texto: string): boolean {
 }
 
 /**
- * Frase fija con la que el agente pide la confirmación (agent/prompt.md → "Cómo registras el
- * pedido"). Si el prompt la cambia, hay que cambiarla aquí: ningún pedido se crearía.
+ * Frase fija con la que el agente debe pedir la confirmación. La usará agent/prompt.md desde US-08-P2
+ * ("Cómo registras el pedido"); si el prompt la cambia, hay que cambiarla aquí, o ningún pedido se
+ * crearía.
  */
 export const FRASE_PREGUNTA_CONFIRMACION = '¿Confirmo tu pedido?';
 const FRASE_NORMALIZADA = palabrasDe(FRASE_PREGUNTA_CONFIRMACION).join(' ');
+// Las palabras se unen con un espacio: la frase va al inicio y termina en espacio o al final.
+const INICIO_PREGUNTA = new RegExp(`^(te )?${FRASE_NORMALIZADA}( |$)`);
 
 /**
- * Mensaje del agente que pide la confirmación del pedido: una pregunta con "Confirmo tu pedido".
- * Otras preguntas con "confirm…" no cuentan ("¿Quieres agregar algo antes de que lo confirme?",
- * "¿Confirmas que tu teléfono es…?").
+ * Mensaje del agente que pide la confirmación del pedido: termina en una pregunta que empieza con
+ * "Confirmo tu pedido" ("Tu pedido: … ¿Confirmo tu pedido?"). Otras preguntas no cuentan: "¿Quieres
+ * agregar algo antes de que lo confirme?", "¿Confirmas que tu teléfono es…?" o "Confirmo tu pedido.
+ * ¿Algo más?", donde un "sí" significa otra cosa.
  */
 export function esPreguntaDeConfirmacion(texto: string): boolean {
-  return texto.includes('?') && palabrasDe(texto).join(' ').includes(FRASE_NORMALIZADA);
+  const recortado = texto.trim();
+  if (!recortado.endsWith('?')) return false;
+  const ultimaPregunta = recortado.slice(recortado.lastIndexOf('¿') + 1);
+  return INICIO_PREGUNTA.test(palabrasDe(ultimaPregunta).join(' '));
 }
 
 /** `true` si el cliente respondió que sí a la última pregunta de confirmación y nada cambió después. */

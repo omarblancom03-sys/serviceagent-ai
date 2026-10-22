@@ -51,16 +51,16 @@ confirmado → (esperando_pago) → en_cola → preparando → listo → entrega
                                    ↘ cancelado     ↘ expirado
 ```
 
-| Transición           | Quién la hace                                                                                                                     |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| → confirmado         | Agente (`crear_pedido`), solo tras confirmación explícita del cliente; la API la revisa en la conversación ([D48](decisiones.md)) |
-| → esperando_pago     | Sistema, si el pago es por transferencia                                                                                          |
-| → en_cola            | Sistema: al confirmar o al pagar, según `modo_envio_cocina` (hoy, al confirmar: D46)                                              |
-| en_cola → preparando | Cocina (botón **Empezar**)                                                                                                        |
-| preparando → listo   | Cocina (botón verde **Terminado**) → dispara aviso por WhatsApp                                                                   |
-| listo → entregado    | Caja                                                                                                                              |
-| → cancelado          | Cliente vía agente (solo antes de `preparando`) o empleado                                                                        |
-| → expirado           | Sistema, si una transferencia no llega a tiempo                                                                                   |
+| Transición           | Quién la hace                                                                        |
+| -------------------- | ------------------------------------------------------------------------------------ |
+| → confirmado         | Agente (`crear_pedido`), tras confirmación explícita del cliente (D48)               |
+| → esperando_pago     | Sistema, si el pago es por transferencia                                             |
+| → en_cola            | Sistema: al confirmar o al pagar, según `modo_envio_cocina` (hoy, al confirmar: D46) |
+| en_cola → preparando | Cocina (botón **Empezar**)                                                           |
+| preparando → listo   | Cocina (botón verde **Terminado**) → dispara aviso por WhatsApp                      |
+| listo → entregado    | Caja                                                                                 |
+| → cancelado          | Cliente vía agente (solo antes de `preparando`) o empleado                           |
+| → expirado           | Sistema, si una transferencia no llega a tiempo                                      |
 
 - Cada transición guarda su hora exacta, puesta por Postgres ([D42](decisiones.md)); se usa para el tiempo estimado que aprende.
 - `modo_envio_cocina` es configuración del restaurante: `al_confirmar` o `al_pagar`.
