@@ -4,7 +4,7 @@ import {
   clienteConfirmo,
   esAfirmativo,
   esPreguntaDeConfirmacion,
-  mensajesDeLaLlamada,
+  mensajesDeLaConversacion,
 } from '../src/services/confirmacion';
 
 const PREGUNTA = {
@@ -35,6 +35,7 @@ describe('esAfirmativo', () => {
     'Sip',
     'Confírmalo por favor',
     'Sí, confirma mi pedido',
+    'Sí, por favor',
   ])('"%s" confirma', (texto) => {
     expect(esAfirmativo(texto)).toBe(true);
   });
@@ -62,6 +63,10 @@ describe('esAfirmativo', () => {
     'mi pedido esta listo',
     'esta listo',
     'listo el pedido',
+    // Revisión de Martín (#45).
+    '¿sí?',
+    'mejor no',
+    'sí pero cámbiale la salsa',
   ])('"%s" no confirma', (texto) => {
     expect(esAfirmativo(texto)).toBe(false);
   });
@@ -163,21 +168,22 @@ describe('clienteConfirmo (D48)', () => {
   });
 });
 
-describe('mensajesDeLaLlamada', () => {
-  it('lee los mensajes de call.message_with_tool_calls', () => {
-    expect(mensajesDeLaLlamada({ message_with_tool_calls: [PREGUNTA, cliente('Sí')] })).toEqual([
-      PREGUNTA,
-      cliente('Sí'),
-    ]);
+describe('mensajesDeLaConversacion', () => {
+  it('lee los mensajes de la conversación (message_with_tool_calls)', () => {
+    expect(
+      mensajesDeLaConversacion({ message_with_tool_calls: [PREGUNTA, cliente('Sí')] }),
+    ).toEqual([PREGUNTA, cliente('Sí')]);
   });
 
   it('acepta content y name en null, como en una invocación de herramienta', () => {
     const invocacion = { role: 'tool_call_invocation', name: 'cotizar_pedido', content: null };
-    expect(mensajesDeLaLlamada({ message_with_tool_calls: [invocacion] })).toEqual([invocacion]);
+    expect(mensajesDeLaConversacion({ message_with_tool_calls: [invocacion] })).toEqual([
+      invocacion,
+    ]);
   });
 
   it('descarta solo los mensajes que no sirven, sin perder los demás', () => {
-    const mensajes = mensajesDeLaLlamada({
+    const mensajes = mensajesDeLaConversacion({
       message_with_tool_calls: [PREGUNTA, null, 'texto', { content: 'sin rol' }, cliente('Sí')],
     });
     expect(mensajes).toEqual([PREGUNTA, cliente('Sí')]);
@@ -185,9 +191,9 @@ describe('mensajesDeLaLlamada', () => {
   });
 
   it.each([undefined, null, 'x', 42, [], {}, { message_with_tool_calls: 'x' }])(
-    'sin la lista en call (%j) no hay mensajes',
-    (call) => {
-      expect(mensajesDeLaLlamada(call)).toEqual([]);
+    'sin la lista en la conversación (%j) no hay mensajes',
+    (conversacion) => {
+      expect(mensajesDeLaConversacion(conversacion)).toEqual([]);
     },
   );
 });

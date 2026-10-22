@@ -142,7 +142,7 @@ describe('cotizar_pedido en agent/retell.json', () => {
     expect(herramienta?.url).toBe('/pedidos/cotizar');
   });
 
-  // El contrato espera el sobre { name, call, args }: "Payload: args only" apagado.
+  // El contrato espera el sobre { name, chat, args }: "Payload: args only" apagado.
   it('manda el sobre completo (args_at_root en false)', () => {
     expect(herramienta?.args_at_root).toBe(false);
   });
