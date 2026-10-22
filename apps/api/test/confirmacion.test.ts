@@ -35,6 +35,7 @@ describe('esAfirmativo', () => {
     'Sip',
     'Confírmalo por favor',
     'Sí, confirma mi pedido',
+    'Sí, por favor',
   ])('"%s" confirma', (texto) => {
     expect(esAfirmativo(texto)).toBe(true);
   });
@@ -62,6 +63,10 @@ describe('esAfirmativo', () => {
     'mi pedido esta listo',
     'esta listo',
     'listo el pedido',
+    // Revisión de Martín (#45).
+    '¿sí?',
+    'mejor no',
+    'sí pero cámbiale la salsa',
   ])('"%s" no confirma', (texto) => {
     expect(esAfirmativo(texto)).toBe(false);
   });
@@ -164,7 +169,7 @@ describe('clienteConfirmo (D48)', () => {
 });
 
 describe('mensajesDeLaConversacion', () => {
-  it('lee los mensajes de call.message_with_tool_calls', () => {
+  it('lee los mensajes de la conversación (message_with_tool_calls)', () => {
     expect(
       mensajesDeLaConversacion({ message_with_tool_calls: [PREGUNTA, cliente('Sí')] }),
     ).toEqual([PREGUNTA, cliente('Sí')]);
@@ -186,9 +191,9 @@ describe('mensajesDeLaConversacion', () => {
   });
 
   it.each([undefined, null, 'x', 42, [], {}, { message_with_tool_calls: 'x' }])(
-    'sin la lista en call (%j) no hay mensajes',
-    (call) => {
-      expect(mensajesDeLaConversacion(call)).toEqual([]);
+    'sin la lista en la conversación (%j) no hay mensajes',
+    (conversacion) => {
+      expect(mensajesDeLaConversacion(conversacion)).toEqual([]);
     },
   );
 });
