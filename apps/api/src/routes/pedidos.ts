@@ -8,7 +8,7 @@ import {
 } from '@serviceagent/shared';
 import type { AppEnv, Bindings } from '../lib/env';
 import { requiereFirmaRetell } from '../lib/firmaRetell';
-import { mensajesDeLaLlamada } from '../services/confirmacion';
+import { mensajesDeLaConversacion } from '../services/confirmacion';
 import { obtenerCotizacion } from '../services/cotizacion';
 import { crearPedido, type PedidosRepo } from '../services/pedido';
 import { errorDeFormato, FIRMA_RETELL, json } from './funcionesRetell';
@@ -59,7 +59,7 @@ export const crearPedidoRoute = createRoute({
   summary: 'Crea el pedido confirmado (custom function `crear_pedido` del agente)',
   description:
     FIRMA_RETELL +
-    'Solo crea el pedido si en `call.message_with_tool_calls` el cliente respondió que sí a la ' +
+    'Solo crea el pedido si en `chat.message_with_tool_calls` (en voz, `call`) el cliente respondió que sí a la ' +
     'última pregunta de confirmación del agente y no se volvió a cotizar después; si no, responde ' +
     '200 con `ok: false` y `faltaConfirmacion: true` sin tocar la base (D48). ' +
     'Recibe el mismo pedido que se cotizó más nombre y teléfono, y lo VUELVE a cotizar con ' +
@@ -106,12 +106,17 @@ export function registrarPedidos(app: OpenAPIHono<AppEnv>, deps: DependenciasPed
   app.openapi(
     crearPedidoRoute,
     async (c) => {
-      const { args, call } = c.req.valid('json');
-      const mensajes = mensajesDeLaLlamada(call);
+      const { args, chat, call } = c.req.valid('json');
+      // Un agente de chat manda la conversación en `chat`; uno de voz, en `call`.
+      const conversacion = chat ?? call;
+      const mensajes = mensajesDeLaConversacion(conversacion);
       if (mensajes.length === 0) {
         // Sin conversación no se puede revisar la confirmación (D48). Solo las llaves, nunca el contenido.
-        const llaves = call !== null && typeof call === 'object' ? Object.keys(call) : [];
-        console.warn('POST /pedidos sin mensajes en call', { llaves });
+        const llaves =
+          conversacion !== null && typeof conversacion === 'object'
+            ? Object.keys(conversacion)
+            : [];
+        console.warn('POST /pedidos sin mensajes en la conversación', { llaves });
       }
       try {
         const respuesta = await crearPedido(
