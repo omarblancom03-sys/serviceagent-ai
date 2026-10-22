@@ -85,14 +85,16 @@ const RELLENO: ReadonlySet<string> = new Set([
 /**
  * "Sí", "sí, confírmalo", "va", "de acuerdo", "así está bien, gracias". Todas las palabras deben ser
  * de "sí" o de relleno, y al menos una de "sí"; una pregunta nunca confirma, tampoco sin signos
- * ("está listo", "mi pedido está listo"). Así "¿Cuánto sale?", "¿Ya está listo?", "Sí, y otra
+ * ("está listo", "mi pedido está listo", "pedido listo"). Así "¿Cuánto sale?", "¿Ya está listo?", "Sí, y otra
  * horchata" o "Sí, pero sin cebolla" no crean el pedido.
  */
 export function esAfirmativo(texto: string): boolean {
   if (texto.includes('?') || texto.includes('¿')) return false;
   const palabras = palabrasDe(texto);
-  // "¿Ya está listo?" escrito sin signos: es una pregunta, no un sí.
-  if (palabras.includes('esta') && palabras.includes('listo')) return false;
+  // "¿Ya está listo?" o "¿mi pedido listo?" escrito sin signos: es una pregunta, no un sí.
+  if (palabras.includes('listo') && (palabras.includes('esta') || palabras.includes('pedido'))) {
+    return false;
+  }
   return (
     palabras.some((palabra) => AFIRMATIVAS.has(palabra)) &&
     palabras.every((palabra) => AFIRMATIVAS.has(palabra) || RELLENO.has(palabra))
@@ -108,6 +110,7 @@ export const FRASE_PREGUNTA_CONFIRMACION = '¿Confirmo tu pedido?';
 const FRASE_NORMALIZADA = palabrasDe(FRASE_PREGUNTA_CONFIRMACION).join(' ');
 // Las palabras se unen con un espacio: la frase va al inicio y termina en espacio o al final.
 const INICIO_PREGUNTA = new RegExp(`^(te )?${FRASE_NORMALIZADA}( |$)`);
+const EXACTA = new RegExp(`^(te )?${FRASE_NORMALIZADA}$`);
 
 /**
  * Mensaje del agente que pide la confirmación del pedido: termina en una pregunta que empieza con
@@ -118,9 +121,18 @@ const INICIO_PREGUNTA = new RegExp(`^(te )?${FRASE_NORMALIZADA}( |$)`);
 export function esPreguntaDeConfirmacion(texto: string): boolean {
   const recortado = texto.trim();
   if (!recortado.endsWith('?')) return false;
-  const ultimaPregunta = recortado.slice(recortado.lastIndexOf('¿') + 1);
-  return INICIO_PREGUNTA.test(palabrasDe(ultimaPregunta).join(' '));
+  // La última pregunta empieza después del último "¿", ".", "!" o "?" anterior al "?" final.
+  const sinFinal = recortado.slice(0, -1);
+  const corte = Math.max(...['¿', '.', '!', '?'].map((signo) => sinFinal.lastIndexOf(signo)));
+  const ultimaPregunta = palabrasDe(recortado.slice(corte + 1)).join(' ');
+  // Con "¿" basta que empiece con la frase ("¿Confirmo tu pedido a nombre de…?"). Sin "¿" tiene que
+  // ser la frase sola: "Confirmo tu pedido, algo más?" escrito sin signos no es la pregunta.
+  if (sinFinal[corte] === '¿') return INICIO_PREGUNTA.test(ultimaPregunta);
+  return EXACTA.test(ultimaPregunta);
 }
+
+/** Rol que se le pone a un mensaje de la conversación que no se pudo leer. */
+export const ROL_ILEGIBLE = 'ilegible';
 
 /** `true` si el cliente respondió que sí a la última pregunta de confirmación y nada cambió después. */
 export function clienteConfirmo(mensajes: readonly MensajeConversacion[]): boolean {
@@ -134,19 +146,22 @@ export function clienteConfirmo(mensajes: readonly MensajeConversacion[]): boole
   if (despues.some((m) => m.role === 'tool_call_invocation' && m.name === 'cotizar_pedido')) {
     return false;
   }
-  const respuesta = despues.find((m) => m.role === 'user');
-  return respuesta !== undefined && esAfirmativo(respuesta.content ?? '');
+  // Un mensaje que no se pudo leer ocupa su lugar: si es el primero después de la pregunta, pudo ser
+  // la respuesta del cliente, así que no hay confirmación (falla hacia lo seguro).
+  const respuesta = despues.find((m) => m.role === 'user' || m.role === ROL_ILEGIBLE);
+  return respuesta?.role === 'user' && esAfirmativo(respuesta.content ?? '');
 }
 
 /**
  * Los mensajes de `chat.message_with_tool_calls`. Si no trae la lista, no hay mensajes (y el pedido
- * no se crea). Un mensaje sin `role` o que no es objeto se descarta sin perder los demás.
+ * no se crea). Un mensaje sin `role` o que no es objeto queda como `ROL_ILEGIBLE`, en su lugar, sin
+ * perder los demás.
  */
 export function mensajesDeLaConversacion(conversacion: unknown): MensajeConversacion[] {
   const leida = ConversacionRetellSchema.safeParse(conversacion);
   if (!leida.success) return [];
   return leida.data.message_with_tool_calls.flatMap((mensaje) => {
     const leido = MensajeConversacionSchema.safeParse(mensaje);
-    return leido.success ? [leido.data] : [];
+    return [leido.success ? leido.data : { role: ROL_ILEGIBLE }];
   });
 }

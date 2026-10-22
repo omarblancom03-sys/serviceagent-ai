@@ -5,6 +5,7 @@ import {
   esAfirmativo,
   esPreguntaDeConfirmacion,
   mensajesDeLaConversacion,
+  ROL_ILEGIBLE,
 } from '../src/services/confirmacion';
 
 const PREGUNTA = {
@@ -63,6 +64,10 @@ describe('esAfirmativo', () => {
     'mi pedido esta listo',
     'esta listo',
     'listo el pedido',
+    // T3: "listo" con "pedido" también es una pregunta sin signos.
+    'mi pedido listo',
+    'listo mi pedido',
+    'pedido listo',
     // Revisión de Martín (#45).
     '¿sí?',
     'mejor no',
@@ -90,6 +95,10 @@ describe('esPreguntaDeConfirmacion', () => {
     expect(esPreguntaDeConfirmacion('Confirmo tu pedido. ¿Algo más?')).toBe(false);
     expect(esPreguntaDeConfirmacion('¿Reconfirmo tu pedido?')).toBe(false);
     expect(esPreguntaDeConfirmacion('¿Confirmo tu pedido? Avísame si falta algo.')).toBe(false);
+    // T3: sin "¿", la pregunta tiene que ser la frase sola.
+    expect(esPreguntaDeConfirmacion('Confirmo tu pedido, algo mas?')).toBe(false);
+    expect(esPreguntaDeConfirmacion('Tu pedido: 1 Totopos. Confirmo tu pedido?')).toBe(true);
+    expect(esPreguntaDeConfirmacion('Listo! Confirmo tu pedido?')).toBe(true);
   });
 
   it('no cuenta un mensaje sin pregunta ni otras preguntas', () => {
@@ -182,11 +191,30 @@ describe('mensajesDeLaConversacion', () => {
     ]);
   });
 
-  it('descarta solo los mensajes que no sirven, sin perder los demás', () => {
+  it('un mensaje que no se puede leer ocupa su lugar sin perder los demás (T3)', () => {
     const mensajes = mensajesDeLaConversacion({
       message_with_tool_calls: [PREGUNTA, null, 'texto', { content: 'sin rol' }, cliente('Sí')],
     });
-    expect(mensajes).toEqual([PREGUNTA, cliente('Sí')]);
+    expect(mensajes).toEqual([
+      PREGUNTA,
+      { role: ROL_ILEGIBLE },
+      { role: ROL_ILEGIBLE },
+      { role: ROL_ILEGIBLE },
+      cliente('Sí'),
+    ]);
+  });
+
+  it('si lo ilegible está justo después de la pregunta, no hay confirmación (T3)', () => {
+    const conIlegible = mensajesDeLaConversacion({
+      message_with_tool_calls: [PREGUNTA, { content: '¿y la horchata?' }, cliente('Sí')],
+    });
+    expect(clienteConfirmo(conIlegible)).toBe(false);
+  });
+
+  it('lo ilegible antes de la pregunta no estorba', () => {
+    const mensajes = mensajesDeLaConversacion({
+      message_with_tool_calls: [null, PREGUNTA, cliente('Sí')],
+    });
     expect(clienteConfirmo(mensajes)).toBe(true);
   });
 
