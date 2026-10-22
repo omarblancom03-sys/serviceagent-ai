@@ -52,8 +52,8 @@ describe('inicioDelDia (US-20)', () => {
     );
   });
 
-  it('respeta otra zona con horario de verano', () => {
-    // 1-jul en Ciudad de Juárez (UTC-6 en verano): el día empieza a las 06:00 UTC.
+  it('en otra zona, un día normal de horario de verano empieza a la medianoche local', () => {
+    // 1-jul en Ciudad Juárez (UTC-6 en verano): el día empieza a las 06:00 UTC.
     expect(inicioDelDia(t('2026-07-01T12:00:00Z'), 'America/Ciudad_Juarez').toISOString()).toBe(
       '2026-07-01T06:00:00.000Z',
     );
