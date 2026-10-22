@@ -1,5 +1,5 @@
 import {
-  CallRetellSchema,
+  ConversacionRetellSchema,
   MensajeConversacionSchema,
   type MensajeConversacion,
 } from '@serviceagent/shared';
@@ -7,7 +7,8 @@ import {
 /*
  * ¿El cliente confirmó el pedido? (D48, US-08-P2-T1). El modelo a veces llama a `crear_pedido` en
  * el mismo turno en que pregunta "¿Confirmo tu pedido…?", sin esperar la respuesta. El prompt no
- * basta para impedirlo, así que el backend lo revisa en la conversación que manda Retell en `call`:
+ * basta para impedirlo, así que el backend lo revisa en la conversación que manda Retell en `chat`
+ * (en un agente de voz, `call`):
  *
  * 1. Busca la ÚLTIMA pregunta de confirmación del agente: la frase fija del prompt, "¿Confirmo tu
  *    pedido?" (`FRASE_PREGUNTA_CONFIRMACION`).
@@ -138,13 +139,14 @@ export function clienteConfirmo(mensajes: readonly MensajeConversacion[]): boole
 }
 
 /**
- * Los mensajes de `call.message_with_tool_calls`. Si `call` no trae la lista, no hay mensajes (y el
+ * Los mensajes de `message_with_tool_calls` de la conversación (`chat`, o `call` en voz). Si no trae
+ * la lista, no hay mensajes (y el
  * pedido no se crea). Un mensaje sin `role` o que no es objeto se descarta sin perder los demás.
  */
-export function mensajesDeLaLlamada(call: unknown): MensajeConversacion[] {
-  const conversacion = CallRetellSchema.safeParse(call);
-  if (!conversacion.success) return [];
-  return conversacion.data.message_with_tool_calls.flatMap((mensaje) => {
+export function mensajesDeLaConversacion(conversacion: unknown): MensajeConversacion[] {
+  const leida = ConversacionRetellSchema.safeParse(conversacion);
+  if (!leida.success) return [];
+  return leida.data.message_with_tool_calls.flatMap((mensaje) => {
     const leido = MensajeConversacionSchema.safeParse(mensaje);
     return leido.success ? [leido.data] : [];
   });

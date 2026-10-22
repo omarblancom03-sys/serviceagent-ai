@@ -37,6 +37,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). *
 
 ### Corregido
 
+- US-08-P2-T1: `POST /pedidos` lee la conversación de `chat`, que es donde la manda Retell en un agente de chat (comprobado en un chat real); antes solo leía `call` y ningún pedido de chat se habría podido crear. `call` queda para voz (D48).
 - US-07-P1: los 500 intermitentes de `POST /pedidos/cotizar` y `GET /menu` ("JWT issued at future" de Supabase) se reintentan en el cliente de Supabase, solo ante ese error y hasta ~3 s, para toda la API (D41).
 - US-07-P2: el agente de chat ya no lee la memoria de contacto de Retell (evita mezclar datos entre clientes).
 - US-08-P2-T2: el chat web abre los chats con la versión publicada del agente (`agent_version: "latest_published"`); antes usaba la más reciente, aunque fuera el borrador (D52).

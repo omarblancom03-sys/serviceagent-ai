@@ -133,8 +133,8 @@ export const CotizarPedidoArgsSchema = z
 
 /**
  * Sobre que manda Retell a una custom function con "Payload: args only"
- * apagado (valor por defecto): `{ name, call, args }`. Solo se usan `name` y
- * `args`; las llaves no declaradas (como `call`) zod las descarta. A propósito
+ * apagado (valor por defecto): `{ name, chat, args }` en un agente de chat (`call` en uno de voz).
+ * Solo se usan `name` y `args`; las llaves no declaradas (como `chat`) zod las descarta. A propósito
  * NO es estricto: Retell puede agregar campos al sobre sin romper la API.
  */
 export const CotizarPedidoPeticionSchema = z.object({
@@ -301,7 +301,7 @@ export const CrearPedidoArgsSchema = z
   .refine(traeAlgo, { message: MENSAJE_PEDIDO_VACIO });
 
 /**
- * Un mensaje de la conversación que Retell manda en `call.message_with_tool_calls` (chat). Solo se
+ * Un mensaje de la conversación que Retell manda en `chat.message_with_tool_calls`. Solo se
  * leen `role` (`agent`, `user`, `tool_call_invocation`…), el texto y el nombre de la herramienta;
  * los dos últimos pueden faltar o venir en `null` (una invocación de herramienta no trae texto).
  */
@@ -312,22 +312,26 @@ export const MensajeConversacionSchema = z.looseObject({
 });
 
 /**
- * Lo que la API lee de `call`: la conversación hasta el momento de la llamada, para revisar que el
- * cliente confirmó el pedido (D48). La API lo aplica con `safeParse`: si `call` no trae la lista
+ * Lo que la API lee de `chat` (en un agente de voz, `call`): la conversación hasta el momento de la
+ * llamada, para revisar que el cliente confirmó el pedido (D48). Comprobado en un chat real el
+ * 22-oct: Retell manda `chat` con `chat_id`, `message_with_tool_calls`, `transcript` y otros. La API
+ * lo aplica con `safeParse`: si no trae la lista
  * o viene con otra forma, queda sin mensajes y el pedido no se crea (`faltaConfirmacion`). Cada
  * mensaje se valida aparte con `MensajeConversacionSchema`: uno con otra forma se descarta sin
  * perder los demás.
  */
-export const CallRetellSchema = z.looseObject({
+export const ConversacionRetellSchema = z.looseObject({
   message_with_tool_calls: z.array(z.unknown()),
 });
 
 /**
- * Sobre de Retell para `crear_pedido` (ver CotizarPedidoPeticionSchema). `call` se acepta con
- * cualquier forma (un 400 no le diría al agente qué hacer) y se lee con `CallRetellSchema`.
+ * Sobre de Retell para `crear_pedido` (ver CotizarPedidoPeticionSchema). `chat` y `call` se aceptan
+ * con cualquier forma (un 400 no le diría al agente qué hacer) y se leen con
+ * `ConversacionRetellSchema`.
  */
 export const CrearPedidoPeticionSchema = z.object({
   name: z.literal('crear_pedido'),
+  chat: z.unknown().optional(),
   call: z.unknown().optional(),
   args: CrearPedidoArgsSchema,
 });
