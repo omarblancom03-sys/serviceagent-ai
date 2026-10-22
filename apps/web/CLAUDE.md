@@ -30,7 +30,7 @@ SPA en React + Vite + Tailwind + React Router para clientes y empleados. Se desp
 - `src/lib/chat.ts`: lógica pura del chat de `/pedir`: estado y `reducirChat` (fases `listo`, `enviando`, `error`, `terminada`, `limite`, `tope_diario`), `validarTexto` con el esquema de shared y `clasificarErrorChat` (error y paso → fase y aviso, sin códigos HTTP). Solo en `listo` se puede escribir; en `error` la única acción es **Reintentar**, que reenvía `pendiente` sin otra burbuja; en `terminada` y `limite`, **Iniciar otra**.
 - **Tope diario del chat:** comparte el 503 `servicio_no_disponible` con una falla de Retell. Se reconoce porque solo ocurre al crear la conversación y el `error` contiene "límite de hoy" (texto de `apps/api/src/routes/chat.ts`); si ese texto cambia, cae al 503 genérico con Reintentar.
 - `src/lib/cocina.ts`: lógica pura de `/cocina`: `foliosNuevos` (qué resaltar; nada en la primera carga), `lineaDe` y `separarRenglones` (textos del ticket; extras por unidad con "c/u" si hay más de una; extras sueltos "Aparte"), `estadoConexionDe`, `TEXTO_CONEXION`, `mensajeErrorCocina`, `crearRecargador` (cuándo pedir la lista: señales agrupadas en 400 ms con tope de 2 s desde la primera, una petición a la vez y ponerse al día al reconectar) y los tiempos (refresco cada 30 s, resalte de 15 s; hora en `America/Chihuahua`).
-- `src/lib/senalPedidos.ts`: `escucharSenalPedidos` con `@supabase/supabase-js` y la llave anon (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`): solo escucha el canal `pedidos`, evento `cambio`, sin datos (D12, D47). Sin esas variables, `hayRealtime()` es `false` y la pantalla vive del refresco. Es el único uso de Supabase en la web. Un solo canal para toda la app, que no se cierra: cada pantalla agrega y quita su oyente (cerrarlo al salir y volver enseguida dejaba la pantalla en "Conectando…").
+- `src/lib/senalPedidos.ts`: `escucharSenalPedidos` con `@supabase/supabase-js` y una llave pública, anon o publishable (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`): solo escucha el canal `pedidos`, evento `cambio`, sin datos (D12, D47). Sin esas variables, o si no son válidas (`crearClienteRealtime` devuelve `null` en lugar de tronar), `hayRealtime()` es `false` y la pantalla vive del refresco. Es el único uso de Supabase en la web. Un solo canal para toda la app, que no se cierra: cada pantalla agrega y quita su oyente (cerrarlo al salir y volver enseguida dejaba la pantalla en "Conectando…").
 - `src/lib/enlaces.ts`: `separarEnlaces` parte un mensaje en texto y URLs http/https (sin la puntuación final). Los mensajes se pintan como texto de React, nunca con `dangerouslySetInnerHTML`.
 - `src/index.css`: solo `@import 'tailwindcss'` (Tailwind 4, sin archivo de configuración).
 
@@ -56,7 +56,7 @@ pnpm --filter @serviceagent/web build
 pnpm --filter @serviceagent/web test        # Vitest (test/*.test.ts)
 ```
 
-- **Tests:** solo lógica pura en `test/` (token, permisos, mensajes, menú de admin, vista del menú por modo, estado del chat, enlaces y cocina), sin DOM ni dependencias extra.
+- **Tests:** solo lógica pura en `test/` (token, permisos, mensajes, menú de admin, vista del menú por modo, estado del chat, enlaces, cocina y señal de Realtime), sin DOM ni dependencias extra.
 - **Probar el login a mano:** levanta la API con su `.dev.vars` (ver [apps/api/CLAUDE.md](../api/CLAUDE.md)) y la web. Luego entra a `/login` con los empleados de prueba de [supabase/CLAUDE.md](../../supabase/CLAUDE.md#empleados-de-prueba-solo-desarrollo).
 
 ## Reglas que aplican
