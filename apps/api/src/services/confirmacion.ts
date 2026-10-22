@@ -85,8 +85,8 @@ const RELLENO: ReadonlySet<string> = new Set([
 /**
  * "Sí", "sí, confírmalo", "va", "de acuerdo", "así está bien, gracias". Todas las palabras deben ser
  * de "sí" o de relleno, y al menos una de "sí"; una pregunta nunca confirma, tampoco sin signos
- * ("está listo", "mi pedido está listo", "pedido listo"). Así "¿Cuánto sale?", "¿Ya está listo?", "Sí, y otra
- * horchata" o "Sí, pero sin cebolla" no crean el pedido.
+ * ("está listo", "mi pedido está listo", "pedido listo"). Así "¿Cuánto sale?", "¿Ya está listo?",
+ * "Sí, y otra horchata" o "Sí, pero sin cebolla" no crean el pedido.
  */
 export function esAfirmativo(texto: string): boolean {
   if (texto.includes('?') || texto.includes('¿')) return false;
@@ -128,8 +128,11 @@ export function esPreguntaDeConfirmacion(texto: string): boolean {
   for (const signo of sinFinal.matchAll(/¿|[.!?](?=\s)/g)) corte = signo.index;
   const ultimaPregunta = palabrasDe(recortado.slice(corte + 1)).join(' ');
   // Con "¿" basta que empiece con la frase ("¿Confirmo tu pedido a nombre de…?"). Sin "¿" tiene que
-  // ser la frase sola: "Confirmo tu pedido, algo más?" escrito sin signos no es la pregunta.
+  // ser la frase sola: "Confirmo tu pedido, algo más?" escrito sin signos no es la pregunta. Y no
+  // puede venir justo después de otra pregunta: en "¿Algo más? Confirmo tu pedido?" un "sí" puede
+  // ser "sí, quiero algo más".
   if (sinFinal[corte] === '¿') return INICIO_PREGUNTA.test(ultimaPregunta);
+  if (sinFinal[corte] === '?') return false;
   return EXACTA.test(ultimaPregunta);
 }
 

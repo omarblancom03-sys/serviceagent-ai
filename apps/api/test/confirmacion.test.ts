@@ -37,6 +37,10 @@ describe('esAfirmativo', () => {
     'Confírmalo por favor',
     'Sí, confirma mi pedido',
     'Sí, por favor',
+    // Revisión de Martín (#47).
+    'Listo',
+    'Listo.',
+    'ok listo',
   ])('"%s" confirma', (texto) => {
     expect(esAfirmativo(texto)).toBe(true);
   });
@@ -72,6 +76,16 @@ describe('esAfirmativo', () => {
     '¿sí?',
     'mejor no',
     'sí pero cámbiale la salsa',
+    // Revisión de Martín (#47): a propósito no confirman.
+    'eso es todo',
+    'no, eso es todo',
+    'sí, ya',
+    'si, a nombre de ana',
+    'si ya pagué',
+    '¿ya está listo mi pedido?',
+    'pedido listo?',
+    // Con la regla de "listo" + "pedido" ya no confirma; que sí, sería otra decisión.
+    'Listo, confirma mi pedido',
   ])('"%s" no confirma', (texto) => {
     expect(esAfirmativo(texto)).toBe(false);
   });
@@ -104,6 +118,15 @@ describe('esPreguntaDeConfirmacion', () => {
       true,
     );
     expect(esPreguntaDeConfirmacion('Son $149.00 en total. Confirmo tu pedido?')).toBe(true);
+    // Revisión de Martín (#47): sin "¿", no cuenta si viene justo después de otra pregunta.
+    expect(esPreguntaDeConfirmacion('¿Algo más? Confirmo tu pedido?')).toBe(false);
+    expect(esPreguntaDeConfirmacion('¿Quieres agregar algo? Confirmo tu pedido?')).toBe(false);
+    // Con "¿" sí cuenta, aunque venga después de otra pregunta.
+    expect(esPreguntaDeConfirmacion('¿Algo más? ¿Confirmo tu pedido?')).toBe(true);
+    // Un salto de línea corta igual que un espacio.
+    expect(esPreguntaDeConfirmacion('Tu pedido: 1 Totopos.\n¿Confirmo tu pedido?')).toBe(true);
+    // Una abreviatura corta la pregunta y no cuenta: falla hacia lo seguro.
+    expect(esPreguntaDeConfirmacion('¿Confirmo tu pedido a nombre del Sr. López?')).toBe(false);
   });
 
   it('no cuenta un mensaje sin pregunta ni otras preguntas', () => {

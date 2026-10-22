@@ -37,7 +37,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). *
 
 ### Corregido
 
-- US-08-P2-T3: el detector de confirmación es más estricto en casos raros: "mi pedido listo" sin signos no confirma, sin "¿" la pregunta tiene que ser la frase sola y un mensaje ilegible justo después de la pregunta no cuenta como respuesta (D48).
+- US-08-P2-T3: el detector de confirmación es más estricto en casos raros: "mi pedido listo" sin signos no confirma, sin "¿" cuenta solo si la última oración es la frase sola y no viene justo después de otra pregunta ("Tu pedido: 1 Totopos. Confirmo tu pedido?" ahora sí cuenta; "¿Algo más? Confirmo tu pedido?", no) y un mensaje ilegible justo después de la pregunta no cuenta como respuesta (D48).
 - US-08-P2-T1: `POST /pedidos` lee la conversación de `chat`, que es donde la manda Retell en un agente de chat (comprobado en un chat real); antes solo leía `call` y ningún pedido de chat se habría podido crear. `call` ya no se lee: voz queda pendiente para el Sprint 10 (D48).
 - US-07-P1: los 500 intermitentes de `POST /pedidos/cotizar` y `GET /menu` ("JWT issued at future" de Supabase) se reintentan en el cliente de Supabase, solo ante ese error y hasta ~3 s, para toda la API (D41).
 - US-07-P2: el agente de chat ya no lee la memoria de contacto de Retell (evita mezclar datos entre clientes).
