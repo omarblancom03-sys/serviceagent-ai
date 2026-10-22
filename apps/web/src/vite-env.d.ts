@@ -6,7 +6,10 @@ interface ImportMetaEnv {
   readonly VITE_API_URL?: string;
   /** URL del proyecto de Supabase, solo para escuchar la señal de Realtime (D47). */
   readonly VITE_SUPABASE_URL?: string;
-  /** Llave anon de Supabase: pública por diseño; con ella no se lee ninguna tabla (D15). */
+  /**
+   * Llave pública de Supabase: la anon o la publishable (`sb_publishable_…`), nunca la secreta ni la
+   * de servicio. Pública por diseño; con ella no se lee ninguna tabla (D15).
+   */
   readonly VITE_SUPABASE_ANON_KEY?: string;
 }
 
