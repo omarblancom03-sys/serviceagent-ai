@@ -103,8 +103,9 @@ export type ResultadoCocina<T> =
 
 const folioTexto = (folio: number) => `#${folio}`;
 
+/** 409 de Empezar, Terminado y Deshacer: el pedido no está en el estado que esperaba la pantalla. */
 const estadoCambio = (folio: number, estadoActual: EstadoPedido): ConflictoCocina => ({
-  error: `El pedido ${folioTexto(folio)} ya cambió de estado en otra pantalla. Actualiza la lista.`,
+  error: `El pedido ${folioTexto(folio)} ya no está en ese estado. Actualiza la lista.`,
   codigo: 'estado_cambio',
   estadoActual,
 });

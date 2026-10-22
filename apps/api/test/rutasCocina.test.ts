@@ -6,6 +6,7 @@ import {
   RespuestaPedidosCocinaSchema,
   SEGUNDOS_DESHACER_PANTALLA,
   SEGUNDOS_DESHACER_SERVIDOR,
+  type EstadoPedido,
   type Rol,
 } from '@serviceagent/shared';
 import { describe, expect, it, vi } from 'vitest';
@@ -13,7 +14,7 @@ import { crearApp } from '../src/index';
 import { firmarToken } from '../src/lib/auth';
 import type { Bindings } from '../src/lib/env';
 import type { CocinaRepo, PedidoActivo } from '../src/services/cocina';
-import { crearCocinaEnMemoria, pedidoEnCola } from './cocinaEnMemoria';
+import { crearCocinaEnMemoria, pedidoEnCola, type PedidoEnMemoria } from './cocinaEnMemoria';
 
 const env = { JWT_SECRET: 'secreto-de-prueba-de-al-menos-32-caracteres' } as Bindings;
 
@@ -148,6 +149,29 @@ async function post(
 
 const segundos = (n: number) => n * 1000;
 
+/** 409 `estado_cambio` del pedido 1001: el mismo texto para Empezar, Terminado y Deshacer. */
+const TEXTO_ESTADO_CAMBIO = 'El pedido #1001 ya no está en ese estado. Actualiza la lista.';
+
+/** Pasos del historial después de 'en_cola' para llegar a cada estado (los de caja incluidos). */
+const PASOS_DESDE_COLA = {
+  listo: ['preparando', 'listo'],
+  entregado: ['preparando', 'listo', 'entregado'],
+  cancelado: ['cancelado'],
+} as const satisfies Partial<Record<EstadoPedido, readonly EstadoPedido[]>>;
+
+/** Lleva un pedido recién puesto en la cola a `estado`, con sus filas del historial. */
+function llevarA(
+  pedido: PedidoEnMemoria | undefined,
+  estado: keyof typeof PASOS_DESDE_COLA,
+  ahora: Date,
+) {
+  if (!pedido) throw new Error('No hay pedido que mover');
+  for (const [i, paso] of PASOS_DESDE_COLA[estado].entries()) {
+    pedido.historial.push({ id: 500 + i, estado: paso, creadoEn: ahora, idEmpleado: null });
+  }
+  pedido.estado = estado;
+}
+
 describe('POST /cocina/pedidos/{folio}/empezar y /terminar (US-11-P1)', () => {
   it('Empezar pasa de en_cola a preparando y guarda quién lo hizo, tomado de la sesión', async () => {
     const { aplicacion, pedidos, reloj } = montar();
@@ -208,6 +232,33 @@ describe('POST /cocina/pedidos/{folio}/empezar y /terminar (US-11-P1)', () => {
     expect(pedidos[0]?.historial).toHaveLength(2);
   });
 
+  it.each([
+    ['empezar', 'cancelado'],
+    ['empezar', 'entregado'],
+    ['empezar', 'listo'],
+    ['terminar', 'cancelado'],
+    ['terminar', 'entregado'],
+    ['terminar', 'listo'],
+  ] as const)(
+    '%s sobre un pedido %s responde 409 con ese estadoActual y no cambia nada',
+    async (accion, estado) => {
+      const { aplicacion, pedidos, reloj } = montar();
+      llevarA(pedidos[0], estado, reloj.ahora);
+      const historialAntes = [...(pedidos[0]?.historial ?? [])];
+
+      const res = await post(aplicacion, `/cocina/pedidos/1001/${accion}`);
+
+      expect(res.status).toBe(409);
+      expect(ConflictoCocinaSchema.parse(await res.json())).toEqual({
+        error: TEXTO_ESTADO_CAMBIO,
+        codigo: 'estado_cambio',
+        estadoActual: estado,
+      });
+      expect(pedidos[0]?.estado).toBe(estado);
+      expect(pedidos[0]?.historial).toEqual(historialAntes);
+    },
+  );
+
   it('Empezar dos veces: la segunda responde 409 y el historial tiene un solo preparando', async () => {
     const { aplicacion, pedidos } = montar();
     expect((await post(aplicacion, '/cocina/pedidos/1001/empezar')).status).toBe(200);
@@ -216,7 +267,7 @@ describe('POST /cocina/pedidos/{folio}/empezar y /terminar (US-11-P1)', () => {
     expect(res.status).toBe(409);
     const conflicto = ConflictoCocinaSchema.parse(await res.json());
     expect(conflicto.estadoActual).toBe('preparando');
-    expect(conflicto.error).toMatch(/#1001/);
+    expect(conflicto.error).toBe(TEXTO_ESTADO_CAMBIO);
     expect(pedidos[0]?.historial.filter((h) => h.estado === 'preparando')).toHaveLength(1);
   });
 
@@ -339,11 +390,39 @@ describe('POST /cocina/pedidos/{folio}/deshacer (US-11-P1)', () => {
       cuerpo: { estado: 'preparando' },
     });
     expect(res.status).toBe(409);
-    expect(ConflictoCocinaSchema.parse(await res.json())).toMatchObject({
+    expect(ConflictoCocinaSchema.parse(await res.json())).toEqual({
+      error: TEXTO_ESTADO_CAMBIO,
       codigo: 'estado_cambio',
       estadoActual: 'listo',
     });
     expect(pedidos[0]?.estado).toBe('listo');
+  });
+
+  it('deshacer listo cuando caja ya lo entregó responde 409 con entregado, aun dentro del plazo', async () => {
+    const { aplicacion, pedidos, reloj } = montar();
+    await post(aplicacion, '/cocina/pedidos/1001/empezar');
+    await post(aplicacion, '/cocina/pedidos/1001/terminar');
+    const pedido = pedidos[0];
+    pedido?.historial.push({
+      id: 2000,
+      estado: 'entregado',
+      creadoEn: reloj.ahora,
+      idEmpleado: null,
+    });
+    if (pedido) pedido.estado = 'entregado';
+    const historialAntes = [...(pedido?.historial ?? [])];
+
+    const res = await post(aplicacion, '/cocina/pedidos/1001/deshacer', {
+      cuerpo: { estado: 'listo' },
+    });
+    expect(res.status).toBe(409);
+    expect(ConflictoCocinaSchema.parse(await res.json())).toEqual({
+      error: TEXTO_ESTADO_CAMBIO,
+      codigo: 'estado_cambio',
+      estadoActual: 'entregado',
+    });
+    expect(pedido?.estado).toBe('entregado');
+    expect(pedido?.historial).toEqual(historialAntes);
   });
 
   it('deshacer un pedido que nunca empezó responde 409', async () => {
