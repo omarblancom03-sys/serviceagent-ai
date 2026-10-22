@@ -5,6 +5,7 @@ import {
   esAfirmativo,
   esPreguntaDeConfirmacion,
   mensajesDeLaConversacion,
+  ROL_ILEGIBLE,
 } from '../src/services/confirmacion';
 
 const PREGUNTA = {
@@ -36,6 +37,10 @@ describe('esAfirmativo', () => {
     'Confírmalo por favor',
     'Sí, confirma mi pedido',
     'Sí, por favor',
+    // Revisión de Martín (#47).
+    'Listo',
+    'Listo.',
+    'ok listo',
   ])('"%s" confirma', (texto) => {
     expect(esAfirmativo(texto)).toBe(true);
   });
@@ -63,10 +68,24 @@ describe('esAfirmativo', () => {
     'mi pedido esta listo',
     'esta listo',
     'listo el pedido',
+    // T3: "listo" con "pedido" también es una pregunta sin signos.
+    'mi pedido listo',
+    'listo mi pedido',
+    'pedido listo',
     // Revisión de Martín (#45).
     '¿sí?',
     'mejor no',
     'sí pero cámbiale la salsa',
+    // Revisión de Martín (#47): a propósito no confirman.
+    'eso es todo',
+    'no, eso es todo',
+    'sí, ya',
+    'si, a nombre de ana',
+    'si ya pagué',
+    '¿ya está listo mi pedido?',
+    'pedido listo?',
+    // Con la regla de "listo" + "pedido" ya no confirma; que sí, sería otra decisión.
+    'Listo, confirma mi pedido',
   ])('"%s" no confirma', (texto) => {
     expect(esAfirmativo(texto)).toBe(false);
   });
@@ -90,6 +109,24 @@ describe('esPreguntaDeConfirmacion', () => {
     expect(esPreguntaDeConfirmacion('Confirmo tu pedido. ¿Algo más?')).toBe(false);
     expect(esPreguntaDeConfirmacion('¿Reconfirmo tu pedido?')).toBe(false);
     expect(esPreguntaDeConfirmacion('¿Confirmo tu pedido? Avísame si falta algo.')).toBe(false);
+    // T3: sin "¿", la pregunta tiene que ser la frase sola.
+    expect(esPreguntaDeConfirmacion('Confirmo tu pedido, algo mas?')).toBe(false);
+    expect(esPreguntaDeConfirmacion('Tu pedido: 1 Totopos. Confirmo tu pedido?')).toBe(true);
+    expect(esPreguntaDeConfirmacion('Listo! Confirmo tu pedido?')).toBe(true);
+    // Un punto decimal no corta la pregunta.
+    expect(esPreguntaDeConfirmacion('¿Confirmo tu pedido a nombre de Ana, por $916.00?')).toBe(
+      true,
+    );
+    expect(esPreguntaDeConfirmacion('Son $149.00 en total. Confirmo tu pedido?')).toBe(true);
+    // Revisión de Martín (#47): sin "¿", no cuenta si viene justo después de otra pregunta.
+    expect(esPreguntaDeConfirmacion('¿Algo más? Confirmo tu pedido?')).toBe(false);
+    expect(esPreguntaDeConfirmacion('¿Quieres agregar algo? Confirmo tu pedido?')).toBe(false);
+    // Con "¿" sí cuenta, aunque venga después de otra pregunta.
+    expect(esPreguntaDeConfirmacion('¿Algo más? ¿Confirmo tu pedido?')).toBe(true);
+    // Un salto de línea corta igual que un espacio.
+    expect(esPreguntaDeConfirmacion('Tu pedido: 1 Totopos.\n¿Confirmo tu pedido?')).toBe(true);
+    // Una abreviatura corta la pregunta y no cuenta: falla hacia lo seguro.
+    expect(esPreguntaDeConfirmacion('¿Confirmo tu pedido a nombre del Sr. López?')).toBe(false);
   });
 
   it('no cuenta un mensaje sin pregunta ni otras preguntas', () => {
@@ -182,11 +219,30 @@ describe('mensajesDeLaConversacion', () => {
     ]);
   });
 
-  it('descarta solo los mensajes que no sirven, sin perder los demás', () => {
+  it('un mensaje que no se puede leer ocupa su lugar sin perder los demás (T3)', () => {
     const mensajes = mensajesDeLaConversacion({
       message_with_tool_calls: [PREGUNTA, null, 'texto', { content: 'sin rol' }, cliente('Sí')],
     });
-    expect(mensajes).toEqual([PREGUNTA, cliente('Sí')]);
+    expect(mensajes).toEqual([
+      PREGUNTA,
+      { role: ROL_ILEGIBLE },
+      { role: ROL_ILEGIBLE },
+      { role: ROL_ILEGIBLE },
+      cliente('Sí'),
+    ]);
+  });
+
+  it('si lo ilegible está justo después de la pregunta, no hay confirmación (T3)', () => {
+    const conIlegible = mensajesDeLaConversacion({
+      message_with_tool_calls: [PREGUNTA, { content: '¿y la horchata?' }, cliente('Sí')],
+    });
+    expect(clienteConfirmo(conIlegible)).toBe(false);
+  });
+
+  it('lo ilegible antes de la pregunta no estorba', () => {
+    const mensajes = mensajesDeLaConversacion({
+      message_with_tool_calls: [null, PREGUNTA, cliente('Sí')],
+    });
     expect(clienteConfirmo(mensajes)).toBe(true);
   });
 

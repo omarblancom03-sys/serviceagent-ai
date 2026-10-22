@@ -317,7 +317,7 @@ export const MensajeConversacionSchema = z.looseObject({
  * manda `chat` con `chat_id`, `message_with_tool_calls`, `transcript` y otros. La API lo aplica con
  * `safeParse`: si no trae la lista o viene con otra forma, queda sin mensajes y el pedido no se crea
  * (`faltaConfirmacion`). Cada mensaje se valida aparte con `MensajeConversacionSchema`: uno con otra
- * forma se descarta sin perder los demás.
+ * forma queda en su lugar como ilegible, sin perder los demás.
  */
 export const ConversacionRetellSchema = z.looseObject({
   message_with_tool_calls: z.array(z.unknown()),
