@@ -331,10 +331,12 @@ describe('Contrato de crear pedido', () => {
     expect(CrearPedidoArgsSchema.safeParse({ ...cliente }).success).toBe(false);
   });
 
-  it('respuesta: ok: false necesita al menos una aclaración del pedido o del cliente', () => {
-    const sinNada = { ok: false, aclaraciones: [], datosCliente: [] };
+  it('respuesta: ok: false necesita al menos una aclaración, o que falte la confirmación', () => {
+    const sinNada = { ok: false, faltaConfirmacion: false, aclaraciones: [], datosCliente: [] };
     expect(RespuestaCrearPedidoSchema.safeParse(sinNada).success).toBe(false);
     const conDato = { ...sinNada, datosCliente: [{ campo: 'telefono', detalle: 'x' }] };
     expect(RespuestaCrearPedidoSchema.safeParse(conDato).success).toBe(true);
+    const sinConfirmar = { ...sinNada, faltaConfirmacion: true };
+    expect(RespuestaCrearPedidoSchema.safeParse(sinConfirmar).success).toBe(true);
   });
 });

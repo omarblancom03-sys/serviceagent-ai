@@ -25,6 +25,7 @@ Todo lo del agente de Retell, **versionado en Git** y no solo en el dashboard de
 - El menú completo **no** va en el prompt: se consulta con `buscar_menu`.
 - El enlace del menú del prompt es la URL de producción de la web ([docs/despliegue.md](../docs/despliegue.md)); si cambia el dominio, se cambia el prompt.
 - El prompt nunca pide al modelo calcular montos; los montos vienen de `cotizar_pedido`.
+- Cuando el prompt pida confirmar el pedido (desde US-08-P2), el mensaje debe terminar con una pregunta que empiece con la frase fija **"¿Confirmo tu pedido?"**: el backend la busca en la conversación para dejar crear el pedido (`FRASE_PREGUNTA_CONFIRMACION` en `apps/api/src/services/confirmacion.ts`, D48). Si el prompt la cambia, se cambia también ahí, o ningún pedido se crea.
 - La sección "Lo que puedes hacer hoy" del prompt dice qué hace el agente con lo que aún no tiene herramienta. La historia que agrega una custom function reemplaza ahí su línea y ajusta los casos `sin_inventar` que correspondan. Con el menú es la sección "El menú" (enlace a `/menu`, [D45](../docs/decisiones.md)): la ajusta la historia de `buscar_menu`.
 - El archivo que descarga "Export" en Retell **nunca entra al repo**: trae ids de la cuenta y una copia del prompt. Se guarda fuera del proyecto y solo se usa para comparar ([retell.md → Export del agente](./retell.md#export-del-agente)).
 - `retell.json` no lleva ids de la cuenta ni llaves. El modelo se elige con la regla de [retell.md → Modelo](./retell.md#modelo).

@@ -24,6 +24,15 @@ const AHORA = new Date('2026-10-09T18:00:00Z');
 const minutosDespues = (minutos: number) => new Date(AHORA.getTime() + minutos * 60_000);
 
 const CLIENTE = { nombre: 'María José', telefono: '614 123 4567' };
+
+/** Conversación en la que el cliente ya confirmó (D48). */
+const CONFIRMADO = [
+  {
+    role: 'agent',
+    content: '¿Confirmo tu pedido a nombre de María José, al 614 123 4567, por $916.00?',
+  },
+  { role: 'user', content: 'Sí' },
+];
 const DOS_TBONE = {
   productos: [{ producto: 't-bone', cantidad: 2, extras: [{ extra: 'espuelas', cantidad: 1 }] }],
 };
@@ -32,7 +41,12 @@ const DOS_TBONE = {
 /** Crea el pedido con el reloj de la base (el del repo en memoria) puesto en `ahora`. */
 async function crear(args: unknown, repo = crearRepoPedidosEnMemoria(AHORA), ahora = AHORA) {
   repo.ahora = ahora;
-  const respuesta = await crearPedido(repoMenu, repo, CrearPedidoArgsSchema.parse(args));
+  const respuesta = await crearPedido(
+    repoMenu,
+    repo,
+    CrearPedidoArgsSchema.parse(args),
+    CONFIRMADO,
+  );
   return { respuesta: RespuestaCrearPedidoSchema.parse(respuesta), repo };
 }
 
@@ -155,6 +169,7 @@ describe('crearPedido', () => {
 
     expect(respuesta).toEqual({
       ok: false,
+      faltaConfirmacion: false,
       aclaraciones: [
         { tipo: 'no_existe', origen: 'producto', indice: 0, producto: 'pizza de pepperoni' },
       ],
@@ -168,6 +183,7 @@ describe('crearPedido', () => {
 
     expect(respuesta).toEqual({
       ok: false,
+      faltaConfirmacion: false,
       aclaraciones: [],
       datosCliente: [
         { campo: 'nombre', detalle: DETALLE_NOMBRE },
@@ -184,6 +200,7 @@ describe('crearPedido', () => {
 
       expect(respuesta).toEqual({
         ok: false,
+        faltaConfirmacion: false,
         aclaraciones: [],
         datosCliente: [{ campo: 'telefono', detalle: DETALLE_TELEFONO }],
       });
@@ -318,11 +335,31 @@ describe('crearPedido', () => {
 
   it('propaga el error si falla el menú o al guardar (la ruta responderá 500)', async () => {
     const args = CrearPedidoArgsSchema.parse({ ...DOS_TBONE, ...CLIENTE });
-    await expect(crearPedido(repoMenuQueFalla, crearRepoPedidosEnMemoria(), args)).rejects.toThrow(
+    await expect(
+      crearPedido(repoMenuQueFalla, crearRepoPedidosEnMemoria(), args, CONFIRMADO),
+    ).rejects.toThrow('Supabase no responde');
+    await expect(crearPedido(repoMenu, repoPedidosQueFalla, args, CONFIRMADO)).rejects.toThrow(
       'Supabase no responde',
     );
-    await expect(crearPedido(repoMenu, repoPedidosQueFalla, args)).rejects.toThrow(
-      'Supabase no responde',
+  });
+
+  it('sin confirmación del cliente no cotiza ni guarda: responde faltaConfirmacion (D48)', async () => {
+    const repo = crearRepoPedidosEnMemoria(AHORA);
+    const args = CrearPedidoArgsSchema.parse({ ...DOS_TBONE, ...CLIENTE });
+    const mismoTurno = [
+      { role: 'user', content: 'María José, 614 123 4567' },
+      { role: 'agent', content: '¿Confirmo tu pedido a nombre de María José, por $916.00?' },
+    ];
+    const respuesta = RespuestaCrearPedidoSchema.parse(
+      await crearPedido(repoMenuQueFalla, repo, args, mismoTurno),
     );
+
+    expect(respuesta).toEqual({
+      ok: false,
+      faltaConfirmacion: true,
+      aclaraciones: [],
+      datosCliente: [],
+    });
+    expect(repo.pedidos).toHaveLength(0);
   });
 });
