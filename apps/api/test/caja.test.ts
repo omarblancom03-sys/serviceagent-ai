@@ -38,6 +38,20 @@ describe('inicioDelDia (US-20)', () => {
     expect(inicioDelDia(t('2026-10-22T05:59:59Z')).toISOString()).toBe('2026-10-21T06:00:00.000Z');
   });
 
+  it('el día que empieza el horario de verano usa el desfase de la medianoche', () => {
+    // 8-mar-2026 en Ciudad Juárez: a las 00:00 sigue en UTC-7 (07:00Z); al mediodía ya es UTC-6.
+    expect(inicioDelDia(t('2026-03-08T18:00:00Z'), 'America/Ciudad_Juarez').toISOString()).toBe(
+      '2026-03-08T07:00:00.000Z',
+    );
+  });
+
+  it('el día que termina el horario de verano también', () => {
+    // 1-nov-2026 en Ciudad Juárez: a las 00:00 todavía es UTC-6 (06:00Z); al mediodía ya es UTC-7.
+    expect(inicioDelDia(t('2026-11-01T19:00:00Z'), 'America/Ciudad_Juarez').toISOString()).toBe(
+      '2026-11-01T06:00:00.000Z',
+    );
+  });
+
   it('respeta otra zona con horario de verano', () => {
     // 1-jul en Ciudad de Juárez (UTC-6 en verano): el día empieza a las 06:00 UTC.
     expect(inicioDelDia(t('2026-07-01T12:00:00Z'), 'America/Ciudad_Juarez').toISOString()).toBe(

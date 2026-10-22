@@ -47,8 +47,8 @@ export interface CajaRepo {
   leerPedidosCaja(desde: Date): Promise<PedidoCajaLeido[]>;
 }
 
-/** Inicio del día (00:00) en `zona` para el instante `ahora`. */
-export function inicioDelDia(ahora: Date, zona = ZONA_HORARIA_RESTAURANTE): Date {
+/** Fecha y hora de pared de `instante` en `zona`. */
+function paredEn(instante: Date, zona: string) {
   const partes = new Intl.DateTimeFormat('en-US', {
     timeZone: zona,
     year: 'numeric',
@@ -58,16 +58,37 @@ export function inicioDelDia(ahora: Date, zona = ZONA_HORARIA_RESTAURANTE): Date
     minute: '2-digit',
     second: '2-digit',
     hourCycle: 'h23',
-  }).formatToParts(ahora);
+  }).formatToParts(instante);
   const valor = (tipo: Intl.DateTimeFormatPartTypes) =>
     Number(partes.find((p) => p.type === tipo)?.value);
-  const anio = valor('year');
-  const mes = valor('month') - 1;
-  const dia = valor('day');
-  // La hora de pared de la zona leída como si fuera UTC, menos el instante real, es su desfase.
-  const paredComoUtc = Date.UTC(anio, mes, dia, valor('hour'), valor('minute'), valor('second'));
-  const desfase = paredComoUtc - Math.floor(ahora.getTime() / 1000) * 1000;
-  return new Date(Date.UTC(anio, mes, dia) - desfase);
+  return {
+    anio: valor('year'),
+    mes: valor('month') - 1,
+    dia: valor('day'),
+    hora: valor('hour'),
+    minuto: valor('minute'),
+    segundo: valor('second'),
+  };
+}
+
+/** Desfase de `zona` respecto a UTC en `instante`: su hora de pared leída como UTC, menos el instante. */
+function desfaseEn(instante: Date, zona: string): number {
+  const p = paredEn(instante, zona);
+  const paredComoUtc = Date.UTC(p.anio, p.mes, p.dia, p.hora, p.minuto, p.segundo);
+  return paredComoUtc - Math.floor(instante.getTime() / 1000) * 1000;
+}
+
+/**
+ * Inicio del día (00:00) en `zona` para el instante `ahora`. El desfase se toma en la medianoche, no
+ * en `ahora`: el día que cambia el horario de verano (por ejemplo, en Ciudad Juárez) la medianoche
+ * y el mediodía tienen desfases distintos. Se calcula dos veces porque, para saber el desfase de la
+ * medianoche, primero hay que estimar cuándo fue.
+ */
+export function inicioDelDia(ahora: Date, zona = ZONA_HORARIA_RESTAURANTE): Date {
+  const { anio, mes, dia } = paredEn(ahora, zona);
+  const medianocheComoUtc = Date.UTC(anio, mes, dia);
+  const estimada = new Date(medianocheComoUtc - desfaseEn(ahora, zona));
+  return new Date(medianocheComoUtc - desfaseEn(estimada, zona));
 }
 
 /**

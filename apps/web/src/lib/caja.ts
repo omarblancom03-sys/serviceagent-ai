@@ -1,6 +1,6 @@
 import type { EstadoPedido, MetodoPago, PedidoCaja } from '@serviceagent/shared';
 import { ErrorApi } from './api';
-import { normalizarTexto } from './menuAdmin';
+import { formatearHora, normalizarTexto } from './menuAdmin';
 
 /*
  * Lógica pura de la pantalla de caja (US-20): en qué grupo va cada pedido, en qué orden, cómo se
@@ -116,21 +116,13 @@ export function mensajeErrorCaja(error: unknown): string {
 
 const formatoDia = (zona: string) =>
   new Intl.DateTimeFormat('es-MX', { timeZone: zona, day: '2-digit', month: '2-digit' });
-const formatoHora = (zona: string) =>
-  new Intl.DateTimeFormat('es-MX', {
-    timeZone: zona,
-    hour: '2-digit',
-    minute: '2-digit',
-    hourCycle: 'h23',
-  });
-
 /**
  * "Pidió a las 22:40" si es de hoy en la zona del restaurante, o "Pidió el 20/10 a las 22:40" si
  * es un pedido abierto de un día anterior, para que caja no lo confunda con uno de hoy.
  */
 export function textoHoraPedido(creadoEn: string, ahora: Date, zona: string): string {
   const fecha = new Date(creadoEn);
-  const hora = formatoHora(zona).format(fecha);
+  const hora = formatearHora(creadoEn, zona);
   const dia = formatoDia(zona);
   return dia.format(fecha) === dia.format(ahora)
     ? `Pidió a las ${hora}`
