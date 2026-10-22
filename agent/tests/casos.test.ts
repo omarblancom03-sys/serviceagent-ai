@@ -166,6 +166,12 @@ describe('prompt (agent/prompt.md)', () => {
     expect(prompt).toContain('El Granero');
   });
 
+  // El backend solo crea el pedido si el cliente dijo que sí a esta pregunta (D48): es
+  // FRASE_PREGUNTA_CONFIRMACION de apps/api/src/services/confirmacion.ts. Si cambia, cambian los dos.
+  it('pide la confirmación con la frase fija que busca el backend', () => {
+    expect(prompt).toContain('¿Confirmo tu pedido?');
+  });
+
   // docs/negocio.md -> Dinero: el modelo nunca calcula ni inventa precios.
   it('no contiene montos', () => {
     expect(prompt).not.toMatch(/\$\s*\d/);
