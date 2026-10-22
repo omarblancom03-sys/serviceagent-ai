@@ -53,7 +53,7 @@ confirmado → (esperando_pago) → en_cola → preparando → listo → entrega
 
 | Transición           | Quién la hace                                                                        |
 | -------------------- | ------------------------------------------------------------------------------------ |
-| → confirmado         | Agente (`crear_pedido`), solo tras confirmación explícita del cliente                |
+| → confirmado         | Agente (`crear_pedido`), tras confirmación explícita del cliente (D48)               |
 | → esperando_pago     | Sistema, si el pago es por transferencia                                             |
 | → en_cola            | Sistema: al confirmar o al pagar, según `modo_envio_cocina` (hoy, al confirmar: D46) |
 | en_cola → preparando | Cocina (botón **Empezar**)                                                           |

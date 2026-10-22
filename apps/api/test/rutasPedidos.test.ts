@@ -3,7 +3,7 @@ import {
   RespuestaCotizarPedidoSchema,
   RespuestaCrearPedidoSchema,
 } from '@serviceagent/shared';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { crearApp } from '../src/index';
 import type { Bindings } from '../src/lib/env';
 import { firmar } from './firmaDePrueba';
@@ -17,6 +17,11 @@ import { leerSeedMenu } from './seedEnMemoria';
  * aquí, lo que agrega la ruta.
  */
 
+// Los spies de console se restauran después de cada test (vitest.config.ts no lo hace solo).
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
 const seed = leerSeedMenu();
 const app = crearApp({ crearRepoMenu: () => crearRepoMenuEnMemoria(seed.filas, seed.sinonimos) });
 const appQueFalla = crearApp({ crearRepoMenu: () => repoMenuQueFalla });
@@ -24,9 +29,18 @@ const appQueFalla = crearApp({ crearRepoMenu: () => repoMenuQueFalla });
 const LLAVE = 'key_llave_de_prueba_con_badge_de_webhook';
 const env = { RETELL_API_KEY: LLAVE } as Bindings;
 
-/** Cuerpo como lo manda Retell con "Payload: args only" apagado: `{ name, call, args }`. */
-const sobre = (args: unknown, name = 'cotizar_pedido') =>
-  JSON.stringify({ name, call: { call_id: 'chat_123' }, args });
+/** Conversación en la que el cliente ya confirmó (D48). */
+const CONFIRMADO = [
+  { message_id: 'm1', role: 'agent', content: '¿Confirmo tu pedido a nombre de María José?' },
+  { message_id: 'm2', role: 'user', content: 'Sí, confírmalo' },
+];
+
+/**
+ * Cuerpo como lo manda Retell con "Payload: args only" apagado: `{ name, call, args }`. `call` trae
+ * la conversación en `message_with_tool_calls` (chat).
+ */
+const sobre = (args: unknown, name = 'cotizar_pedido', mensajes: unknown = CONFIRMADO) =>
+  JSON.stringify({ name, call: { chat_id: 'chat_123', message_with_tool_calls: mensajes }, args });
 
 async function cotizar(
   cuerpo: string,
@@ -233,6 +247,87 @@ describe('POST /pedidos', () => {
       datosCliente: [{ campo: 'telefono' }],
     });
     expect(repo.pedidos).toHaveLength(0);
+  });
+
+  // Lo que pasó en la corrida de Retell (D48): la llamada llega en el mismo turno de la pregunta.
+  it.each([
+    [
+      'llamada en el mismo turno de la pregunta',
+      [
+        { role: 'user', content: 'María José, 614 123 4567' },
+        { role: 'agent', content: '¿Confirmo tu pedido a nombre de María José?' },
+      ],
+    ],
+    [
+      'cambio y nueva pregunta en el mismo turno',
+      [
+        ...CONFIRMADO.slice(0, 1),
+        { role: 'user', content: 'Mejor agrégale unos totopos' },
+        { role: 'tool_call_invocation', name: 'cotizar_pedido', arguments: '{}' },
+        { role: 'tool_call_result', content: '{"ok":true}' },
+        { role: 'agent', content: 'El total es $208.00. ¿Confirmo tu pedido?' },
+      ],
+    ],
+    ['sin mensajes en call', null],
+    ['mensajes con otra forma', 'no es una lista'],
+  ])('%s: responde faltaConfirmacion y no guarda nada', async (_caso, mensajes) => {
+    const { app: aplicacion, repo } = nuevaApp();
+    const res = await crear(sobre(PEDIDO, 'crear_pedido', mensajes), { aplicacion });
+
+    expect(res.status).toBe(200);
+    expect(RespuestaCrearPedidoSchema.parse(await res.json())).toEqual({
+      ok: false,
+      faltaConfirmacion: true,
+      aclaraciones: [],
+      datosCliente: [],
+    });
+    expect(repo.pedidos).toHaveLength(0);
+  });
+
+  it.each([
+    ['sin call', { name: 'crear_pedido', args: PEDIDO }],
+    ['call que no es objeto', { name: 'crear_pedido', call: 'texto', args: PEDIDO }],
+    ['call en null', { name: 'crear_pedido', call: null, args: PEDIDO }],
+  ])('%s: responde faltaConfirmacion, sin 400 ni 500', async (_caso, cuerpo) => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { app: aplicacion, repo } = nuevaApp();
+    const res = await crear(JSON.stringify(cuerpo), { aplicacion });
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ ok: false, faltaConfirmacion: true });
+    expect(repo.pedidos).toHaveLength(0);
+  });
+
+  it('sin mensajes en call, el log trae solo las llaves de call: ni nombre, ni teléfono, ni texto', async () => {
+    const aviso = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { app: aplicacion } = nuevaApp();
+    const cuerpo = {
+      name: 'crear_pedido',
+      call: { chat_id: 'chat_123', transcript: 'María José 614 123 4567 sí confírmalo' },
+      args: PEDIDO,
+    };
+    await crear(JSON.stringify(cuerpo), { aplicacion });
+
+    expect(aviso).toHaveBeenCalledWith('POST /pedidos sin mensajes en call', {
+      llaves: ['chat_id', 'transcript'],
+    });
+    const registrado = JSON.stringify(aviso.mock.calls);
+    expect(registrado).not.toMatch(/María|614|123 4567|confírmalo/);
+  });
+
+  it('tras corregir el teléfono vuelve a llamar sin otra pregunta y sí guarda', async () => {
+    const { app: aplicacion, repo } = nuevaApp();
+    const mensajes = [
+      ...CONFIRMADO,
+      { role: 'tool_call_invocation', name: 'crear_pedido', arguments: '{}' },
+      { role: 'tool_call_result', content: '{"ok":false}' },
+      { role: 'agent', content: 'Ese teléfono no es válido. ¿Me lo das de nuevo?' },
+      { role: 'user', content: '614 123 4567' },
+    ];
+    const res = await crear(sobre(PEDIDO, 'crear_pedido', mensajes), { aplicacion });
+
+    expect(await res.json()).toMatchObject({ ok: true, folio: 1001 });
+    expect(repo.pedidos).toHaveLength(1);
   });
 
   it('rechaza con 401 sin firma y no guarda nada', async () => {

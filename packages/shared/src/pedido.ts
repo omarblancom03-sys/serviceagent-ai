@@ -300,9 +300,35 @@ export const CrearPedidoArgsSchema = z
   .strictObject({ ...camposDelPedido, nombre: DatoClienteSchema, telefono: TelefonoSchema })
   .refine(traeAlgo, { message: MENSAJE_PEDIDO_VACIO });
 
-/** Sobre de Retell para `crear_pedido` (ver CotizarPedidoPeticionSchema). */
+/**
+ * Un mensaje de la conversación que Retell manda en `call.message_with_tool_calls` (chat). Solo se
+ * leen `role` (`agent`, `user`, `tool_call_invocation`…), el texto y el nombre de la herramienta;
+ * los dos últimos pueden faltar o venir en `null` (una invocación de herramienta no trae texto).
+ */
+export const MensajeConversacionSchema = z.looseObject({
+  role: z.string(),
+  content: z.string().nullish(),
+  name: z.string().nullish(),
+});
+
+/**
+ * Lo que la API lee de `call`: la conversación hasta el momento de la llamada, para revisar que el
+ * cliente confirmó el pedido (D48). La API lo aplica con `safeParse`: si `call` no trae la lista
+ * o viene con otra forma, queda sin mensajes y el pedido no se crea (`faltaConfirmacion`). Cada
+ * mensaje se valida aparte con `MensajeConversacionSchema`: uno con otra forma se descarta sin
+ * perder los demás.
+ */
+export const CallRetellSchema = z.looseObject({
+  message_with_tool_calls: z.array(z.unknown()),
+});
+
+/**
+ * Sobre de Retell para `crear_pedido` (ver CotizarPedidoPeticionSchema). `call` se acepta con
+ * cualquier forma (un 400 no le diría al agente qué hacer) y se lee con `CallRetellSchema`.
+ */
 export const CrearPedidoPeticionSchema = z.object({
   name: z.literal('crear_pedido'),
+  call: z.unknown().optional(),
   args: CrearPedidoArgsSchema,
 });
 
@@ -333,16 +359,19 @@ export const PedidoCreadoSchema = z.object({
 });
 
 /**
- * No se creó nada. Trae juntas las aclaraciones del pedido (las mismas que
- * `cotizar_pedido`) y las de los datos del cliente; al menos una de las dos.
+ * No se creó nada. Con `faltaConfirmacion` en verdadero, el cliente todavía no respondió que sí a la
+ * pregunta de confirmación (D48): no se revisa nada más y las listas van vacías. Si no, trae juntas
+ * las aclaraciones del pedido (las mismas que `cotizar_pedido`) y las de los datos del cliente; al
+ * menos una de las dos.
  */
 export const PedidoConAclaracionesSchema = z
   .object({
     ok: z.literal(false),
+    faltaConfirmacion: z.boolean(),
     aclaraciones: z.array(AclaracionSchema),
     datosCliente: z.array(DatoClienteInvalidoSchema),
   })
-  .refine((r) => r.aclaraciones.length + r.datosCliente.length > 0, {
+  .refine((r) => r.faltaConfirmacion || r.aclaraciones.length + r.datosCliente.length > 0, {
     message: 'Debe traer al menos una aclaración.',
   });
 
@@ -382,6 +411,7 @@ export type RespuestaCotizarPedido = z.infer<typeof RespuestaCotizarPedidoSchema
 export type EstadoPedido = z.infer<typeof EstadoPedidoSchema>;
 export type CrearPedidoArgs = z.infer<typeof CrearPedidoArgsSchema>;
 export type CrearPedidoPeticion = z.infer<typeof CrearPedidoPeticionSchema>;
+export type MensajeConversacion = z.infer<typeof MensajeConversacionSchema>;
 export type CampoCliente = (typeof CAMPOS_CLIENTE)[number];
 export type DatoClienteInvalido = z.infer<typeof DatoClienteInvalidoSchema>;
 export type PedidoCreado = z.infer<typeof PedidoCreadoSchema>;
