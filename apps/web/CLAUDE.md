@@ -72,6 +72,6 @@ pnpm --filter @serviceagent/web test        # Vitest (test/*.test.ts)
 - [docs/negocio.md](../../docs/negocio.md): estados del pedido (botones de cocina y caja) y autenticación por PIN (roles, bloqueo, duración del JWT).
 - [docs/despliegue.md](../../docs/despliegue.md): variables `VITE_*` y despliegue en Pages.
 - [docs/decisiones.md](../../docs/decisiones.md): D9, D12 (JWT propio; Realtime solo como señal).
-- Cocina y caja: D46 (pedidos en cola al confirmar), D47 (señal de Realtime) y D54 (qué ve caja y cuándo está pagado) en [decisiones.md](../../docs/decisiones.md).
+- Cocina y caja: D46 (pedidos en cola al confirmar), D47 (señal de Realtime), D54 (qué ve caja y cuándo está pagado) y D58 (aviso sonoro y contador de cocina) en [decisiones.md](../../docs/decisiones.md).
 - Menú de `/admin` y `/menu`: D18 (tiempo base), D19 (extras), D20 (agotado) y D23 (usa el `GET /menu` público) en [decisiones.md](../../docs/decisiones.md).
 - Chat de `/pedir`: D21, D36 (límite de mensajes), D38 (tope diario), D39 (fallas de Retell) y D40 en [decisiones.md](../../docs/decisiones.md).
