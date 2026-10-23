@@ -61,5 +61,5 @@ pnpm db:reset:personal                                    # recrea todo desde ce
 ## Reglas que aplican
 
 - [docs/negocio.md](../docs/negocio.md): autenticación, estados del pedido con su hora, pagos, inventario y recetas.
-- [docs/decisiones.md](../docs/decisiones.md): D2, D3, D7, D12, D13, D14, D15, D16, D18 y pendiente de embeddings (US-16).
+- [docs/decisiones.md](../docs/decisiones.md): D2, D3, D7, D12, D13, D14, D15, D16, D18 y D50 (embeddings del menú, US-16).
 - [docs/despliegue.md](../docs/despliegue.md): variables `SUPABASE_*`; la llave de servicio solo en la API.
