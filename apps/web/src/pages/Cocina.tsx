@@ -2,6 +2,15 @@ import { RespuestaPedidosCocinaSchema, type TicketCocina } from '@serviceagent/s
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSesion } from '../auth/SesionContext';
 import {
+  AVISO_SONIDO,
+  contarPedidos,
+  crearAvisoSonoro,
+  textoBotonSonido,
+  textoContador,
+  type AvisoSonoro,
+  type EstadoSonido,
+} from '../lib/avisoCocina';
+import {
   DURACION_RESALTE_MS,
   ETIQUETA_ESTADO,
   INTERVALO_REFRESCO_MS,
@@ -17,11 +26,13 @@ import {
 } from '../lib/cocina';
 import { formatearHora } from '../lib/menuAdmin';
 import { escucharSenalPedidos, hayRealtime } from '../lib/senalPedidos';
+import { crearSonadorWebAudio, hayWebAudio } from '../lib/sonidoCocina';
 
 /**
  * Pantalla de cocina (US-10). Los pedidos aparecen solos: la señal de Realtime avisa que algo
  * cambió y la lista se vuelve a pedir a la API con la sesión (D12, D47). Si la señal se pierde, la
- * lista se refresca cada 30 s. Los botones Empezar y Terminado llegan con US-11.
+ * lista se refresca cada 30 s. Los botones Empezar y Terminado llegan con US-11. US-12: suena un
+ * aviso con cada tanda de pedidos nuevos y un contador dice cuántos hay en cola y preparándose.
  */
 export function Cocina() {
   const { pedirConSesion } = useSesion();
@@ -32,10 +43,14 @@ export function Cocina() {
   );
   const [resaltados, setResaltados] = useState<ReadonlySet<number>>(new Set());
   const [aviso, setAviso] = useState('');
+  const [sonido, setSonido] = useState<EstadoSonido>(() =>
+    hayWebAudio() ? 'bloqueado' : 'sin_audio',
+  );
 
   const anteriores = useRef<TicketCocina[] | null>(null);
   const recargador = useRef<Recargador | null>(null);
   const temporizadores = useRef(new Set<ReturnType<typeof setTimeout>>());
+  const avisoSonoro = useRef<AvisoSonoro | null>(null);
 
   const despues = useCallback((ms: number, accion: () => void) => {
     const id = setTimeout(() => {
@@ -55,6 +70,7 @@ export function Cocina() {
       setError(null);
       if (nuevos.length > 0) {
         setAviso(`Llegó el pedido ${nuevos.map((f) => `#${f}`).join(', ')}`);
+        avisoSonoro.current?.pedidosNuevos(pedidos.filter((t) => nuevos.includes(t.folio)));
         setResaltados((previos) => new Set([...previos, ...nuevos]));
         despues(DURACION_RESALTE_MS, () =>
           setResaltados((previos) => new Set([...previos].filter((f) => !nuevos.includes(f)))),
@@ -64,6 +80,20 @@ export function Cocina() {
       setError(mensajeErrorCocina(causa));
     }
   }, [pedirConSesion, despues]);
+
+  useEffect(() => {
+    // El navegador solo deja sonar después de que alguien toca la página (US-12).
+    const sonoro = crearAvisoSonoro(crearSonadorWebAudio(), setSonido);
+    avisoSonoro.current = sonoro;
+    const alTocar = () => void sonoro.interaccion();
+    document.addEventListener('pointerdown', alTocar);
+    document.addEventListener('keydown', alTocar);
+    return () => {
+      avisoSonoro.current = null;
+      document.removeEventListener('pointerdown', alTocar);
+      document.removeEventListener('keydown', alTocar);
+    };
+  }, []);
 
   useEffect(() => {
     // Cuándo pedir la lista (agrupar señales, una petición a la vez, ponerse al día): lib/cocina.ts.
@@ -96,12 +126,14 @@ export function Cocina() {
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-3xl font-bold text-orange-800">Cocina</h1>
         {tickets && (
-          <span className="text-lg text-stone-600">
-            {tickets.length === 1 ? '1 pedido' : `${tickets.length} pedidos`}
+          <span className="text-xl font-semibold text-stone-800">
+            {textoContador(contarPedidos(tickets))}
           </span>
         )}
         <IndicadorConexion estado={conexion} />
       </div>
+
+      <BarraSonido estado={sonido} alAlternar={() => avisoSonoro.current?.alternarSilencio()} />
 
       <p className="sr-only" aria-live="polite">
         {aviso}
@@ -144,6 +176,33 @@ function IndicadorConexion({ estado }: { estado: EstadoConexion }) {
       <span className={`h-2.5 w-2.5 rounded-full ${color}`} aria-hidden="true" />
       {TEXTO_CONEXION[estado]}
     </span>
+  );
+}
+
+function BarraSonido({ estado, alAlternar }: { estado: EstadoSonido; alAlternar: () => void }) {
+  const aviso = AVISO_SONIDO[estado];
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-3">
+      {aviso && (
+        <p
+          role="status"
+          className={`rounded-xl px-4 py-2 text-lg font-semibold ${
+            estado === 'bloqueado' ? 'bg-amber-100 text-amber-900' : 'bg-stone-200 text-stone-800'
+          }`}
+        >
+          {aviso}
+        </p>
+      )}
+      {estado !== 'sin_audio' && (
+        <button
+          type="button"
+          onClick={alAlternar}
+          className="min-h-12 rounded-xl border border-orange-300 bg-white px-4 text-lg font-semibold text-orange-800"
+        >
+          {textoBotonSonido(estado)}
+        </button>
+      )}
+    </div>
   );
 }
 
