@@ -1,0 +1,22 @@
+{
+  "id": "busqueda-varias-presentaciones",
+  "historia": "US-16",
+  "criterios": ["C2"],
+  "categoria": "busqueda",
+  "titulo": "Un platillo con varias presentaciones: no da un solo precio",
+  "mensajes": ["¿Tienen agua de arroz?"],
+  "argsBuscarMenu": [
+    {
+      "consulta": "agua de arroz"
+    }
+  ],
+  "debe": [
+    "Llama a buscar_menu.",
+    "Nombra la Horchata, que viene en la respuesta.",
+    "Si da precios, da el de cada presentación tal como viene, o dice que tiene varias presentaciones."
+  ],
+  "noDebe": [
+    "Dar un solo precio como si fuera el de todas las presentaciones.",
+    "Calcular o inventar un precio."
+  ]
+}

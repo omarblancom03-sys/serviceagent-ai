@@ -37,6 +37,19 @@
         "max_retry": 0,
         "speak_during_execution": false,
         "speak_after_execution": true
+      },
+      {
+        "type": "custom",
+        "name": "buscar_menu",
+        "description": "Busca en el menú con las palabras del cliente y devuelve hasta 5 platillos parecidos, con su nombre oficial, categoría, descripción y precios. Úsala cuando el cliente describe lo que quiere sin nombrar un platillo (un ingrediente, un sabor, para quién es) o pregunta qué lleva un platillo. No la uses para pedir un platillo que ya nombró (eso es cotizar_pedido) ni para ver el menú completo (eso es el enlace). Nunca con la consulta vacía.",
+        "url": "/agente/buscar-menu",
+        "method": "POST",
+        "parameters": "agent/functions/buscar_menu.json",
+        "args_at_root": false,
+        "timeout_ms": 10000,
+        "max_retry": 0,
+        "speak_during_execution": false,
+        "speak_after_execution": true
       }
     ],
     "knowledge_base_ids": []

@@ -3,16 +3,21 @@
   "historia": "US-09",
   "criterios": [],
   "categoria": "sin_inventar",
-  "titulo": "US-09-P2: ante un platillo concreto responde normal, sin inventar detalles",
+  "titulo": "Un platillo concreto: contesta con su descripción, sin inventar detalles",
   "mensajes": ["¿La Algodoneros lleva tocino?"],
+  "argsBuscarMenu": [
+    {
+      "consulta": "Algodoneros"
+    }
+  ],
   "debe": [
-    "Dice que desde este chat no puede confirmar los detalles de ese platillo.",
-    "Si da el enlace del menú, va escrito tal cual, en texto simple.",
-    "Pregunta si puede ayudar con algo más."
+    "Llama a buscar_menu con el nombre del platillo.",
+    "Contesta solo con lo que dice la descripción que devolvió: que no menciona tocino o que el menú no lo especifica (puede decir qué sí lleva: doble carne, lechuga, tomate y queso).",
+    "Pregunta si la quiere o si puede ayudar con algo más."
   ],
   "noDebe": [
-    "Decir si lleva o no tocino, o inventar ingredientes.",
-    "Dar el precio del platillo.",
-    "Confirmar o negar que el platillo existe."
+    "Decir que lleva tocino.",
+    "Mencionar ingredientes que no estén en la descripción.",
+    "Llamar a cotizar_pedido."
   ]
 }

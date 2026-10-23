@@ -50,7 +50,7 @@ El dashboard también tiene "Import" (en la lista de agentes), pero la documenta
 
 ## Custom functions
 
-Cada entrada de `general_tools` es una custom function ([documentación oficial](https://docs.retellai.com/build/single-multi-prompt/custom-function.md)). Hoy: `cotizar_pedido`.
+Cada entrada de `general_tools` es una custom function ([documentación oficial](https://docs.retellai.com/build/single-multi-prompt/custom-function.md)). Hoy: `cotizar_pedido` y `buscar_menu`, con los mismos ajustes.
 
 | Campo                    | Dónde está en el dashboard  | Notas                                                                                                                                                                                |
 | ------------------------ | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
