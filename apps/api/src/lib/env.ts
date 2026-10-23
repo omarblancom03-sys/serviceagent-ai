@@ -17,6 +17,11 @@ export interface Bindings {
   JWT_EXPIRES_IN?: string;
   /** Orígenes permitidos para CORS, separados por coma. */
   CORS_ORIGINS?: string;
+  /**
+   * Workers AI (binding `ai` de `wrangler.jsonc`, no es un secreto): embeddings de la búsqueda del
+   * menú (D50). Opcional en el tipo porque los tests no lo tienen; sin él, `buscar_menu` responde 500.
+   */
+  AI?: Ai;
 }
 
 export interface AppEnv {
