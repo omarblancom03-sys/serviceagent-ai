@@ -8,7 +8,7 @@ SPA en React + Vite + Tailwind + React Router para clientes y empleados. Se desp
 | --------- | -------------- | ------------------------------- |
 | `/pedir`  | Cliente (público, sin login) | US-09-P2: chat con el asistente sobre `POST /chat/...`; la conversación se crea al primer mensaje y no se guarda en el navegador (D40) |
 | `/menu`   | Cliente (público, sin login) | US-09-P2: el menú de `/admin` sin conteos, tiempos ni errores técnicos; busca también por categoría |
-| `/cocina` | Rol `cocina` (y `admin`) | US-10: tickets en cola o preparándose (`GET /cocina/pedidos`), del más antiguo al más nuevo; aparecen solos con la señal de Realtime y se refrescan cada 30 s (D47). US-12: contador "En cola · Preparando" y aviso sonoro por tanda de pedidos nuevos, que se puede silenciar |
+| `/cocina` | Rol `cocina` (y `admin`) | US-10: tickets en cola o preparándose (`GET /cocina/pedidos`), del más antiguo al más nuevo; aparecen solos con la señal de Realtime y se refrescan cada 30 s (D47). US-12: contador "En cola · Preparando" y aviso sonoro por tanda de pedidos nuevos, que se puede silenciar (D58) |
 | `/caja`   | Rol `caja` (y `admin`) | Protegida en US-04; pantalla real en US-20 |
 | `/admin`  | Rol `admin` | US-05: menú de solo lectura (`GET /menu`) con búsqueda y filtro por categoría |
 | `/login`  | Empleados | US-04: tarjeta de empleado + teclado de PIN |
