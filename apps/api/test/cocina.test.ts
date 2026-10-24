@@ -1,8 +1,23 @@
-import { RespuestaPedidosCocinaSchema } from '@serviceagent/shared';
+import {
+  ConflictoCocinaSchema,
+  DeshacerCambioCocinaPeticionSchema,
+  ParamsFolioCocinaSchema,
+  RespuestaCambioEstadoCocinaSchema,
+  RespuestaPedidosCocinaSchema,
+  SEGUNDOS_DESHACER_PANTALLA,
+  SEGUNDOS_DESHACER_SERVIDOR,
+} from '@serviceagent/shared';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { describe, expect, it } from 'vitest';
 import { crearRepoCocina } from '../src/lib/repoCocina';
-import { armarTickets, type PedidoActivo } from '../src/services/cocina';
+import {
+  armarTickets,
+  cambiarEstadoCocina,
+  deshacerCambioCocina,
+  type CocinaRepo,
+  type PedidoActivo,
+} from '../src/services/cocina';
+import { crearCocinaEnMemoria } from './cocinaEnMemoria';
 
 const hora = (hhmm: string) => new Date(`2026-10-15T${hhmm}:00Z`);
 
@@ -165,5 +180,242 @@ describe('crearRepoCocina (Supabase)', () => {
 
     const filaRara = clienteCon({ data: [{ ...filaPedido, estado: 'entregado' }], error: null });
     await expect(crearRepoCocina(filaRara.cliente).leerPedidosActivos()).rejects.toThrow();
+  });
+});
+
+/** Repo que responde siempre lo mismo y anota lo que se le pidió. */
+function repoQueResponde(respuestas: {
+  cambio?: Awaited<ReturnType<CocinaRepo['cambiarEstado']>>;
+  deshacer?: Awaited<ReturnType<CocinaRepo['deshacerEstado']>>;
+}) {
+  const pedidos: unknown[] = [];
+  const repo: CocinaRepo = {
+    ...crearCocinaEnMemoria().repo,
+    cambiarEstado: (cambio) => {
+      pedidos.push(cambio);
+      return Promise.resolve(respuestas.cambio ?? null);
+    },
+    deshacerEstado: (deshacer) => {
+      pedidos.push(deshacer);
+      return Promise.resolve(respuestas.deshacer ?? null);
+    },
+  };
+  return { repo, pedidos };
+}
+
+describe('cambiarEstadoCocina y deshacerCambioCocina (US-11-P1)', () => {
+  const cambiadoEn = new Date('2026-10-22T18:00:00.123Z');
+
+  it('Empezar pide en_cola → preparando con el empleado y da deshacerHasta con el plazo de pantalla', async () => {
+    const { repo, pedidos } = repoQueResponde({
+      cambio: { estadoActual: 'preparando', cambiadoEn },
+    });
+    const resultado = await cambiarEstadoCocina(repo, 'empezar', 1001, 'id-empleado');
+
+    expect(pedidos).toEqual([
+      { folio: 1001, desde: 'en_cola', hacia: 'preparando', idEmpleado: 'id-empleado' },
+    ]);
+    expect(resultado).toEqual({
+      tipo: 'ok',
+      respuesta: {
+        folio: 1001,
+        folioTexto: '#1001',
+        estado: 'preparando',
+        cambiadoEn: '2026-10-22T18:00:00.123Z',
+        deshacerHasta: '2026-10-22T18:00:10.123Z',
+      },
+    });
+    expect(SEGUNDOS_DESHACER_PANTALLA).toBe(10);
+  });
+
+  it('Terminado pide preparando → listo', async () => {
+    const { repo, pedidos } = repoQueResponde({ cambio: { estadoActual: 'listo', cambiadoEn } });
+    await cambiarEstadoCocina(repo, 'terminar', 1001, 'id-empleado');
+    expect(pedidos[0]).toMatchObject({ desde: 'preparando', hacia: 'listo' });
+  });
+
+  it('sin cambio es conflicto con el estado actual; sin fila, no existe', async () => {
+    const conflicto = await cambiarEstadoCocina(
+      repoQueResponde({ cambio: { estadoActual: 'cancelado', cambiadoEn: null } }).repo,
+      'empezar',
+      1001,
+      'id',
+    );
+    expect(conflicto).toMatchObject({
+      tipo: 'conflicto',
+      conflicto: { codigo: 'estado_cambio', estadoActual: 'cancelado' },
+    });
+    expect(await cambiarEstadoCocina(repoQueResponde({}).repo, 'empezar', 1, 'id')).toEqual({
+      tipo: 'no_existe',
+    });
+  });
+
+  it('deshacer manda el plazo del servidor y traduce cada motivo', async () => {
+    const { repo, pedidos } = repoQueResponde({
+      deshacer: { estadoActual: 'preparando', motivo: null },
+    });
+    expect(await deshacerCambioCocina(repo, 1001, 'listo')).toEqual({
+      tipo: 'ok',
+      respuesta: { folio: 1001, folioTexto: '#1001', estado: 'preparando' },
+    });
+    expect(pedidos).toEqual([{ folio: 1001, estado: 'listo', segundosPlazo: 15 }]);
+    expect(SEGUNDOS_DESHACER_SERVIDOR).toBe(15);
+
+    const vencido = await deshacerCambioCocina(
+      repoQueResponde({ deshacer: { estadoActual: 'preparando', motivo: 'plazo_vencido' } }).repo,
+      1001,
+      'preparando',
+    );
+    expect(vencido).toMatchObject({ tipo: 'conflicto', conflicto: { codigo: 'plazo_vencido' } });
+
+    const distinto = await deshacerCambioCocina(
+      repoQueResponde({ deshacer: { estadoActual: 'listo', motivo: 'estado_distinto' } }).repo,
+      1001,
+      'preparando',
+    );
+    expect(distinto).toMatchObject({
+      tipo: 'conflicto',
+      conflicto: { codigo: 'estado_cambio', estadoActual: 'listo' },
+    });
+  });
+});
+
+/** Cliente de Supabase falso que solo tiene `rpc()`. */
+function clienteRpc(respuesta: { data: unknown; error: { message: string } | null }) {
+  const llamadas: { funcion: string; parametros: unknown }[] = [];
+  const cliente = {
+    rpc(funcion: string, parametros: unknown) {
+      llamadas.push({ funcion, parametros });
+      return Promise.resolve(respuesta);
+    },
+  } as unknown as SupabaseClient;
+  return { cliente, llamadas };
+}
+
+describe('crearRepoCocina: cambio de estado con rpc() (US-11-P1)', () => {
+  it('llama a cambiar_estado_cocina con sus parámetros y lee la hora', async () => {
+    const { cliente, llamadas } = clienteRpc({
+      data: [{ estado_actual: 'preparando', cambiado_en: '2026-10-22T18:00:00.123456+00:00' }],
+      error: null,
+    });
+    const guardado = await crearRepoCocina(cliente).cambiarEstado({
+      folio: 1001,
+      desde: 'en_cola',
+      hacia: 'preparando',
+      idEmpleado: 'id-empleado',
+    });
+    expect(llamadas).toEqual([
+      {
+        funcion: 'cambiar_estado_cocina',
+        parametros: {
+          p_folio: 1001,
+          p_estado_desde: 'en_cola',
+          p_estado_hacia: 'preparando',
+          p_id_empleado: 'id-empleado',
+        },
+      },
+    ]);
+    expect(guardado?.cambiadoEn?.toISOString()).toBe('2026-10-22T18:00:00.123Z');
+  });
+
+  it('sin hora es que no cambió; sin filas, que el folio no existe', async () => {
+    const sinCambio = clienteRpc({
+      data: [{ estado_actual: 'listo', cambiado_en: null }],
+      error: null,
+    });
+    expect(
+      await crearRepoCocina(sinCambio.cliente).cambiarEstado({
+        folio: 1001,
+        desde: 'en_cola',
+        hacia: 'preparando',
+        idEmpleado: 'id',
+      }),
+    ).toEqual({ estadoActual: 'listo', cambiadoEn: null });
+
+    const vacio = clienteRpc({ data: [], error: null });
+    expect(
+      await crearRepoCocina(vacio.cliente).deshacerEstado({
+        folio: 9999,
+        estado: 'listo',
+        segundosPlazo: 15,
+      }),
+    ).toBeNull();
+  });
+
+  it('llama a deshacer_estado_cocina con el plazo y lee el motivo', async () => {
+    const { cliente, llamadas } = clienteRpc({
+      data: [{ estado_actual: 'preparando', motivo: 'plazo_vencido' }],
+      error: null,
+    });
+    const guardado = await crearRepoCocina(cliente).deshacerEstado({
+      folio: 1001,
+      estado: 'preparando',
+      segundosPlazo: 15,
+    });
+    expect(llamadas[0]).toEqual({
+      funcion: 'deshacer_estado_cocina',
+      parametros: { p_folio: 1001, p_estado: 'preparando', p_segundos_plazo: 15 },
+    });
+    expect(guardado).toEqual({ estadoActual: 'preparando', motivo: 'plazo_vencido' });
+  });
+
+  it('lanza un error si Supabase falla o la fila no tiene la forma esperada', async () => {
+    const conError = clienteRpc({ data: null, error: { message: 'permission denied' } });
+    await expect(
+      crearRepoCocina(conError.cliente).deshacerEstado({
+        folio: 1,
+        estado: 'listo',
+        segundosPlazo: 15,
+      }),
+    ).rejects.toThrow('No se pudo deshacer el cambio del pedido: permission denied');
+
+    const filaRara = clienteRpc({ data: [{ estado_actual: 'otro', motivo: null }], error: null });
+    await expect(
+      crearRepoCocina(filaRara.cliente).deshacerEstado({
+        folio: 1,
+        estado: 'listo',
+        segundosPlazo: 15,
+      }),
+    ).rejects.toThrow();
+  });
+});
+
+describe('contrato del cambio de estado en cocina (US-11-P1)', () => {
+  it('el folio de la ruta acepta solo enteros positivos escritos con dígitos', () => {
+    expect(ParamsFolioCocinaSchema.parse({ folio: '1001' })).toEqual({ folio: 1001 });
+    for (const folio of ['0', 'abc', '1e3', '0x10', '-1', '2147483648']) {
+      expect(ParamsFolioCocinaSchema.safeParse({ folio }).success).toBe(false);
+    }
+  });
+
+  it('el cuerpo de deshacer es estricto y solo acepta preparando o listo', () => {
+    expect(DeshacerCambioCocinaPeticionSchema.safeParse({ estado: 'listo' }).success).toBe(true);
+    expect(DeshacerCambioCocinaPeticionSchema.safeParse({ estado: 'en_cola' }).success).toBe(false);
+    expect(
+      DeshacerCambioCocinaPeticionSchema.safeParse({ estado: 'listo', idEmpleado: 'x' }).success,
+    ).toBe(false);
+  });
+
+  it('la respuesta del cambio y el conflicto validan sus campos', () => {
+    expect(
+      RespuestaCambioEstadoCocinaSchema.safeParse({
+        folio: 1001,
+        folioTexto: '#1001',
+        estado: 'en_cola',
+        cambiadoEn: '2026-10-22T18:00:00.000Z',
+        deshacerHasta: '2026-10-22T18:00:10.000Z',
+      }).success,
+    ).toBe(false);
+    expect(
+      ConflictoCocinaSchema.safeParse({
+        error: 'x',
+        codigo: 'plazo_vencido',
+        estadoActual: 'entregado',
+      }).success,
+    ).toBe(true);
+    expect(
+      ConflictoCocinaSchema.safeParse({ error: 'x', codigo: 'otro', estadoActual: 'listo' })
+        .success,
+    ).toBe(false);
   });
 });

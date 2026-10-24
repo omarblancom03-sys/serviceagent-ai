@@ -1,7 +1,17 @@
-import { ESTADOS_COCINA, EstadoCocinaSchema, type RenglonCocina } from '@serviceagent/shared';
+import {
+  ESTADOS_COCINA,
+  EstadoCocinaSchema,
+  EstadoPedidoSchema,
+  type RenglonCocina,
+} from '@serviceagent/shared';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
-import type { CocinaRepo, PedidoActivo } from '../services/cocina';
+import type {
+  CambioEstadoGuardado,
+  CocinaRepo,
+  DeshacerGuardado,
+  PedidoActivo,
+} from '../services/cocina';
 
 /*
  * Filas de los pedidos activos con sus tablas relacionadas, en una sola consulta de PostgREST
@@ -75,6 +85,20 @@ function aRenglones(fila: FilaPedido): RenglonCocina[] {
     );
 }
 
+/*
+ * Filas de `cambiar_estado_cocina` y `deshacer_estado_cocina`
+ * (supabase/migrations/*_cocina_cambio_estado.sql). Cero filas: el folio no existe.
+ */
+const FilaCambioSchema = z.object({
+  estado_actual: EstadoPedidoSchema,
+  cambiado_en: z.string().nullable(),
+});
+
+const FilaDeshacerSchema = z.object({
+  estado_actual: EstadoPedidoSchema,
+  motivo: z.enum(['estado_distinto', 'plazo_vencido']).nullable(),
+});
+
 /** Implementación de `CocinaRepo` sobre Supabase. */
 export function crearRepoCocina(cliente: SupabaseClient): CocinaRepo {
   return {
@@ -95,6 +119,36 @@ export function crearRepoCocina(cliente: SupabaseClient): CocinaRepo {
           enColaDesde: horaEnCola(fila),
           renglones: aRenglones(fila),
         }));
+    },
+
+    async cambiarEstado({ folio, desde, hacia, idEmpleado }): Promise<CambioEstadoGuardado | null> {
+      const { data, error } = await cliente.rpc('cambiar_estado_cocina', {
+        p_folio: folio,
+        p_estado_desde: desde,
+        p_estado_hacia: hacia,
+        p_id_empleado: idEmpleado,
+      });
+      if (error) throw new Error(`No se pudo cambiar el estado del pedido: ${error.message}`);
+
+      const [fila] = z.array(FilaCambioSchema).max(1).parse(data);
+      if (!fila) return null;
+      return {
+        estadoActual: fila.estado_actual,
+        cambiadoEn: fila.cambiado_en ? new Date(fila.cambiado_en) : null,
+      };
+    },
+
+    async deshacerEstado({ folio, estado, segundosPlazo }): Promise<DeshacerGuardado | null> {
+      const { data, error } = await cliente.rpc('deshacer_estado_cocina', {
+        p_folio: folio,
+        p_estado: estado,
+        p_segundos_plazo: segundosPlazo,
+      });
+      if (error) throw new Error(`No se pudo deshacer el cambio del pedido: ${error.message}`);
+
+      const [fila] = z.array(FilaDeshacerSchema).max(1).parse(data);
+      if (!fila) return null;
+      return { estadoActual: fila.estado_actual, motivo: fila.motivo };
     },
   };
 }
