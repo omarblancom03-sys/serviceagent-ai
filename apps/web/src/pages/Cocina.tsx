@@ -1,11 +1,11 @@
 import { RespuestaPedidosCocinaSchema, type TicketCocina } from '@serviceagent/shared';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSesion } from '../auth/SesionContext';
+import { IndicadorConexion } from '../components/IndicadorConexion';
 import {
   DURACION_RESALTE_MS,
   ETIQUETA_ESTADO,
   INTERVALO_REFRESCO_MS,
-  TEXTO_CONEXION,
   ZONA_HORARIA_RESTAURANTE,
   crearRecargador,
   foliosNuevos,
@@ -134,16 +134,6 @@ export function Cocina() {
         </ol>
       )}
     </section>
-  );
-}
-
-function IndicadorConexion({ estado }: { estado: EstadoConexion }) {
-  const color = estado === 'en_vivo' ? 'bg-green-500' : 'bg-amber-500';
-  return (
-    <span className="ml-auto flex items-center gap-2 text-sm text-stone-600">
-      <span className={`h-2.5 w-2.5 rounded-full ${color}`} aria-hidden="true" />
-      {TEXTO_CONEXION[estado]}
-    </span>
   );
 }
 

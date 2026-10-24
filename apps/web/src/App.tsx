@@ -4,6 +4,7 @@ import { NOMBRE_ROL, PANTALLAS_EMPLEADO, puedeVer } from './auth/permisos';
 import { RutaProtegida } from './auth/RutaProtegida';
 import { useSesion } from './auth/SesionContext';
 import { AdminMenu } from './pages/AdminMenu';
+import { Caja } from './pages/Caja';
 import { Cocina } from './pages/Cocina';
 import { Login } from './pages/Login';
 import { MenuCliente } from './pages/MenuCliente';
@@ -14,6 +15,7 @@ import { PedirChat } from './pages/PedirChat';
 const PAGINA_EMPLEADO: Partial<Record<string, ReactNode>> = {
   '/admin': <AdminMenu />,
   '/cocina': <Cocina />,
+  '/caja': <Caja />,
 };
 
 const claseEnlace = ({ isActive }: { isActive: boolean }) =>
