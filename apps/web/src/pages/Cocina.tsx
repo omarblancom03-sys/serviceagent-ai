@@ -17,6 +17,14 @@ import {
 } from '../lib/cocina';
 import { formatearHora } from '../lib/menuAdmin';
 import { escucharSenalPedidos, hayRealtime } from '../lib/senalPedidos';
+import {
+  INTERVALO_RELOJ_MS,
+  clasesTicket,
+  estaAtrasado,
+  minutosDesde,
+  textoTiempo,
+} from '../lib/tiempoCocina';
+import { useAhora } from '../lib/useAhora';
 
 /**
  * Pantalla de cocina (US-10). Los pedidos aparecen solos: la señal de Realtime avisa que algo
@@ -32,6 +40,7 @@ export function Cocina() {
   );
   const [resaltados, setResaltados] = useState<ReadonlySet<number>>(new Set());
   const [aviso, setAviso] = useState('');
+  const ahora = useAhora(INTERVALO_RELOJ_MS);
 
   const anteriores = useRef<TicketCocina[] | null>(null);
   const recargador = useRef<Recargador | null>(null);
@@ -129,7 +138,12 @@ export function Cocina() {
       {tickets && tickets.length > 0 && (
         <ol className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {tickets.map((ticket) => (
-            <Ticket key={ticket.folio} ticket={ticket} nuevo={resaltados.has(ticket.folio)} />
+            <Ticket
+              key={ticket.folio}
+              ticket={ticket}
+              nuevo={resaltados.has(ticket.folio)}
+              ahora={ahora}
+            />
           ))}
         </ol>
       )}
@@ -137,14 +151,12 @@ export function Cocina() {
   );
 }
 
-function Ticket({ ticket, nuevo }: { ticket: TicketCocina; nuevo: boolean }) {
+function Ticket({ ticket, nuevo, ahora }: { ticket: TicketCocina; nuevo: boolean; ahora: number }) {
   const { platillos, aparte } = separarRenglones(ticket);
+  const minutos = minutosDesde(ticket.enColaDesde, ahora);
+  const atrasado = estaAtrasado(minutos);
   return (
-    <li
-      className={`rounded-2xl border bg-white p-4 shadow-sm ${
-        nuevo ? 'border-orange-400 ring-4 ring-orange-300' : 'border-orange-200'
-      }`}
-    >
+    <li className={clasesTicket({ nuevo, atrasado })}>
       <div className="flex items-baseline justify-between gap-2">
         <span className="text-3xl font-bold text-stone-900">{ticket.folioTexto}</span>
         <span
@@ -160,6 +172,16 @@ function Ticket({ ticket, nuevo }: { ticket: TicketCocina; nuevo: boolean }) {
       <p className="mt-1 text-stone-600">
         {ticket.nombreCliente} · entró a las{' '}
         {formatearHora(ticket.enColaDesde, ZONA_HORARIA_RESTAURANTE)}
+      </p>
+      <p className="mt-2 flex items-center gap-2">
+        <span className={`text-2xl font-bold ${atrasado ? 'text-red-700' : 'text-stone-900'}`}>
+          {textoTiempo(minutos)}
+        </span>
+        {atrasado && (
+          <span className="rounded-full bg-red-600 px-3 py-1 text-sm font-semibold text-white">
+            Atrasado
+          </span>
+        )}
       </p>
 
       <Lineas lineas={platillos} />
