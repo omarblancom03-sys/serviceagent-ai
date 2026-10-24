@@ -64,6 +64,7 @@ confirmado → (esperando_pago) → en_cola → preparando → listo → entrega
 
 - Cada transición guarda su hora exacta, puesta por Postgres ([D42](decisiones.md)); se usa para el tiempo estimado que aprende.
 - `modo_envio_cocina` es configuración del restaurante: `al_confirmar` o `al_pagar`.
+- El ticket de cocina muestra los minutos desde que el pedido entró a la cola; a partir de 20 min se marca como atrasado ([D57](decisiones.md)).
 
 ## Pagos
 
