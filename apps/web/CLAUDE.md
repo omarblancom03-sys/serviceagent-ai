@@ -9,7 +9,7 @@ SPA en React + Vite + Tailwind + React Router para clientes y empleados. Se desp
 | `/pedir`  | Cliente (público, sin login) | US-09-P2: chat con el asistente sobre `POST /chat/...`; la conversación se crea al primer mensaje y no se guarda en el navegador (D40) |
 | `/menu`   | Cliente (público, sin login) | US-09-P2: el menú de `/admin` sin conteos, tiempos ni errores técnicos; busca también por categoría |
 | `/cocina` | Rol `cocina` (y `admin`) | US-10: tickets en cola o preparándose (`GET /cocina/pedidos`), del más antiguo al más nuevo; aparecen solos con la señal de Realtime y se refrescan cada 30 s (D47). US-13: minutos desde que entró a la cola, recalculados cada 15 s; desde 20 min, rojo y "Atrasado" |
-| `/caja`   | Rol `caja` (y `admin`) | Protegida en US-04; pantalla real en US-20 |
+| `/caja`   | Rol `caja` (y `admin`) | US-20: pedidos del día y abiertos de días anteriores (`GET /caja/pedidos`) en grupos (listos, en cocina, esperando pago, entregados y cancelados), con palomita de pagado o "Por cobrar" y búsqueda por folio o nombre; en vivo igual que cocina (D54) |
 | `/admin`  | Rol `admin` | US-05: menú de solo lectura (`GET /menu`) con búsqueda y filtro por categoría |
 | `/login`  | Empleados | US-04: tarjeta de empleado + teclado de PIN |
 
@@ -17,7 +17,8 @@ SPA en React + Vite + Tailwind + React Router para clientes y empleados. Se desp
 
 - `src/main.tsx`: monta `<App />` dentro de `BrowserRouter` y `SesionProvider`.
 - `src/App.tsx`: barra de navegación (solo pantallas permitidas, nombre del empleado y **Cerrar sesión**) y tabla de rutas (`/` redirige a `/pedir`). `PAGINA_EMPLEADO` dice qué pantalla interna ya tiene página real; las demás muestran `PaginaPlaceholder`. Las rutas públicas (`/pedir`, `/menu`, `/login`) van fuera de `PANTALLAS_EMPLEADO` y sin `RutaProtegida`.
-- `src/pages/`: una página por ruta. Reales: `Login.tsx`, `AdminMenu.tsx` (`/admin`), `MenuCliente.tsx` (`/menu`), `PedirChat.tsx` (`/pedir`) y `Cocina.tsx` (`/cocina`); las demás usan `PaginaPlaceholder` hasta que su historia las reemplace.
+- `src/pages/`: una página por ruta. Reales: `Login.tsx`, `AdminMenu.tsx` (`/admin`), `MenuCliente.tsx` (`/menu`), `PedirChat.tsx` (`/pedir`), `Cocina.tsx` (`/cocina`) y `Caja.tsx` (`/caja`); las demás usan `PaginaPlaceholder` hasta que su historia las reemplace.
+- `src/components/IndicadorConexion.tsx`: punto "En vivo" o "se actualiza cada 30 s" de cocina y caja.
 - `src/components/ListadoMenu.tsx`: el listado del menú que comparten `/admin` y `/menu` (carga, error con **Reintentar**, buscador, selector, tarjetas y extras sueltos). Recibe `modo` y solo lee las opciones de `opcionesVista(modo)`.
 - `src/auth/`: sesión del empleado.
   - `SesionContext.tsx`: `useSesion()` con `sesion`, `iniciarSesion`, `cerrarSesion` y `pedirConSesion`.
@@ -31,6 +32,7 @@ SPA en React + Vite + Tailwind + React Router para clientes y empleados. Se desp
 - **Tope diario del chat:** comparte el 503 `servicio_no_disponible` con una falla de Retell. Se reconoce porque solo ocurre al crear la conversación y el `error` contiene "límite de hoy" (texto de `apps/api/src/routes/chat.ts`); si ese texto cambia, cae al 503 genérico con Reintentar.
 - `src/lib/cocina.ts`: lógica pura de `/cocina`: `foliosNuevos` (qué resaltar; nada en la primera carga), `lineaDe` y `separarRenglones` (textos del ticket; extras por unidad con "c/u" si hay más de una; extras sueltos "Aparte"), `estadoConexionDe`, `TEXTO_CONEXION`, `mensajeErrorCocina`, `crearRecargador` (cuándo pedir la lista: señales agrupadas en 400 ms con tope de 2 s desde la primera, una petición a la vez y ponerse al día al reconectar) y los tiempos (refresco cada 30 s, resalte de 15 s; hora en `America/Chihuahua`).
 - `src/lib/tiempoCocina.ts` y `src/lib/useAhora.ts`: tiempo de cada ticket (US-13). `MINUTOS_ATRASO` (20, constante en código, [D57](../../docs/decisiones.md)), `minutosDesde` (con el reloj de la tablet; negativos o fecha inválida → 0), `estaAtrasado` (desde 20 exactos), `textoTiempo` ("12 min", "1 h 05 min") y `clasesTicket`. `useAhora(ms)`: un solo intervalo por pantalla (15 s) y actualiza al volver la pestaña; nunca cuenta ticks.
+- `src/lib/caja.ts`: lógica pura de `/caja`: `agruparPedidosCaja` (grupo por estado y orden dentro de cada uno), `coincideBusqueda` (folio o nombre sin acentos), `textoPago`, `textoHoraPedido` (con la fecha si no es de hoy), `ETIQUETA_ESTADO_CAJA` y `mensajeErrorCaja`. La recarga en vivo reutiliza `crearRecargador` de `cocina.ts`.
 - `src/lib/senalPedidos.ts`: `escucharSenalPedidos` con `@supabase/supabase-js` y la llave anon (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`): solo escucha el canal `pedidos`, evento `cambio`, sin datos (D12, D47). Sin esas variables, `hayRealtime()` es `false` y la pantalla vive del refresco. Es el único uso de Supabase en la web. Un solo canal para toda la app, que no se cierra: cada pantalla agrega y quita su oyente (cerrarlo al salir y volver enseguida dejaba la pantalla en "Conectando…").
 - `src/lib/enlaces.ts`: `separarEnlaces` parte un mensaje en texto y URLs http/https (sin la puntuación final). Los mensajes se pintan como texto de React, nunca con `dangerouslySetInnerHTML`.
 - `src/index.css`: solo `@import 'tailwindcss'` (Tailwind 4, sin archivo de configuración).
@@ -57,7 +59,7 @@ pnpm --filter @serviceagent/web build
 pnpm --filter @serviceagent/web test        # Vitest (test/*.test.ts)
 ```
 
-- **Tests:** solo lógica pura en `test/` (token, permisos, mensajes, menú de admin, vista del menú por modo, estado del chat, enlaces, cocina y tiempo de cocina), sin DOM ni dependencias extra.
+- **Tests:** solo lógica pura en `test/` (token, permisos, mensajes, menú de admin, vista del menú por modo, estado del chat, enlaces, cocina, tiempo de cocina y caja), sin DOM ni dependencias extra.
 - **Probar el login a mano:** levanta la API con su `.dev.vars` (ver [apps/api/CLAUDE.md](../api/CLAUDE.md)) y la web. Luego entra a `/login` con los empleados de prueba de [supabase/CLAUDE.md](../../supabase/CLAUDE.md#empleados-de-prueba-solo-desarrollo).
 
 ## Reglas que aplican
@@ -66,6 +68,6 @@ pnpm --filter @serviceagent/web test        # Vitest (test/*.test.ts)
 - [docs/negocio.md](../../docs/negocio.md): estados del pedido (botones de cocina y caja) y autenticación por PIN (roles, bloqueo, duración del JWT).
 - [docs/despliegue.md](../../docs/despliegue.md): variables `VITE_*` y despliegue en Pages.
 - [docs/decisiones.md](../../docs/decisiones.md): D9, D12 (JWT propio; Realtime solo como señal).
-- Cocina (`/cocina`): D46 (pedidos en cola al confirmar) y D47 (señal de Realtime) en [decisiones.md](../../docs/decisiones.md).
+- Cocina y caja: D46 (pedidos en cola al confirmar), D47 (señal de Realtime) y D54 (qué ve caja y cuándo está pagado) en [decisiones.md](../../docs/decisiones.md).
 - Menú de `/admin` y `/menu`: D18 (tiempo base), D19 (extras), D20 (agotado) y D23 (usa el `GET /menu` público) en [decisiones.md](../../docs/decisiones.md).
 - Chat de `/pedir`: D21, D36 (límite de mensajes), D38 (tope diario), D39 (fallas de Retell) y D40 en [decisiones.md](../../docs/decisiones.md).
