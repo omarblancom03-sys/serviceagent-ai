@@ -224,6 +224,54 @@ begin
     ('20. service_role: Deshacer', 'en_cola, null', v_deshacer);
 end $$;
 
+-- Doble deshacer: un tercer pedido de prueba, para no depender del estado de los otros dos.
+with p as (
+  insert into public.pedidos (nombre_cliente, telefono, huella, total_centavos, estado)
+  values ('Prueba US-11 doble deshacer', '6141234567', repeat('c', 64), 10000, 'en_cola')
+  returning id_pedido, folio
+), h as (
+  insert into public.historial_estado_pedido (id_pedido, estado)
+  select id_pedido, e from p, unnest(array['confirmado', 'en_cola']) as e
+)
+select set_config('ensayo.folio_doble', folio::text, true) from p;
+
+-- 21 a 25. Empezar, Terminado, deshacer listo y luego deshacer preparando, todo dentro del plazo:
+-- el pedido regresa hasta en_cola y el historial queda como lo dejó crear_pedido (D56).
+do $$
+declare
+  v_folio integer := current_setting('ensayo.folio_doble')::integer;
+  v_empleado uuid := current_setting('ensayo.empleado')::uuid;
+  v_empezar text;
+  v_terminar text;
+  v_deshacer_listo text;
+  v_deshacer_preparando text;
+begin
+  select estado_actual || case when cambiado_en is null then ', sin hora' else ', con hora' end
+  into v_empezar
+  from public.cambiar_estado_cocina(v_folio, 'en_cola', 'preparando', v_empleado);
+  select estado_actual || case when cambiado_en is null then ', sin hora' else ', con hora' end
+  into v_terminar
+  from public.cambiar_estado_cocina(v_folio, 'preparando', 'listo', v_empleado);
+  select estado_actual || ', ' || coalesce(motivo, 'null')
+  into v_deshacer_listo
+  from public.deshacer_estado_cocina(v_folio, 'listo', 15);
+  select estado_actual || ', ' || coalesce(motivo, 'null')
+  into v_deshacer_preparando
+  from public.deshacer_estado_cocina(v_folio, 'preparando', 15);
+  insert into ensayo_resultado values
+    ('21. Doble deshacer: Empezar', 'preparando, con hora', v_empezar),
+    ('22. Doble deshacer: Terminado', 'listo, con hora', v_terminar),
+    ('23. Doble deshacer: deshacer listo', 'preparando, null', v_deshacer_listo),
+    ('24. Doble deshacer: deshacer preparando', 'en_cola, null', v_deshacer_preparando);
+end $$;
+
+insert into ensayo_resultado
+select '25. Doble deshacer: historial', 'confirmado,en_cola',
+  (select string_agg(h.estado, ',' order by h.creado_en, h.id_historial)
+   from public.historial_estado_pedido h
+   join public.pedidos p using (id_pedido)
+   where p.folio = current_setting('ensayo.folio_doble')::integer);
+
 -- Resultados: ok = true en todas las filas.
 select caso, esperado, obtenido, obtenido is not distinct from esperado as ok
 from ensayo_resultado

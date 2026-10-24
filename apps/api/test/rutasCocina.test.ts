@@ -364,6 +364,31 @@ describe('POST /cocina/pedidos/{folio}/deshacer (US-11-P1)', () => {
     ]);
   });
 
+  it('deshacer dos veces seguidas dentro del plazo regresa hasta en_cola (D56)', async () => {
+    const { aplicacion, pedidos, reloj } = montar();
+    const empezo = reloj.ahora.getTime();
+    await post(aplicacion, '/cocina/pedidos/1001/empezar');
+    reloj.ahora = new Date(empezo + segundos(5));
+    await post(aplicacion, '/cocina/pedidos/1001/terminar');
+    reloj.ahora = new Date(empezo + segundos(8));
+
+    const primero = await post(aplicacion, '/cocina/pedidos/1001/deshacer', {
+      cuerpo: { estado: 'listo' },
+    });
+    expect(primero.status).toBe(200);
+    expect(RespuestaDeshacerCocinaSchema.parse(await primero.json()).estado).toBe('preparando');
+
+    // Preparando se hizo hace 10 s: sigue dentro de los 15 s del servidor.
+    reloj.ahora = new Date(empezo + segundos(10));
+    const segundo = await post(aplicacion, '/cocina/pedidos/1001/deshacer', {
+      cuerpo: { estado: 'preparando' },
+    });
+    expect(segundo.status).toBe(200);
+    expect(RespuestaDeshacerCocinaSchema.parse(await segundo.json()).estado).toBe('en_cola');
+    expect(pedidos[0]?.estado).toBe('en_cola');
+    expect(pedidos[0]?.historial.map((h) => h.estado)).toEqual(['confirmado', 'en_cola']);
+  });
+
   it('fuera del plazo responde 409 plazo_vencido y no cambia nada', async () => {
     const { aplicacion, pedidos, reloj } = montar();
     await post(aplicacion, '/cocina/pedidos/1001/empezar');
