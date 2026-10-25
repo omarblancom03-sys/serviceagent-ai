@@ -59,12 +59,16 @@ export function textoUltimoCambio(
   return `Lo cambió ${configuracion.actualizadoPor} el ${dia} a las ${hora}.`;
 }
 
-/** Mensajes sin códigos técnicos. Un 401 ya cierra la sesión antes de llegar aquí. */
+/**
+ * Mensajes sin códigos técnicos. Un 401 ya cierra la sesión antes de llegar aquí. Si falla el
+ * guardado no se sabe si el cambio quedó (la base pudo guardarlo y fallar después la respuesta),
+ * así que no se promete que el modo sigue igual: la pantalla vuelve a pedir el modo actual.
+ */
 export function mensajeErrorConfiguracion(error: unknown, accion: 'leer' | 'guardar'): string {
   if (error instanceof ErrorApi && error.status === 403) {
     return 'Solo el administrador puede ver y cambiar el modo de pago.';
   }
   return accion === 'leer'
     ? 'No se pudo cargar el modo de pago. Intenta de nuevo.'
-    : 'No se pudo cambiar el modo de pago. Intenta de nuevo; el modo sigue como estaba.';
+    : 'No pudimos confirmar el cambio del modo de pago. Revisa arriba cuál quedó activo e intenta de nuevo si hace falta.';
 }

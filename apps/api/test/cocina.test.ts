@@ -1,4 +1,4 @@
-import { RespuestaPedidosCocinaSchema } from '@serviceagent/shared';
+import { ESTADOS_COCINA, RespuestaPedidosCocinaSchema } from '@serviceagent/shared';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { describe, expect, it } from 'vitest';
 import { crearRepoCocina } from '../src/lib/repoCocina';
@@ -165,5 +165,11 @@ describe('crearRepoCocina (Supabase)', () => {
 
     const filaRara = clienteCon({ data: [{ ...filaPedido, estado: 'entregado' }], error: null });
     await expect(crearRepoCocina(filaRara.cliente).leerPedidosActivos()).rejects.toThrow();
+  });
+});
+
+describe('ESTADOS_COCINA (D55)', () => {
+  it('no incluye esperando_pago: un pedido por transferencia no llega a cocina hasta que se pague', () => {
+    expect(ESTADOS_COCINA).not.toContain('esperando_pago');
   });
 });

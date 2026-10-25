@@ -43,7 +43,7 @@ describe('modo de pago en /admin (US-22)', () => {
       'No se pudo cargar el modo de pago. Intenta de nuevo.',
     );
     expect(mensajeErrorConfiguracion(new TypeError('Failed to fetch'), 'guardar')).toBe(
-      'No se pudo cambiar el modo de pago. Intenta de nuevo; el modo sigue como estaba.',
+      'No pudimos confirmar el cambio del modo de pago. Revisa arriba cuál quedó activo e intenta de nuevo si hace falta.',
     );
   });
 });

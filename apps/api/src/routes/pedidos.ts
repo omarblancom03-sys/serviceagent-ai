@@ -64,7 +64,9 @@ export const crearPedidoRoute = createRoute({
     '200 con `ok: false` y `faltaConfirmacion: true` sin tocar la base (D48). ' +
     'Recibe el mismo pedido que se cotizó más nombre y teléfono, y lo VUELVE a cotizar con ' +
     'precios de la base: nunca recibe montos. Si no falta nada, guarda el pedido con folio en una ' +
-    'sola transacción y lo manda a la cola de cocina (estado `en_cola`, modo al confirmar, D46). Si algo del pedido o del cliente no sirve, ' +
+    'sola transacción con el modo de pago vigente (D55), que devuelve como `modoPago`: con pago al ' +
+    'recoger va a la cola de cocina (`en_cola`, D46); con transferencia queda en `esperando_pago` y ' +
+    'no llega a cocina hasta que se pague. Si algo del pedido o del cliente no sirve, ' +
     'responde 200 con `ok: false` y no guarda nada. El mismo pedido con el mismo teléfono y ' +
     'nombre en los últimos 10 minutos devuelve el folio que ya existe (`yaExistia: true`).',
   security: [{ FirmaRetell: [] }],

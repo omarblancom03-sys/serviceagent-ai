@@ -63,6 +63,14 @@ export function ModoPagoAdmin() {
       setPorConfirmar(null);
     } catch (causa) {
       setErrorGuardar(mensajeErrorConfiguracion(causa, 'guardar'));
+      // El cambio pudo quedar guardado aunque falle la respuesta: se vuelve a pedir el modo actual.
+      try {
+        const actual = await pedirConSesion('/admin/configuracion', ConfiguracionRestauranteSchema);
+        setEstado({ tipo: 'listo', configuracion: actual });
+        if (actual.modoPago === modoPago) setPorConfirmar(null);
+      } catch {
+        // Si tampoco se puede leer, se queda lo que había en pantalla; el mensaje ya pide revisar.
+      }
     } finally {
       setGuardando(false);
     }
