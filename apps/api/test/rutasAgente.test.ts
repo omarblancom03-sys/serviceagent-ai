@@ -95,6 +95,13 @@ describe('POST /agente/buscar-menu', () => {
     });
   });
 
+  it('una consulta de exactamente 200 caracteres sí se acepta (el límite es 200)', async () => {
+    const res = await buscar(sobre({ consulta: 'a'.repeat(200) }));
+
+    expect(res.status).toBe(200);
+    expect(RespuestaBuscarMenuSchema.safeParse(await res.json()).success).toBe(true);
+  });
+
   it('400 si la función no es buscar_menu', async () => {
     expect((await buscar(sobre({ consulta: 'tacos' }, 'cotizar_pedido'))).status).toBe(400);
   });
