@@ -6,17 +6,17 @@ El agente atiende al cliente por chat (voz en Sprint 10). Su prompt, sus custom 
 
 Retell llama a nuestra API. **Toda petición de Retell se verifica con la firma `X-Retell-Signature`**; si no es válida, se rechaza.
 
-| Función                 | Endpoint                        | Para qué                                                          |
-| ----------------------- | ------------------------------- | ----------------------------------------------------------------- |
-| `buscar_menu`           | `POST /agente/buscar-menu`      | RAG: 3–5 productos relevantes con precio y disponibilidad en vivo |
-| `info_restaurante`      | `POST /agente/info`             | Horario, ubicación, pagos, alérgenos, FAQs                        |
-| `cotizar_pedido`        | `POST /pedidos/cotizar`         | Valida productos y calcula total (sin guardar)                    |
-| `crear_pedido`          | `POST /pedidos`                 | Crea el pedido tras confirmación explícita (D48)                  |
-| `modificar_pedido`      | `PATCH /pedidos/:folio`         | Cambios antes de preparación                                      |
-| `cancelar_pedido`       | `POST /pedidos/:folio/cancelar` | Solo antes de `preparando`                                        |
-| `estado_pedido`         | `POST /agente/estado`           | Requiere folio **y** teléfono que coincidan                       |
-| `tiempo_estimado`       | `GET /tiempo-estimado`          | Antes de confirmar                                                |
-| `transferir_a_empleado` | `POST /agente/escalar`          | Crea alerta en caja/admin                                         |
+| Función                 | Endpoint                        | Para qué                                                                                          |
+| ----------------------- | ------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `buscar_menu`           | `POST /agente/buscar-menu`      | RAG: hasta 5 productos relevantes (0 si nada se parece) con precio y disponibilidad en vivo (D50) |
+| `info_restaurante`      | `POST /agente/info`             | Horario, ubicación, pagos, alérgenos, FAQs                                                        |
+| `cotizar_pedido`        | `POST /pedidos/cotizar`         | Valida productos y calcula total (sin guardar)                                                    |
+| `crear_pedido`          | `POST /pedidos`                 | Crea el pedido tras confirmación explícita (D48)                                                  |
+| `modificar_pedido`      | `PATCH /pedidos/:folio`         | Cambios antes de preparación                                                                      |
+| `cancelar_pedido`       | `POST /pedidos/:folio/cancelar` | Solo antes de `preparando`                                                                        |
+| `estado_pedido`         | `POST /agente/estado`           | Requiere folio **y** teléfono que coincidan                                                       |
+| `tiempo_estimado`       | `GET /tiempo-estimado`          | Antes de confirmar                                                                                |
+| `transferir_a_empleado` | `POST /agente/escalar`          | Crea alerta en caja/admin                                                                         |
 
 Los nombres exactos de rutas pueden ajustarse en su historia; si cambian, se actualiza esta tabla en el mismo PR.
 
