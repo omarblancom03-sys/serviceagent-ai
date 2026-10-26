@@ -36,6 +36,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). *
 - US-08-P2-T1: `POST /pedidos` solo crea el pedido si el cliente respondió que sí a la pregunta de confirmación en la conversación que manda Retell; si no, responde `faltaConfirmacion: true` sin guardar nada (D48).
 - US-20: pantalla `/caja` (rol caja y admin) con los pedidos del día y los abiertos de días anteriores, agrupados en listos para entregar, en cocina y entregados o cancelados, con total, últimos 4 dígitos del teléfono, palomita de pagado y su método o "Por cobrar", búsqueda por folio o nombre y actualización en vivo como cocina; `GET /caja/pedidos` y tabla `pagos` (D54).
 - US-13: cada ticket de `/cocina` muestra los minutos desde que entró a la cola ("12 min", "1 h 05 min"), que se actualizan solos cada 15 s y al volver a la pestaña; desde los 20 minutos el ticket se pinta en rojo con la etiqueta "Atrasado" (D57).
+- US-16 (API y base de datos): `POST /agente/buscar-menu` (custom function `buscar_menu`, con la firma de Retell) busca en el menú con las palabras del cliente: embeddings de Workers AI (`bge-m3`) en pgvector, hasta 5 platillos con precios y disponibilidad en vivo, umbral para no devolver lo que no se parece y reindexado automático de los platillos que cambian (D50). Evaluación con 20 preguntas: 19 en el top 3.
 
 ### Corregido
 

@@ -61,6 +61,14 @@ Conversaciones nuevas del chat al día en todo el sistema, contadas por día de 
 
 - **Ambiente desplegado:** para cambiarla sin tocar código, el PO la carga con `cd apps/api && pnpm exec wrangler secret put CHAT_TOPE_DIARIO`. No es secreta, pero en `vars` de `wrangler.jsonc` cambiarla exigiría un PR, y una variable puesta a mano en el dashboard se borra en el siguiente despliegue.
 
+### Workers AI (binding `AI`)
+
+La búsqueda semántica del menú calcula embeddings con Workers AI ([D50](decisiones.md)). No es un secreto ni una variable: es el binding `ai` de `apps/api/wrangler.jsonc` y se despliega con el Worker.
+
+- **Local:** `wrangler dev` siempre llama a Workers AI remoto (puede cobrar uso) con la sesión de `wrangler login`. Sin sesión, `buscar_menu` responde 500.
+- **Costo:** $0.0118 por millón de tokens. Indexar el menú completo son unos 10,000 tokens; cada búsqueda, unas decenas.
+- Los tests no usan Workers AI: reemplazan el embedder por uno en memoria.
+
 ### Frontends (web y simuladores)
 
 - Vite solo expone variables con prefijo `VITE_`, y **terminan en el navegador**. Nunca pongas secretos ahí.
