@@ -42,7 +42,7 @@ Fuera de alcance: delivery a domicilio.
 
 ## Pedido confirmado
 
-- `crear_pedido` recibe el mismo pedido que se cotizó más nombre y teléfono; el backend vuelve a cotizar y guarda el pedido ([D35](decisiones.md)). Mientras no haya pagos, el modo es `al_confirmar`: queda en `en_cola` en la misma transacción ([D46](decisiones.md)).
+- `crear_pedido` recibe el mismo pedido que se cotizó más nombre y teléfono; el backend vuelve a cotizar y guarda el pedido ([D35](decisiones.md)). Con el modo de pago vigente ([D55](decisiones.md)): pago al recoger → queda en `en_cola` en la misma transacción ([D46](decisiones.md)); transferencia → queda en `esperando_pago`. El pedido guarda su modo y la respuesta lo dice (`modoPago`).
 - Teléfono de México a 10 dígitos y nombre de 2 a 60 letras ([D32](decisiones.md)); folio creciente desde 1001 ([D33](decisiones.md)); el mismo pedido con el mismo teléfono y nombre dos veces en 10 minutos no se duplica ([D34](decisiones.md)).
 
 ## Estados del pedido
@@ -56,7 +56,7 @@ confirmado → (esperando_pago) → en_cola → preparando → listo → entrega
 | -------------------- | ------------------------------------------------------------------------------------ |
 | → confirmado         | Agente (`crear_pedido`), tras confirmación explícita del cliente (D48)               |
 | → esperando_pago     | Sistema, si el pago es por transferencia                                             |
-| → en_cola            | Sistema: al confirmar o al pagar, según `modo_envio_cocina` (hoy, al confirmar: D46) |
+| → en_cola            | Sistema: al confirmar o al pagar, según el modo de pago que fija el admin (D46, D55) |
 | en_cola → preparando | Cocina (botón **Empezar**)                                                           |
 | preparando → listo   | Cocina (botón verde **Terminado**) → dispara aviso por WhatsApp                      |
 | listo → entregado    | Caja                                                                                 |
@@ -65,7 +65,7 @@ confirmado → (esperando_pago) → en_cola → preparando → listo → entrega
 
 - Cada transición guarda su hora exacta, puesta por Postgres ([D42](decisiones.md)); se usa para el tiempo estimado que aprende.
 - **Cocina** ([D56](decisiones.md)): Empezar solo desde `en_cola` y Terminado solo desde `preparando`; si otra pantalla ya lo cambió, no se aplica. El historial guarda qué empleado lo hizo. Deshacer regresa al estado anterior y borra ese paso del historial: la pantalla lo ofrece 10 s y el servidor lo acepta hasta 15 s, solo si es el último cambio del pedido.
-- `modo_envio_cocina` es configuración del restaurante: `al_confirmar` o `al_pagar`.
+- El **modo de pago** es configuración del restaurante y decide cuándo va el pedido a cocina: `al_recoger` (pago en caja; a cocina al confirmar) o `transferencia` (pago antes; a cocina al pagar). Lo cambia el administrador en `/admin` y solo afecta a los pedidos nuevos ([D55](decisiones.md)).
 - El ticket de cocina muestra los minutos desde que el pedido entró a la cola; a partir de 20 min se marca como atrasado ([D57](decisiones.md)).
 
 ## Pagos

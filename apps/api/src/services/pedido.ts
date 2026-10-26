@@ -3,6 +3,7 @@ import type {
   DatoClienteInvalido,
   EstadoPedido,
   MensajeConversacion,
+  ModoPago,
   RenglonCotizacion,
   RespuestaCrearPedido,
 } from '@serviceagent/shared';
@@ -40,15 +41,21 @@ export interface NuevoPedido {
 export interface PedidoGuardado {
   folio: number;
   totalCentavos: number;
-  /** 'en_cola' si es nuevo (modo al confirmar, D46); si ya existía, el estado que tiene ahora. */
+  /**
+   * Si es nuevo: 'en_cola' con pago al recoger (D46) o 'esperando_pago' con transferencia (D55).
+   * Si ya existía, el estado que tiene ahora.
+   */
   estado: EstadoPedido;
+  /** Modo de pago con que se creó: el vigente al guardarlo, o el del pedido que ya existía. */
+  modoPago: ModoPago;
   yaExistia: boolean;
 }
 
 /** Interfaz de datos de pedidos. La implementa `lib/repoPedidos.ts` (Supabase) o un repo en memoria. */
 export interface PedidosRepo {
   /**
-   * Guarda el pedido ya en la cola de cocina (`en_cola`, D46) en una sola transacción, o devuelve el que ya existe
+   * Guarda el pedido en una sola transacción con el modo de pago vigente, que decide si va a la cola
+   * de cocina (D46) o espera el pago (D55), o devuelve el que ya existe
    * si el mismo teléfono mandó la misma huella hace menos de `minutosDuplicado` minutos. La hora
    * la pone la base, no la API (D42).
    */
@@ -179,6 +186,7 @@ export async function crearPedido(
     folio: guardado.folio,
     folioTexto: `#${guardado.folio}`,
     estado: guardado.estado,
+    modoPago: guardado.modoPago,
     yaExistia: guardado.yaExistia,
     renglones: cotizacion.renglones,
     totalCentavos: guardado.totalCentavos,

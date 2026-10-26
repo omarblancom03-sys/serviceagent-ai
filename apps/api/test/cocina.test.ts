@@ -1,6 +1,7 @@
 import {
   ConflictoCocinaSchema,
   DeshacerCambioCocinaPeticionSchema,
+  ESTADOS_COCINA,
   ParamsFolioCocinaSchema,
   RespuestaCambioEstadoCocinaSchema,
   RespuestaPedidosCocinaSchema,
@@ -417,5 +418,11 @@ describe('contrato del cambio de estado en cocina (US-11-P1)', () => {
       ConflictoCocinaSchema.safeParse({ error: 'x', codigo: 'otro', estadoActual: 'listo' })
         .success,
     ).toBe(false);
+  });
+});
+
+describe('ESTADOS_COCINA (D55)', () => {
+  it('no incluye esperando_pago: un pedido por transferencia no llega a cocina hasta que se pague', () => {
+    expect(ESTADOS_COCINA).not.toContain('esperando_pago');
   });
 });
