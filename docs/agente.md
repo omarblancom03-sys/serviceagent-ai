@@ -16,7 +16,7 @@ Retell llama a nuestra API. **Toda petición de Retell se verifica con la firma 
 | `cancelar_pedido`       | `POST /pedidos/:folio/cancelar` | Solo antes de `preparando`                                                                        |
 | `estado_pedido`         | `POST /agente/estado`           | Requiere folio **y** teléfono que coincidan                                                       |
 | `tiempo_estimado`       | `GET /tiempo-estimado`          | Antes de confirmar                                                                                |
-| `transferir_a_empleado` | `POST /agente/escalar`          | Crea alerta en caja/admin                                                                         |
+| `transferir_a_empleado` | `POST /agente/escalar`          | Crea alerta en caja/admin, una por conversación; sin `chat.chat_id` no la crea (D59)              |
 
 Los nombres exactos de rutas pueden ajustarse en su historia; si cambian, se actualiza esta tabla en el mismo PR.
 
@@ -77,6 +77,7 @@ Lógica en `apps/api/src/services/chat.ts`; Retell se llama con `fetch` directo 
 **Confirmado en la prueba real** (la documentación de Retell no lo dice):
 
 - `create-chat` no trae el saludo del agente: `mensajes` sale vacío, así que la pantalla de `/pedir` muestra su propio saludo. También con el saludo fijo ("Custom message"), confirmado el 17 de octubre de 2026: la primera respuesta de `create-chat-completion` trae solo la respuesta del agente, sin el saludo fijo.
+- En un agente de chat, una custom function recibe `{ name, chat, args }`, no `call`: el id viene en `chat.chat_id`, y `chat` también trae `transcript`, `message_with_tool_calls`, `chat_type`, `agent_id`, `agent_version` y `chat_status`. `transferir_a_empleado` solo lee `chat.chat_id`; la transcripción no se guarda ni va al log ([D59](decisiones.md)).
 - El `chat_id` empieza con `chat_` y mide 32 caracteres. La API acepta de 1 a 128, el largo de la columna.
 - Con un chat cerrado por inactividad, `create-chat-completion` responde 400; la API consulta `get-chat` (`ended`), termina la conversación, devuelve el mensaje y responde 409. A los 13 minutos sin actividad el chat ya estaba cerrado; no se midió si cierra exactamente a los 6.
 - La llave de API de Retell que se usó en la prueba sirve para llamar a la API de chat (`create-chat` y `create-chat-completion`).
