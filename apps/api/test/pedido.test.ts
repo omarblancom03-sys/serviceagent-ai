@@ -333,6 +333,40 @@ describe('crearPedido', () => {
     );
   });
 
+  describe('modo de pago (US-22, D55)', () => {
+    it('con pago al recoger el pedido va a la cola de cocina y la respuesta lo dice', async () => {
+      const { respuesta, repo } = await crear({ ...DOS_TBONE, ...CLIENTE });
+      expect(respuesta).toMatchObject({ ok: true, estado: 'en_cola', modoPago: 'al_recoger' });
+      expect(repo.pedidos[0]).toMatchObject({ estado: 'en_cola', modoPago: 'al_recoger' });
+    });
+
+    it('con transferencia el pedido espera el pago y no va a cocina', async () => {
+      const repo = crearRepoPedidosEnMemoria();
+      repo.modoPago = 'transferencia';
+      const { respuesta } = await crear({ ...DOS_TBONE, ...CLIENTE }, repo);
+      expect(respuesta).toMatchObject({
+        ok: true,
+        estado: 'esperando_pago',
+        modoPago: 'transferencia',
+        totalTexto: '$916.00',
+      });
+    });
+
+    it('cambiar el modo no afecta a un pedido que ya existía: el duplicado conserva su modo', async () => {
+      const repo = crearRepoPedidosEnMemoria();
+      await crear({ ...DOS_TBONE, ...CLIENTE }, repo);
+      repo.modoPago = 'transferencia';
+      const { respuesta } = await crear({ ...DOS_TBONE, ...CLIENTE }, repo, minutosDespues(1));
+      expect(respuesta).toMatchObject({
+        folio: 1001,
+        yaExistia: true,
+        estado: 'en_cola',
+        modoPago: 'al_recoger',
+      });
+      expect(repo.pedidos).toHaveLength(1);
+    });
+  });
+
   it('propaga el error si falla el menú o al guardar (la ruta responderá 500)', async () => {
     const args = CrearPedidoArgsSchema.parse({ ...DOS_TBONE, ...CLIENTE });
     await expect(

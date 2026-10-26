@@ -1,4 +1,4 @@
-import { EstadoPedidoSchema } from '@serviceagent/shared';
+import { EstadoPedidoSchema, ModoPagoSchema } from '@serviceagent/shared';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import type { NuevoPedido, PedidosRepo } from '../services/pedido';
@@ -9,6 +9,7 @@ const PedidoGuardadoFilaSchema = z.object({
   total_guardado: z.number().int().positive(),
   estado_actual: EstadoPedidoSchema,
   ya_existia: z.boolean(),
+  modo_pago: ModoPagoSchema,
 });
 
 /** Renglones como los espera `crear_pedido` en `p_renglones` (snake_case, ids del menú). */
@@ -71,6 +72,7 @@ export function crearRepoPedidos(cliente: SupabaseClient): PedidosRepo {
         folio: fila.folio_asignado,
         totalCentavos: fila.total_guardado,
         estado: fila.estado_actual,
+        modoPago: fila.modo_pago,
         yaExistia: fila.ya_existia,
       };
     },
