@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { CANTIDAD_MAXIMA, CANTIDAD_MINIMA } from './pedido';
+import { IdSchema } from './menu';
+import { CANTIDAD_MAXIMA, CANTIDAD_MINIMA, EstadoPedidoSchema } from './pedido';
 
 /*
  * Contrato de la pantalla de cocina (US-10): `GET /cocina/pedidos`. Lleva solo lo que cocina
@@ -62,9 +63,74 @@ export const ErrorCocinaSchema = z.object({ error: z.string() });
 export const CANAL_SENAL_PEDIDOS = 'pedidos';
 export const EVENTO_SENAL_PEDIDOS = 'cambio';
 
+/*
+ * Cambio de estado en cocina (US-11-P1, D56): `POST /cocina/pedidos/{folio}/empezar`,
+ * `/terminar` y `/deshacer`. Quién lo hizo sale de la sesión, nunca del cuerpo.
+ */
+
+/** Segundos que la pantalla muestra el botón Deshacer después de Empezar o Terminado. */
+export const SEGUNDOS_DESHACER_PANTALLA = 10;
+/** Plazo que revisa la base al deshacer: un poco más que la pantalla, por la latencia de la red. */
+export const SEGUNDOS_DESHACER_SERVIDOR = 15;
+
+/** Folio en la ruta: solo dígitos (nada de `1e3` ni `0x10`), convertido a número. */
+export const ParamsFolioCocinaSchema = z.object({
+  folio: z
+    .string()
+    .regex(/^\d{1,10}$/, 'El folio debe ser un entero positivo')
+    .transform(Number)
+    .pipe(IdSchema),
+});
+
+/** Estados que se pueden deshacer: Empezar deja `preparando` y Terminado deja `listo`. */
+export const ESTADOS_DESHACER = ['preparando', 'listo'] as const;
+export const EstadoDeshacerSchema = z.enum(ESTADOS_DESHACER);
+
+/** Cuerpo de `/deshacer`: el estado que se quiere deshacer. */
+export const DeshacerCambioCocinaPeticionSchema = z.strictObject({ estado: EstadoDeshacerSchema });
+
+/** Respuesta de `/empezar` y `/terminar`. */
+export const RespuestaCambioEstadoCocinaSchema = z.object({
+  folio: z.number().int().positive(),
+  folioTexto: z.string(),
+  /** Empezar deja `preparando` y Terminado deja `listo`. */
+  estado: EstadoDeshacerSchema,
+  /** Hora del cambio, puesta por Postgres (D42). */
+  cambiadoEn: z.iso.datetime({ offset: true }),
+  /** `cambiadoEn` + `SEGUNDOS_DESHACER_PANTALLA`: hasta cuándo la pantalla ofrece Deshacer. */
+  deshacerHasta: z.iso.datetime({ offset: true }),
+});
+
+/** Respuesta de `/deshacer`: el estado al que regresó el pedido. */
+export const RespuestaDeshacerCocinaSchema = z.object({
+  folio: z.number().int().positive(),
+  folioTexto: z.string(),
+  estado: EstadoCocinaSchema,
+});
+
+/**
+ * Motivos del 409: el pedido ya no está en el estado esperado (otra tablet lo cambió, o lo que se
+ * quiere deshacer no fue el último cambio) o ya pasó el plazo para deshacer.
+ */
+export const CODIGOS_CONFLICTO_COCINA = ['estado_cambio', 'plazo_vencido'] as const;
+
+export const ConflictoCocinaSchema = z.object({
+  error: z.string(),
+  codigo: z.enum(CODIGOS_CONFLICTO_COCINA),
+  /** Estado en que está el pedido ahora, para que la pantalla se acomode. */
+  estadoActual: EstadoPedidoSchema,
+});
+
 export type EstadoCocina = z.infer<typeof EstadoCocinaSchema>;
 export type ExtraCocina = z.infer<typeof ExtraCocinaSchema>;
 export type RenglonCocina = z.infer<typeof RenglonCocinaSchema>;
 export type TicketCocina = z.infer<typeof TicketCocinaSchema>;
 export type RespuestaPedidosCocina = z.infer<typeof RespuestaPedidosCocinaSchema>;
 export type ErrorCocina = z.infer<typeof ErrorCocinaSchema>;
+export type ParamsFolioCocina = z.infer<typeof ParamsFolioCocinaSchema>;
+export type EstadoDeshacer = z.infer<typeof EstadoDeshacerSchema>;
+export type DeshacerCambioCocinaPeticion = z.infer<typeof DeshacerCambioCocinaPeticionSchema>;
+export type RespuestaCambioEstadoCocina = z.infer<typeof RespuestaCambioEstadoCocinaSchema>;
+export type RespuestaDeshacerCocina = z.infer<typeof RespuestaDeshacerCocinaSchema>;
+export type CodigoConflictoCocina = (typeof CODIGOS_CONFLICTO_COCINA)[number];
+export type ConflictoCocina = z.infer<typeof ConflictoCocinaSchema>;
