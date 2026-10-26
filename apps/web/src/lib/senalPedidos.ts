@@ -4,8 +4,8 @@ import { estadoConexionDe, type EstadoConexion } from './cocina';
 
 /*
  * Señal de Realtime "cambió un pedido" (D12, D47). Solo se escucha: no trae datos, y los pedidos
- * se piden a la API con la sesión del empleado. La llave es la anon o la publishable
- * (`sb_publishable_…`), públicas por diseño; con ella no se puede leer ninguna tabla (D15).
+ * se piden a la API con la sesión del empleado. Llave pública de Supabase (cuál va:
+ * docs/despliegue.md); con ella no se puede leer ninguna tabla (D15).
  */
 
 let cliente: SupabaseClient | null | undefined;
@@ -26,8 +26,9 @@ let ultimoEstado: EstadoConexion | null = null;
 
 /**
  * Cliente de Realtime con la URL y la llave públicas de Supabase, o `null` si falta alguna o si
- * `createClient` las rechaza (por ejemplo, una URL mal escrita). Con `null` la pantalla funciona
- * igual, con el refresco de 30 s, en lugar de quedarse en blanco.
+ * `createClient` las rechaza (solo pasa con una URL sin forma de URL). Con `null` la pantalla
+ * funciona igual, con el refresco de 30 s, en lugar de quedarse en blanco. Una URL bien formada
+ * pero equivocada o una llave mala no truenan aquí: el canal no conecta y sale "Sin conexión en vivo".
  */
 export function crearClienteRealtime(
   url: string | undefined,

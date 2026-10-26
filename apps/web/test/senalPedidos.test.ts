@@ -1,3 +1,4 @@
+import type { createClient } from '@supabase/supabase-js';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { crearClienteRealtime } from '../src/lib/senalPedidos';
 
@@ -21,9 +22,10 @@ describe('crearClienteRealtime (US-10-T1)', () => {
 
   it('si createClient lanza un error, también devuelve null', () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
+    // Un doble del tipo de createClient: solo importa que lance (no se usa su resultado).
     const crear = (() => {
       throw new Error('Invalid supabaseUrl');
-    }) as never;
+    }) as unknown as typeof createClient;
     expect(crearClienteRealtime('https://abc.supabase.co', 'llave', crear)).toBeNull();
   });
 
@@ -32,7 +34,8 @@ describe('crearClienteRealtime (US-10-T1)', () => {
     const cliente = crearClienteRealtime(
       'https://abc.supabase.co',
       'sb_publishable_xyz',
-      crear as never,
+      // Un doble que regresa un objeto cualquiera en lugar de un SupabaseClient real.
+      crear as unknown as typeof createClient,
     );
     expect(cliente).toEqual({ cliente: true });
     expect(crear).toHaveBeenCalledWith('https://abc.supabase.co', 'sb_publishable_xyz', {

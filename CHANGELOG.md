@@ -42,7 +42,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). *
 
 ### Corregido
 
-- US-10-T1: si `VITE_SUPABASE_URL` o la llave no son válidas, `/cocina` ya no se queda en blanco: funciona con el refresco de 30 s. Los docs aclaran que la llave pública puede ser la anon o la publishable, nunca la secreta.
+- US-10-T1: si `VITE_SUPABASE_URL` no tiene forma de URL, `/cocina` y `/caja` ya no se quedan en blanco: funcionan con el refresco de 30 s. Los docs aclaran que la llave pública puede ser la anon o la publishable, nunca la secreta.
 - US-07-P1: los 500 intermitentes de `POST /pedidos/cotizar` y `GET /menu` ("JWT issued at future" de Supabase) se reintentan en el cliente de Supabase, solo ante ese error y hasta ~3 s, para toda la API (D41).
 - US-07-P2: el agente de chat ya no lee la memoria de contacto de Retell (evita mezclar datos entre clientes).
 - US-08-P2-T2: el chat web abre los chats con la versión publicada del agente (`agent_version: "latest_published"`); antes usaba la más reciente, aunque fuera el borrador (D52).

@@ -74,7 +74,7 @@ La búsqueda semántica del menú calcula embeddings con Workers AI ([D50](decis
 - Vite solo expone variables con prefijo `VITE_`, y **terminan en el navegador**. Nunca pongas secretos ahí.
 - Local: `apps/web/.env.local` y `apps/simuladores/.env.local` (por ejemplo, `VITE_API_URL=http://localhost:8787`).
 - En CI: `VITE_API_URL`, `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` se definen como **variables** (no secretos) del repo en GitHub y se usan al compilar en `deploy.yml`.
-- `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` solo sirven para que `/cocina` escuche la señal de Realtime (D47). En `VITE_SUPABASE_ANON_KEY` va una llave **pública**: la anon (formato anterior) o la publishable (`sb_publishable_…`, la que muestra hoy el dashboard de Supabase); las dos funcionan igual. **Nunca** la secreta ni la de servicio. Es pública por diseño y no lee ninguna tabla (D15). Si faltan o no son válidas (por ejemplo, una URL mal escrita), la pantalla funciona igual y se refresca cada 30 s.
+- `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` solo sirven para que `/cocina` y `/caja` escuchen la señal de Realtime (D47). En `VITE_SUPABASE_ANON_KEY` va una llave **pública**: la anon (formato anterior) o la publishable (`sb_publishable_…`, la que muestra hoy el dashboard de Supabase); las dos funcionan igual. **Nunca** la secret (`sb_secret_…`) ni la `service_role`. Es pública por diseño y no lee ninguna tabla (D15). Si faltan, o si la URL no tiene forma de URL (`createClient` truena y `crearClienteRealtime` devuelve `null`), la pantalla vive del refresco de 30 s. Con una URL bien formada pero equivocada o una llave mala no truena: el canal no conecta y la pantalla muestra "Sin conexión en vivo: se actualiza cada 30 s". En los dos casos funciona.
 
 ### GitHub Actions
 
