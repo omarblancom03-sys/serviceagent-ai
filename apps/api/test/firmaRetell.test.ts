@@ -6,7 +6,7 @@ import { firmar } from './firmaDePrueba';
 
 const LLAVE = 'key_llave_de_prueba_con_badge_de_webhook';
 const AHORA = 1_790_000_000_000;
-const CUERPO = JSON.stringify({ name: 'cotizar_pedido', call: {}, args: { productos: [] } });
+const CUERPO = JSON.stringify({ name: 'cotizar_pedido', chat: {}, args: { productos: [] } });
 
 describe('verificarFirmaRetell', () => {
   it('acepta una firma válida y vigente', async () => {
