@@ -22,7 +22,7 @@ Todo lo del agente de Retell, **versionado en Git** y no solo en el dashboard de
 ## Convenciones de esta área
 
 - Los nombres de función y sus endpoints son los de la tabla de [docs/agente.md](../docs/agente.md#custom-functions); el JSON de `functions/` debe coincidir con el contrato del endpoint, y `tests/funciones.test.ts` lo comprueba. El nombre, la descripción, la ruta y los demás ajustes de la función van en `general_tools` de `retell.json`.
-- El menú completo **no** va en el prompt: se consulta con `buscar_menu`.
+- El menú completo **no** va en el prompt: se consulta con `buscar_menu`. `tests/casos.test.ts` lo revisa: a lo más 10 nombres de platillos del seed, sin distinguir mayúsculas.
 - El enlace del menú del prompt es la URL de producción de la web ([docs/despliegue.md](../docs/despliegue.md)); si cambia el dominio, se cambia el prompt.
 - El prompt nunca pide al modelo calcular montos; los montos vienen de `cotizar_pedido`.
 - Cuando el prompt pida confirmar el pedido (desde US-08-P2), el mensaje debe terminar con una pregunta que empiece con la frase fija **"¿Confirmo tu pedido?"**: el backend la busca en la conversación para dejar crear el pedido (`FRASE_PREGUNTA_CONFIRMACION` en `apps/api/src/services/confirmacion.ts`, D48). Si el prompt la cambia, se cambia también ahí, o ningún pedido se crea.

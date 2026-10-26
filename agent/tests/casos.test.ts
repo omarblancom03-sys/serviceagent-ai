@@ -177,7 +177,11 @@ describe('prompt (agent/prompt.md)', () => {
     );
     const bloque = seed.slice(seed.indexOf('2) PLATILLOS'), seed.indexOf('3) VARIANTES'));
     const platillos = [...bloque.matchAll(/^\s*\('[^']+',\s*'([^']+)',/gm)].map((m) => m[1] ?? '');
-    const enElPrompt = platillos.filter((nombre) => prompt.includes(nombre));
+    // En minúsculas: un menú pegado sin mayúsculas también cuenta.
+    const promptMinusculas = prompt.toLowerCase();
+    const enElPrompt = platillos.filter((nombre) =>
+      promptMinusculas.includes(nombre.toLowerCase()),
+    );
 
     expect(platillos.length).toBeGreaterThan(90);
     expect(enElPrompt.length).toBeLessThanOrEqual(10);
