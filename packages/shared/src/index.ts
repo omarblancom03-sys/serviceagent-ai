@@ -1,3 +1,4 @@
+export * from './alerta';
 export * from './auth';
 export * from './caja';
 export * from './busqueda';
