@@ -14,7 +14,7 @@ import {
 
 /*
  * Transferir a un empleado (US-18, D59). El agente pide ayuda para el cliente y la API deja una
- * alerta "Cliente requiere atención" para caja y admin: una sola por conversación de Retell.
+ * alerta "Cliente requiere atención" para caja y admin: una pendiente por conversación de Retell.
  * Nunca se guarda la conversación: solo teléfono, nombre, folio y el motivo que resume el agente.
  */
 
@@ -41,8 +41,8 @@ export interface AlertaGuardada {
 /** Interfaz de datos de alertas. La implementa `lib/repoAlertas.ts` (Supabase) o un repo en memoria. */
 export interface AlertasRepo {
   /**
-   * Guarda la alerta si esa conversación no tiene una; la regla la cumple la base con un `unique`,
-   * así que dos llamadas al mismo tiempo nunca crean dos (D14). La hora la pone la base (D42).
+   * Guarda la alerta si esa conversación no tiene una pendiente; la regla la cumple la base con un
+   * índice único parcial, así que dos llamadas al mismo tiempo nunca crean dos pendientes (D14). La hora la pone la base (D42).
    */
   crearAlerta(alerta: NuevaAlerta): Promise<AlertaGuardada>;
 }

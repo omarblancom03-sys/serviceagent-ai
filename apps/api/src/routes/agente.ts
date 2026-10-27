@@ -66,8 +66,8 @@ export const escalarRoute = createRoute({
   description:
     FIRMA_RETELL +
     'Guarda una alerta "Cliente requiere atención" para caja y admin con el teléfono, el nombre, ' +
-    'el folio y el motivo (D59). Una sola por conversación: si esa conversación ya tenía su ' +
-    'alerta, responde `yaSeAviso: true` sin crear otra. De `chat` solo se lee `chat.chat_id`; si ' +
+    'el folio y el motivo (D59). Una pendiente por conversación: si esa conversación ya tiene una ' +
+    'sin atender, responde `yaSeAviso: true` sin crear otra; ya atendida, puede pedir otra. De `chat` solo se lee `chat.chat_id`; si ' +
     'no viene, responde `ok: false` con `sinConversacion: true` sin tocar la base. La ' +
     'conversación nunca se guarda. Un teléfono o nombre que no sirve, o un motivo de más de 200 ' +
     'caracteres, responde 200 con `ok: false` y lo que hay que corregir. Si el folio no existe o ' +
@@ -125,7 +125,7 @@ export function registrarAgente(app: OpenAPIHono<AppEnv>, deps: DependenciasAgen
       const { args, chat } = c.req.valid('json');
       const idChat = idDelChat(chat);
       if (idChat === null) {
-        // Sin id no hay "una alerta por conversación" (D59). Solo las llaves, nunca su contenido.
+        // Sin id no hay "una alerta pendiente por conversación" (D59). Solo las llaves, nunca su contenido.
         console.warn('POST /agente/escalar sin chat.chat_id', { llaves: llavesDelChat(chat) });
       }
       try {

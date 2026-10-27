@@ -115,7 +115,7 @@ describe('POST /agente/escalar: alerta', () => {
     ]);
   });
 
-  it('la misma conversación dos veces deja una sola alerta; otra conversación crea otra', async () => {
+  it('con una pendiente, la misma conversación no crea otra (yaSeAviso); otra conversación sí', async () => {
     const repo = crearRepoAlertasEnMemoria();
     const aplicacion = nuevaApp(repo);
 
@@ -126,6 +126,23 @@ describe('POST /agente/escalar: alerta', () => {
     expect(repo.alertas).toHaveLength(1);
 
     await escalar(sobre(argsBuenos, chatReal('chat_otro')), { aplicacion });
+    expect(repo.alertas).toHaveLength(2);
+  });
+
+  it('ya atendida, la misma conversación puede crear otra alerta', async () => {
+    const repo = crearRepoAlertasEnMemoria();
+    const aplicacion = nuevaApp(repo);
+
+    await escalar(sobre(argsBuenos), { aplicacion });
+    expect(repo.marcarAtendida(ID_CHAT)).toBe(true);
+
+    const otra = await (await escalar(sobre(argsBuenos), { aplicacion })).json();
+    expect(otra).toMatchObject({ ok: true, yaSeAviso: false });
+    expect(repo.alertas.map((a) => a.idChat)).toEqual([ID_CHAT, ID_CHAT]);
+
+    // La nueva queda pendiente: repetirla otra vez vuelve a dar yaSeAviso.
+    const repetida = await (await escalar(sobre(argsBuenos), { aplicacion })).json();
+    expect(repetida).toMatchObject({ ok: true, yaSeAviso: true });
     expect(repo.alertas).toHaveLength(2);
   });
 

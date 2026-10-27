@@ -1,15 +1,17 @@
 -- US-18: alertas "Cliente requiere atención" (custom function transferir_a_empleado, D59).
 --
 -- El agente pide que un empleado atienda al cliente y la API guarda una alerta para caja y admin:
--- una sola por conversación de Retell. Nunca se guarda la conversación (ni la transcripción ni los
--- mensajes): solo teléfono, nombre, folio y el motivo que resume el agente.
+-- una pendiente por conversación de Retell. Ya atendida, la misma conversación puede pedir otra.
+-- Nunca se guarda la conversación (ni la transcripción ni los mensajes): solo teléfono, nombre,
+-- folio y el motivo que resume el agente.
 
 create table public.alertas_atencion (
   id_alerta integer generated always as identity primary key,
-  -- "Una alerta por conversación" la cumple la base con este unique (D14). Mismo largo que
+  -- Sin unique en la columna: se repite en las alertas ya atendidas. "Una pendiente por
+  -- conversación" la cumple el índice único parcial de abajo (D14). Mismo largo que
   -- conversaciones_chat. Sin llave foránea a esa tabla: el chat de prueba del dashboard de Retell
   -- no pasa por nuestra API. Nunca sale de la API (D36).
-  chat_id_retell text not null unique check (char_length(chat_id_retell) between 1 and 128),
+  chat_id_retell text not null check (char_length(chat_id_retell) between 1 and 128),
   -- Ya normalizado por la API, con la misma regla que pedidos (D32).
   telefono text not null check (telefono ~ '^[2-9][0-9]{9}$'),
   nombre_cliente text check (length(trim(nombre_cliente)) between 2 and 60),
@@ -25,12 +27,18 @@ create table public.alertas_atencion (
   constraint alertas_atencion_atendida_completa check ((atendida_en is null) = (atendida_por is null))
 );
 
--- Caja lee solo las pendientes, de la más antigua a la más nueva.
+-- Una alerta pendiente por conversación: dos pendientes con el mismo chat no caben; las atendidas
+-- quedan fuera del índice. crear_alerta_atencion lo usa en su on conflict.
+create unique index alertas_atencion_pendiente_por_chat on public.alertas_atencion (chat_id_retell)
+where atendida_en is null;
+
+-- No repite al de arriba (ese busca por chat): caja lee las pendientes de la más antigua a la más
+-- nueva.
 create index alertas_atencion_pendientes on public.alertas_atencion (creado_en)
 where atendida_en is null;
 
 comment on table public.alertas_atencion is
-  'Alertas "Cliente requiere atención" del agente (una por conversación). Solo la API la lee y escribe.';
+  'Alertas "Cliente requiere atención" del agente (una pendiente por conversación). Solo la API la lee y escribe.';
 
 revoke all on table public.alertas_atencion from anon, authenticated, service_role;
 grant select on table public.alertas_atencion to service_role;
@@ -40,8 +48,8 @@ grant insert (chat_id_retell, telefono, nombre_cliente, folio, motivo)
 grant update (atendida_en, atendida_por) on table public.alertas_atencion to service_role;
 alter table public.alertas_atencion enable row level security;
 
--- 1. Crea la alerta si esa conversación no tiene una. Atómica sin candado: con el unique, dos
---    llamadas al mismo tiempo nunca crean dos filas (D14). El folio se guarda solo si existe y es
+-- 1. Crea la alerta si esa conversación no tiene una pendiente. Atómica sin candado: con el índice
+--    único parcial, dos llamadas al mismo tiempo nunca crean dos pendientes (D14). El folio se guarda solo si existe y es
 --    de ese teléfono; si no, la alerta se guarda igual sin folio, así nunca se pierde y caja nunca
 --    ve el pedido de otra persona. Devuelve si la creó y si el folio no se encontró.
 create function public.crear_alerta_atencion(
@@ -67,11 +75,11 @@ begin
 
   insert into public.alertas_atencion (chat_id_retell, telefono, nombre_cliente, folio, motivo)
   values (p_chat_id, p_telefono, p_nombre_cliente, v_folio, p_motivo)
-  on conflict (chat_id_retell) do nothing
+  on conflict (chat_id_retell) where atendida_en is null do nothing
   returning id_alerta into v_id_alerta;
 
   if v_id_alerta is null then
-    -- Ya existía: no se cambió nada, así que el folio de esta llamada no importa.
+    -- Ya había una pendiente: no se cambió nada, así que el folio de esta llamada no importa.
     return query select false, false;
   else
     return query select true, p_folio is not null and v_folio is null;

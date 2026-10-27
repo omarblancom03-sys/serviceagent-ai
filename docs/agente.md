@@ -16,7 +16,7 @@ Retell llama a nuestra API. **Toda petición de Retell se verifica con la firma 
 | `cancelar_pedido`       | `POST /pedidos/:folio/cancelar` | Solo antes de `preparando`                                                                        |
 | `estado_pedido`         | `POST /agente/estado`           | Requiere folio **y** teléfono que coincidan                                                       |
 | `tiempo_estimado`       | `GET /tiempo-estimado`          | Antes de confirmar                                                                                |
-| `transferir_a_empleado` | `POST /agente/escalar`          | Crea alerta en caja/admin, una por conversación; sin `chat.chat_id` no la crea (D59)              |
+| `transferir_a_empleado` | `POST /agente/escalar`          | Crea alerta en caja/admin, una pendiente por conversación; sin `chat.chat_id` no la crea (D59)    |
 
 Los nombres exactos de rutas pueden ajustarse en su historia; si cambian, se actualiza esta tabla en el mismo PR.
 

@@ -1,7 +1,7 @@
 /**
  * Contrato de POST /agente/escalar: custom function `transferir_a_empleado` (US-18, D59). El agente
  * la llama cuando el cliente pide hablar con alguien o cuando no puede resolver algo; la API guarda
- * una alerta "Cliente requiere atención" para caja y admin, una sola por conversación.
+ * una alerta "Cliente requiere atención" para caja y admin, una pendiente por conversación.
  *
  * Solo depende de zod (regla de packages/shared): nada de Hono aquí.
  */
@@ -56,7 +56,7 @@ export const TransferirAEmpleadoPeticionSchema = z.object({
 // ─── Respuesta (siempre HTTP 200 con un cuerpo válido) ──────────────────────
 
 /**
- * Se avisó a caja. `yaSeAviso`: esa conversación ya tenía su alerta y no se creó otra.
+ * Se avisó a caja. `yaSeAviso`: esa conversación ya tiene una alerta pendiente y no se creó otra.
  * `folioNoEncontrado`: el folio no existe o no es de ese teléfono; la alerta se guardó sin folio.
  */
 export const AlertaCreadaSchema = z.object({
@@ -67,7 +67,7 @@ export const AlertaCreadaSchema = z.object({
 
 /**
  * No se guardó nada. `sinConversacion`: el sobre no trajo `chat.chat_id` y no se puede cumplir "una
- * alerta por conversación". Si no, trae lo que hay que volver a pedir: `datosCliente` (teléfono o
+ * alerta pendiente por conversación". Si no, trae lo que hay que volver a pedir: `datosCliente` (teléfono o
  * nombre) y `aclaracionMotivo` (el motivo pasa de 200 caracteres), al menos una de las dos.
  */
 export const AlertaNoCreadaSchema = z
