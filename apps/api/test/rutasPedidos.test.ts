@@ -36,11 +36,12 @@ const CONFIRMADO = [
 ];
 
 /**
- * Cuerpo como lo manda Retell con "Payload: args only" apagado: `{ name, call, args }`. `call` trae
- * la conversación en `message_with_tool_calls` (chat).
+ * Cuerpo como lo manda Retell a un agente de chat con "Payload: args only" apagado (comprobado en
+ * un chat real, 22-oct): `{ name, chat, args }`. `chat` trae la conversación en
+ * `message_with_tool_calls`.
  */
 const sobre = (args: unknown, name = 'cotizar_pedido', mensajes: unknown = CONFIRMADO) =>
-  JSON.stringify({ name, call: { chat_id: 'chat_123', message_with_tool_calls: mensajes }, args });
+  JSON.stringify({ name, chat: { chat_id: 'chat_123', message_with_tool_calls: mensajes }, args });
 
 async function cotizar(
   cuerpo: string,
@@ -268,7 +269,7 @@ describe('POST /pedidos', () => {
         { role: 'agent', content: 'El total es $208.00. ¿Confirmo tu pedido?' },
       ],
     ],
-    ['sin mensajes en call', null],
+    ['sin mensajes en chat', null],
     ['mensajes con otra forma', 'no es una lista'],
   ])('%s: responde faltaConfirmacion y no guarda nada', async (_caso, mensajes) => {
     const { app: aplicacion, repo } = nuevaApp();
@@ -285,9 +286,9 @@ describe('POST /pedidos', () => {
   });
 
   it.each([
-    ['sin call', { name: 'crear_pedido', args: PEDIDO }],
-    ['call que no es objeto', { name: 'crear_pedido', call: 'texto', args: PEDIDO }],
-    ['call en null', { name: 'crear_pedido', call: null, args: PEDIDO }],
+    ['sin chat ni call', { name: 'crear_pedido', args: PEDIDO }],
+    ['chat que no es objeto', { name: 'crear_pedido', chat: 'texto', args: PEDIDO }],
+    ['chat en null', { name: 'crear_pedido', chat: null, args: PEDIDO }],
   ])('%s: responde faltaConfirmacion, sin 400 ni 500', async (_caso, cuerpo) => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     const { app: aplicacion, repo } = nuevaApp();
@@ -298,21 +299,39 @@ describe('POST /pedidos', () => {
     expect(repo.pedidos).toHaveLength(0);
   });
 
-  it('sin mensajes en call, el log trae solo las llaves de call: ni nombre, ni teléfono, ni texto', async () => {
+  it('sin mensajes, el log trae solo las llaves de la conversación: ni nombre, ni teléfono, ni texto', async () => {
     const aviso = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const { app: aplicacion } = nuevaApp();
     const cuerpo = {
       name: 'crear_pedido',
-      call: { chat_id: 'chat_123', transcript: 'María José 614 123 4567 sí confírmalo' },
+      chat: { chat_id: 'chat_123', transcript: 'María José 614 123 4567 sí confírmalo' },
       args: PEDIDO,
     };
     await crear(JSON.stringify(cuerpo), { aplicacion });
 
-    expect(aviso).toHaveBeenCalledWith('POST /pedidos sin mensajes en call', {
+    expect(aviso).toHaveBeenCalledWith('POST /pedidos sin mensajes en la conversación', {
       llaves: ['chat_id', 'transcript'],
     });
     const registrado = JSON.stringify(aviso.mock.calls);
     expect(registrado).not.toMatch(/María|614|123 4567|confírmalo/);
+  });
+
+  // Voz: pendiente, Sprint 10 (D48). Qué manda Retell en voz no está comprobado, así que `call`
+  // no se lee.
+  it.each([
+    ['solo call', { call: { call_id: 'call_1', message_with_tool_calls: CONFIRMADO } }],
+    [
+      'chat mal formado y call válido',
+      { chat: 'texto', call: { call_id: 'call_1', message_with_tool_calls: CONFIRMADO } },
+    ],
+  ])('%s: no lee call y no crea el pedido', async (_caso, conversacion) => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { app: aplicacion, repo } = nuevaApp();
+    const cuerpo = { name: 'crear_pedido', ...conversacion, args: PEDIDO };
+    const res = await crear(JSON.stringify(cuerpo), { aplicacion });
+
+    expect(await res.json()).toMatchObject({ ok: false, faltaConfirmacion: true });
+    expect(repo.pedidos).toHaveLength(0);
   });
 
   it('tras corregir el teléfono vuelve a llamar sin otra pregunta y sí guarda', async () => {

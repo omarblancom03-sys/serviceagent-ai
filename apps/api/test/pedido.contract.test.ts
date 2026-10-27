@@ -68,15 +68,15 @@ const respuestaOk = {
 };
 
 describe('Contrato de cotizar pedido: petición', () => {
-  it('acepta el sobre de Retell { name, call, args } y descarta call', () => {
+  it('acepta el sobre de Retell { name, chat, args } y descarta chat', () => {
     const peticion = CotizarPedidoPeticionSchema.parse({
       name: 'cotizar_pedido',
-      call: { call_id: 'abc123', transcript: 'Quiero dos T-Bone con espuelas' },
+      chat: { chat_id: 'abc123', transcript: 'Quiero dos T-Bone con espuelas' },
       args,
     });
     expect(peticion.name).toBe('cotizar_pedido');
     expect(peticion.args.productos[0]?.producto).toBe('t bone');
-    expect(peticion).not.toHaveProperty('call');
+    expect(peticion).not.toHaveProperty('chat');
   });
 
   it('rechaza una función con otro name', () => {
@@ -285,7 +285,7 @@ describe('Contrato de crear pedido', () => {
   it('acepta el sobre de Retell con el pedido, nombre y teléfono', () => {
     const peticion = CrearPedidoPeticionSchema.parse({
       name: 'crear_pedido',
-      call: { call_id: 'chat_1' },
+      chat: { chat_id: 'chat_1' },
       args: { ...args, ...cliente },
     });
     expect(peticion.args).toMatchObject(cliente);
