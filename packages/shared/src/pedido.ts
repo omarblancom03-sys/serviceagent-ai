@@ -133,10 +133,10 @@ export const CotizarPedidoArgsSchema = z
   .refine(traeAlgo, { message: MENSAJE_PEDIDO_VACIO });
 
 /**
- * Sobre que manda Retell a una custom function con "Payload: args only"
- * apagado (valor por defecto): `{ name, chat, args }` en un agente de chat (voz: pendiente, Sprint
- * 10). Solo se usan `name` y `args`; las llaves no declaradas (como `chat`) zod las descarta. A propósito
- * NO es estricto: Retell puede agregar campos al sobre sin romper la API.
+ * Sobre que manda Retell a una custom function con "Payload: args only" apagado (valor por
+ * defecto): `{ name, chat, args }` en un agente de chat (voz: pendiente, Sprint 10). Solo se usan
+ * `name` y `args`; las llaves no declaradas (como `chat`) zod las descarta. A propósito NO es
+ * estricto: Retell puede agregar campos al sobre sin romper la API.
  */
 export const CotizarPedidoPeticionSchema = z.object({
   name: z.literal('cotizar_pedido'),
@@ -303,8 +303,8 @@ export const CrearPedidoArgsSchema = z
 
 /**
  * Un mensaje de la conversación que Retell manda en `chat.message_with_tool_calls`. Solo se leen
- * `role` (`agent`, `user`, `tool_call_invocation`…), el texto y el nombre de la herramienta; los dos
- * últimos pueden faltar o venir en `null` (una invocación de herramienta no trae texto).
+ * `role` (`agent`, `user`, `tool_call_invocation`…), el texto y el nombre de la herramienta; los
+ * dos últimos pueden faltar o venir en `null` (una invocación de herramienta no trae texto).
  */
 export const MensajeConversacionSchema = z.looseObject({
   role: z.string(),
@@ -316,9 +316,9 @@ export const MensajeConversacionSchema = z.looseObject({
  * Lo que la API lee de `chat`: la conversación hasta el momento de la llamada a la función, para
  * revisar que el cliente confirmó el pedido (D48). Comprobado en un chat real el 22-oct: Retell
  * manda `chat` con `chat_id`, `message_with_tool_calls`, `transcript` y otros. La API lo aplica con
- * `safeParse`: si no trae la lista o viene con otra forma, queda sin mensajes y el pedido no se crea
- * (`faltaConfirmacion`). Cada mensaje se valida aparte con `MensajeConversacionSchema`: uno con otra
- * forma se descarta sin perder los demás.
+ * `safeParse`: si no trae la lista o viene con otra forma, queda sin mensajes y el pedido no se
+ * crea (`faltaConfirmacion`). Cada mensaje se valida aparte con `MensajeConversacionSchema`: uno
+ * con otra forma se descarta sin perder los demás.
  */
 export const ConversacionRetellSchema = z.looseObject({
   message_with_tool_calls: z.array(z.unknown()),

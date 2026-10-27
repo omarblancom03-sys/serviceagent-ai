@@ -36,8 +36,9 @@ const CONFIRMADO = [
 ];
 
 /**
- * Cuerpo como lo manda Retell a un agente de chat con "Payload: args only" apagado (comprobado en un
- * chat real, 22-oct): `{ name, chat, args }`. `chat` trae la conversación en `message_with_tool_calls`.
+ * Cuerpo como lo manda Retell a un agente de chat con "Payload: args only" apagado (comprobado en
+ * un chat real, 22-oct): `{ name, chat, args }`. `chat` trae la conversación en
+ * `message_with_tool_calls`.
  */
 const sobre = (args: unknown, name = 'cotizar_pedido', mensajes: unknown = CONFIRMADO) =>
   JSON.stringify({ name, chat: { chat_id: 'chat_123', message_with_tool_calls: mensajes }, args });
@@ -315,7 +316,8 @@ describe('POST /pedidos', () => {
     expect(registrado).not.toMatch(/María|614|123 4567|confírmalo/);
   });
 
-  // Voz: pendiente, Sprint 10 (D48). Qué manda Retell en voz no está comprobado, así que `call` no se lee.
+  // Voz: pendiente, Sprint 10 (D48). Qué manda Retell en voz no está comprobado, así que `call`
+  // no se lee.
   it.each([
     ['solo call', { call: { call_id: 'call_1', message_with_tool_calls: CONFIRMADO } }],
     [

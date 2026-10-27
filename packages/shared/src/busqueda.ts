@@ -21,8 +21,9 @@ export const BuscarMenuArgsSchema = z.strictObject({
 });
 
 /**
- * Sobre que manda Retell a un agente de chat con "Payload: args only" apagado: `{ name, chat, args }`.
- * Como en `cotizar_pedido`, `chat` no se lee y no es estricto: Retell puede agregar campos.
+ * Sobre que manda Retell a un agente de chat con "Payload: args only" apagado:
+ * `{ name, chat, args }`. Como en `cotizar_pedido`, `chat` no se lee y no es estricto: Retell puede
+ * agregar campos.
  */
 export const BuscarMenuPeticionSchema = z.object({
   name: z.literal('buscar_menu'),
