@@ -1,6 +1,8 @@
 import {
   MAX_CARACTERES_MOTIVO,
+  type AlertaAtencion,
   type DatoClienteInvalido,
+  type RespuestaAlertaAtendida,
   type RespuestaTransferirAEmpleado,
   type TransferirAEmpleadoArgs,
 } from '@serviceagent/shared';
@@ -38,6 +40,23 @@ export interface AlertaGuardada {
   folioNoEncontrado: boolean;
 }
 
+/** Una alerta pendiente tal como la lee el repo. Sin `chat_id`: nunca sale de la API (D36). */
+export interface AlertaPendienteLeida {
+  idAlerta: number;
+  /** Los 10 dígitos guardados (D32). */
+  telefono: string;
+  nombreCliente: string | null;
+  folio: number | null;
+  motivo: string;
+  creadaEn: Date;
+}
+
+/** Lo que responde `marcar_alerta_atendida`. */
+export type ResultadoMarcarAtendida =
+  | { resultado: 'atendida'; atendidaEn: Date }
+  | { resultado: 'ya_atendida' }
+  | { resultado: 'no_encontrada' };
+
 /** Interfaz de datos de alertas. La implementa `lib/repoAlertas.ts` (Supabase) o un repo en memoria. */
 export interface AlertasRepo {
   /**
@@ -45,6 +64,13 @@ export interface AlertasRepo {
    * índice único parcial, así que dos llamadas al mismo tiempo nunca crean dos pendientes (D14). La hora la pone la base (D42).
    */
   crearAlerta(alerta: NuevaAlerta): Promise<AlertaGuardada>;
+  /** Solo las que nadie ha atendido. */
+  leerPendientes(): Promise<AlertaPendienteLeida[]>;
+  /**
+   * Marca la alerta como atendida por ese empleado solo si sigue pendiente, en una sola sentencia
+   * (D14): si dos cajeros la marcan casi al mismo tiempo, el segundo recibe `ya_atendida`.
+   */
+  marcarAtendida(idAlerta: number, idEmpleado: string): Promise<ResultadoMarcarAtendida>;
 }
 
 /**
@@ -88,4 +114,46 @@ export async function transferirAEmpleado(
     motivo: args.motivo,
   });
   return { ok: true, yaSeAviso: !guardada.creada, folioNoEncontrado: guardada.folioNoEncontrado };
+}
+
+/**
+ * Alertas pendientes para caja, de la más antigua a la más nueva (la que lleva más esperando va
+ * primero); a la misma hora, por id. Se ordena aquí aunque la base ya las mande en orden, igual
+ * que `armarPedidosCaja`. Los errores del repo se propagan (la ruta da 500).
+ */
+export async function obtenerAlertasPendientes(repo: AlertasRepo): Promise<AlertaAtencion[]> {
+  const pendientes = await repo.leerPendientes();
+  return [...pendientes]
+    .sort((a, b) => a.creadaEn.getTime() - b.creadaEn.getTime() || a.idAlerta - b.idAlerta)
+    .map((a) => ({
+      idAlerta: a.idAlerta,
+      telefono: a.telefono,
+      nombre: a.nombreCliente,
+      folio: a.folio,
+      folioTexto: a.folio === null ? null : `#${a.folio}`,
+      motivo: a.motivo,
+      creadaEn: a.creadaEn.toISOString(),
+    }));
+}
+
+export type ResultadoAtenderAlerta =
+  | { tipo: 'atendida'; respuesta: RespuestaAlertaAtendida }
+  | { tipo: 'ya_atendida' }
+  | { tipo: 'no_encontrada' };
+
+/**
+ * Marca la alerta como atendida a nombre del empleado de la sesión (nunca del cuerpo). La respuesta
+ * no trae el teléfono: atendida, caja ya no necesita llamar (D59). Los errores del repo se propagan.
+ */
+export async function atenderAlerta(
+  repo: AlertasRepo,
+  idAlerta: number,
+  idEmpleado: string,
+): Promise<ResultadoAtenderAlerta> {
+  const marcada = await repo.marcarAtendida(idAlerta, idEmpleado);
+  if (marcada.resultado !== 'atendida') return { tipo: marcada.resultado };
+  return {
+    tipo: 'atendida',
+    respuesta: { idAlerta, atendidaEn: marcada.atendidaEn.toISOString() },
+  };
 }

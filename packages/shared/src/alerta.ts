@@ -1,12 +1,13 @@
 /**
  * Contrato de POST /agente/escalar: custom function `transferir_a_empleado` (US-18, D59). El agente
  * la llama cuando el cliente pide hablar con alguien o cuando no puede resolver algo; la API guarda
- * una alerta "Cliente requiere atención" para caja y admin, una pendiente por conversación.
+ * una alerta "Cliente requiere atención" para caja y admin, una pendiente por conversación. Caja
+ * las lee con GET /caja/alertas y las marca con POST /caja/alertas/{idAlerta}/atender.
  *
  * Solo depende de zod (regla de packages/shared): nada de Hono aquí.
  */
 import { z } from 'zod';
-import { MAX_ID } from './menu';
+import { IdSchema, MAX_ID } from './menu';
 import { DatoClienteInvalidoSchema, DatoClienteSchema, opcional, TelefonoSchema } from './pedido';
 
 // ─── Constantes ─────────────────────────────────────────────────────────────
@@ -86,9 +87,52 @@ export const RespuestaTransferirAEmpleadoSchema = z.discriminatedUnion('ok', [
   AlertaNoCreadaSchema,
 ]);
 
-/** `{ error: "texto en español" }`: 400 cuerpo mal formado, 401 firma, 500 falla. */
+/**
+ * `{ error: "texto en español" }`. En `/agente/escalar`: 400 cuerpo mal formado, 401 firma, 500
+ * falla. En `/caja/alertas`: 400 id mal formado, 401 sesión, 403 rol, 404, 409 y 500.
+ */
 export const ErrorAlertaSchema = z.object({
   error: z.string(),
+});
+
+// ─── Caja: alertas pendientes y marcar como atendida (US-18 P1-B) ───────────
+
+/**
+ * Una alerta pendiente tal como la ve caja. El teléfono va completo porque el empleado tiene que
+ * llamar al cliente (excepción a D54, D59). Nunca trae el `chat_id` de Retell (D36).
+ */
+export const AlertaAtencionSchema = z.object({
+  idAlerta: IdSchema,
+  telefono: z.string().regex(/^\d{10}$/),
+  nombre: z.string().nullable(),
+  folio: IdSchema.nullable(),
+  /** `"#1024"`, como en cocina y caja; `null` si la alerta no tiene folio. */
+  folioTexto: z.string().nullable(),
+  motivo: z.string(),
+  creadaEn: z.iso.datetime({ offset: true }),
+});
+
+/** `GET /caja/alertas`: solo las pendientes, de la más antigua a la más nueva. */
+export const RespuestaAlertasPendientesSchema = z.object({
+  alertas: z.array(AlertaAtencionSchema),
+});
+
+/** `{idAlerta}` de la ruta: solo dígitos, hasta `MAX_ID` (igual que `ParamsProductoSchema`). */
+export const ParamsAlertaSchema = z.object({
+  idAlerta: z
+    .string()
+    .regex(/^\d{1,10}$/, 'El id de la alerta debe ser un entero positivo')
+    .transform(Number)
+    .pipe(IdSchema),
+});
+
+/**
+ * `POST /caja/alertas/{idAlerta}/atender`. Sin teléfono: atendida, caja ya no necesita llamar
+ * (D59). La hora la pone Postgres (D42).
+ */
+export const RespuestaAlertaAtendidaSchema = z.object({
+  idAlerta: IdSchema,
+  atendidaEn: z.iso.datetime({ offset: true }),
 });
 
 // ─── Tipos ──────────────────────────────────────────────────────────────────
@@ -99,3 +143,7 @@ export type AlertaCreada = z.infer<typeof AlertaCreadaSchema>;
 export type AlertaNoCreada = z.infer<typeof AlertaNoCreadaSchema>;
 export type RespuestaTransferirAEmpleado = z.infer<typeof RespuestaTransferirAEmpleadoSchema>;
 export type ErrorAlerta = z.infer<typeof ErrorAlertaSchema>;
+export type AlertaAtencion = z.infer<typeof AlertaAtencionSchema>;
+export type RespuestaAlertasPendientes = z.infer<typeof RespuestaAlertasPendientesSchema>;
+export type ParamsAlerta = z.infer<typeof ParamsAlertaSchema>;
+export type RespuestaAlertaAtendida = z.infer<typeof RespuestaAlertaAtendidaSchema>;

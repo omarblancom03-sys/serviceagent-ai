@@ -134,7 +134,9 @@ describe('POST /agente/escalar: alerta', () => {
     const aplicacion = nuevaApp(repo);
 
     await escalar(sobre(argsBuenos), { aplicacion });
-    expect(repo.marcarAtendida(ID_CHAT)).toBe(true);
+    expect(await repo.marcarAtendida(1, '00000000-0000-4000-8000-000000000002')).toMatchObject({
+      resultado: 'atendida',
+    });
 
     const otra = await (await escalar(sobre(argsBuenos), { aplicacion })).json();
     expect(otra).toMatchObject({ ok: true, yaSeAviso: false });
