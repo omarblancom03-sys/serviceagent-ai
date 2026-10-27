@@ -31,8 +31,8 @@ import { escucharSenalPedidos, hayRealtime } from '../lib/senalPedidos';
 import { crearSonadorWebAudio, hayWebAudio } from '../lib/sonidoCocina';
 import {
   INTERVALO_RELOJ_MS,
+  atrasadoVisible,
   clasesTicket,
-  estaAtrasado,
   minutosDesde,
   textoTiempo,
 } from '../lib/tiempoCocina';
@@ -246,8 +246,8 @@ function Ticket({
 }) {
   const { platillos, aparte } = separarRenglones(ticket);
   const minutos = minutosDesde(ticket.enColaDesde, ahora);
-  const atrasado = estaAtrasado(minutos);
   const terminado = estado === 'listo';
+  const atrasado = atrasadoVisible(minutos, terminado);
   return (
     <li className={clasesTicket({ nuevo, atrasado, terminado })}>
       <div className="flex items-baseline justify-between gap-2">

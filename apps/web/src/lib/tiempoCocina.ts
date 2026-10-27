@@ -26,6 +26,11 @@ export function estaAtrasado(minutos: number, umbral = MINUTOS_ATRASO): boolean 
   return minutos >= umbral;
 }
 
+/** Si el ticket se pinta como atrasado: uno terminado (US-11) ya no lo está, aunque pasen 20 min. */
+export function atrasadoVisible(minutos: number, terminado: boolean): boolean {
+  return !terminado && estaAtrasado(minutos);
+}
+
 /** "12 min"; desde 60, "1 h 05 min". */
 export function textoTiempo(minutos: number): string {
   if (minutos < 60) return `${minutos} min`;
