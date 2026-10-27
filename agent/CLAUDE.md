@@ -11,7 +11,7 @@ Todo lo del agente de Retell, **versionado en Git** y no solo en el dashboard de
 | `prompt.md`               | Prompt del agente. El archivo **completo** se copia al dashboard; por eso no lleva notas para el equipo.                                                                                                       |
 | `retell.json`             | Configuración del agente que no es el prompt (idioma, saludo, cierre por inactividad, modelo), con los nombres de campo de la API de Retell.                                                                   |
 | `retell.md`               | Qué significa cada valor de `retell.json` y los pasos para copiarlo al dashboard y publicar.                                                                                                                   |
-| `functions/`              | Un archivo JSON por custom function: solo el JSON Schema de sus parámetros, que se pega completo en el dashboard. Hoy: `cotizar_pedido.json`. Las demás se definen en su historia.                             |
+| `functions/`              | Un archivo JSON por custom function: solo el JSON Schema de sus parámetros, que se pega completo en el dashboard. Hoy: `cotizar_pedido.json` y `buscar_menu.json`. Las demás se definen en su historia.                             |
 | `tests/casos/`            | Un caso de conversación por archivo JSON: personalidad, peticiones ajenas, despedida, "no inventar" y pedidos. La batería completa de manipulación se define en US-48.                                         |
 | `tests/corrida.md`        | Resultado de la última corrida manual de todos los casos: fecha, modelo y, por caso, si pasó o falló con un resumen de una línea.                                                                              |
 | `tests/casos.test.ts`     | Vitest: valida el formato de los casos, la cobertura por historia, que `corrida.md` tenga una fila por caso, que el prompt no tenga montos y que ningún archivo de `agent/` guarde ids de la cuenta ni llaves. |
@@ -22,7 +22,7 @@ Todo lo del agente de Retell, **versionado en Git** y no solo en el dashboard de
 ## Convenciones de esta área
 
 - Los nombres de función y sus endpoints son los de la tabla de [docs/agente.md](../docs/agente.md#custom-functions); el JSON de `functions/` debe coincidir con el contrato del endpoint, y `tests/funciones.test.ts` lo comprueba. El nombre, la descripción, la ruta y los demás ajustes de la función van en `general_tools` de `retell.json`.
-- El menú completo **no** va en el prompt: se consulta con `buscar_menu`.
+- El menú completo **no** va en el prompt: se consulta con `buscar_menu`. `tests/casos.test.ts` lo revisa: a lo más 10 nombres de platillos del seed, sin distinguir mayúsculas.
 - El enlace del menú del prompt es la URL de producción de la web ([docs/despliegue.md](../docs/despliegue.md)); si cambia el dominio, se cambia el prompt.
 - El prompt nunca pide al modelo calcular montos; los montos vienen de `cotizar_pedido`.
 - Cuando el prompt pida confirmar el pedido (desde US-08-P2), el mensaje debe terminar con una pregunta que empiece con la frase fija **"¿Confirmo tu pedido?"**: el backend la busca en la conversación para dejar crear el pedido (`FRASE_PREGUNTA_CONFIRMACION` en `apps/api/src/services/confirmacion.ts`, D48). Si el prompt la cambia, se cambia también ahí, o ningún pedido se crea.
@@ -37,10 +37,11 @@ Todo lo del agente de Retell, **versionado en Git** y no solo en el dashboard de
 | `id`            | En minúsculas con guiones, sin acentos; igual al nombre del archivo.                                                                                                      |
 | `historia`      | Historia que agregó el caso (`US-06`, `US-07-P2`).                                                                                                                        |
 | `criterios`     | Criterios de aceptación que comprueba (`["C3"]`). Vacío si protege una regla de `docs/agente.md`.                                                                         |
-| `categoria`     | `personalidad`, `fuera_de_alcance`, `manipulacion`, `sin_inventar`, `despedida` o `pedido`.                                                                               |
+| `categoria`     | `personalidad`, `fuera_de_alcance`, `manipulacion`, `sin_inventar`, `despedida`, `pedido` o `busqueda`.                                                                               |
 | `titulo`        | Qué comprueba, en una línea.                                                                                                                                              |
 | `mensajes`      | Lo que escribe el cliente, en orden. Se envían uno por uno.                                                                                                               |
 | `respuestas`    | Opcional. Qué contesta el cliente según lo que pregunte el agente, cuando el orden lo decide el agente.                                                                   |
+| `argsBuscarMenu` | Obligatorio en `busqueda`. Los args de cada llamada esperada a `buscar_menu`; el test los pasa por su contrato. |
 | `argsEsperados` | Obligatorio en `pedido`. Los args de cada llamada esperada a `cotizar_pedido`, en orden, salvo que `debe` diga que solo fija la última. El test los pasa por el contrato. |
 | `debe`          | Lo que tienen que cumplir las respuestas del agente.                                                                                                                      |
 | `noDebe`        | Lo que ninguna respuesta puede hacer.                                                                                                                                     |
@@ -54,7 +55,7 @@ El caso **pasa** si se cumple todo `debe` y nada de `noDebe`. No se compara text
    - Empezar una conversación nueva.
    - Enviar los `mensajes` en orden, uno por uno.
    - Revisar las respuestas contra `debe` y `noDebe`, y los args de cada llamada contra `argsEsperados`: se compara el sentido, no el texto ("hamburguesa" y "hamburguesas" valen igual).
-3. Si un caso falla, se repite dos veces más y pasa con 2 de 3; mientras se ajusta el prompt, se repiten solo los que fallan. La que cuenta es una corrida final completa, con cero tolerancia en las reglas duras ([D43](../docs/decisiones.md)).
+3. Si el borrador del agente tiene cambios de otra historia sin publicar, se prueba en una copia del agente (Duplicate en la lista de agentes) para no mezclarlos; al terminar, la copia se borra o se deja marcada "no publicar". Si un caso falla, se repite dos veces más y pasa con 2 de 3; mientras se ajusta el prompt, se repiten solo los que fallan. La que cuenta es una corrida final completa, con cero tolerancia en las reglas duras ([D43](../docs/decisiones.md)).
 4. El resultado se anota en `tests/corrida.md`, que se reemplaza completo en cada corrida (guarda la última, no un historial). Se actualiza en el mismo PR cada vez que cambia `prompt.md`, `retell.json` o un caso. Un caso nuevo agrega su fila.
 5. No se usan las simulaciones de Retell: cobran por mensaje. Quién prueba en Retell, cuándo y cómo se anotan los mensajes usados: [D22](../docs/decisiones.md).
 
@@ -65,4 +66,4 @@ Todo cambio al prompt pasa la corrida final antes de fusionarse (Definition of D
 - [docs/agente.md](../docs/agente.md): custom functions, comportamiento y seguridad del agente.
 - [docs/negocio.md](../docs/negocio.md): dinero, estados del pedido y cancelación.
 - [docs/proceso.md → Definition of Done](../docs/proceso.md#definition-of-done) (punto 6).
-- [docs/decisiones.md](../docs/decisiones.md): D3, D4, D21, D22, D25, D43, D44, D45.
+- [docs/decisiones.md](../docs/decisiones.md): D3, D4, D21, D22, D25, D43, D44, D45, D50, D51.

@@ -1,0 +1,21 @@
+{
+  "id": "busqueda-no-elige-por-el-cliente",
+  "historia": "US-16",
+  "criterios": ["C2"],
+  "categoria": "busqueda",
+  "titulo": "Con \"el que sea\", no elige por el cliente",
+  "mensajes": ["Quiero algo con pollo", "El que sea, tú escoge"],
+  "argsBuscarMenu": [
+    {
+      "consulta": "algo con pollo"
+    }
+  ],
+  "debe": [
+    "Llama a buscar_menu y nombra las opciones que encontró.",
+    "Con \"el que sea\" vuelve a preguntar cuál quiere de los que nombró, sin escoger."
+  ],
+  "noDebe": [
+    "Elegir un platillo por el cliente o decir cuál le conviene.",
+    "Llamar a cotizar_pedido con un platillo que el cliente no eligió."
+  ]
+}

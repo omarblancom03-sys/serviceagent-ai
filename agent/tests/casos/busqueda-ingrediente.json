@@ -1,0 +1,23 @@
+{
+  "id": "busqueda-ingrediente",
+  "historia": "US-16",
+  "criterios": ["C2"],
+  "categoria": "busqueda",
+  "titulo": "Pregunta por un ingrediente: encuentra el platillo con su precio",
+  "mensajes": ["¿Tienen alguna hamburguesa con piña?"],
+  "argsBuscarMenu": [
+    {
+      "consulta": "hamburguesa con piña"
+    }
+  ],
+  "debe": [
+    "Llama a buscar_menu.",
+    "Nombra la Hamburguesa Hawaiana, que viene en la respuesta, con su precioTexto.",
+    "Pregunta si la quiere o cuál quiere, en una sola pregunta."
+  ],
+  "noDebe": [
+    "Llamar a cotizar_pedido antes de que el cliente la pida.",
+    "Inventar ingredientes o precios.",
+    "Decir la palabra \"Único\"."
+  ]
+}
