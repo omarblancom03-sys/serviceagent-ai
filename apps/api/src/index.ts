@@ -6,6 +6,7 @@ import pkg from '../package.json';
 import { crearClienteRetell } from './lib/clienteRetell';
 import { crearEmbedderWorkersAi } from './lib/embedderWorkersAi';
 import type { AppEnv } from './lib/env';
+import { crearRepoAlertas } from './lib/repoAlertas';
 import { crearRepoCaja } from './lib/repoCaja';
 import { crearRepoChat } from './lib/repoChat';
 import { crearRepoCocina } from './lib/repoCocina';
@@ -46,6 +47,7 @@ const dependenciasReales: Dependencias = {
   crearClienteRetell: (llave) => crearClienteRetell(llave),
   crearRepoEmbeddings: (env) => crearRepoEmbeddings(crearClienteSupabase(env)),
   crearEmbedder: (env) => (env.AI ? crearEmbedderWorkersAi(env.AI) : null),
+  crearRepoAlertas: (env) => crearRepoAlertas(crearClienteSupabase(env)),
 };
 
 /** Cada test pasa solo las dependencias que usa; las demás son las reales. */

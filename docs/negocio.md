@@ -75,6 +75,13 @@ confirmado → (esperando_pago) → en_cola → preparando → listo → entrega
 - Transferencia: referencia única por pedido + CLABE ficticia. El Banco Simulado llama a `POST /webhooks/banco` con **firma HMAC**. El backend concilia por referencia + monto.
 - Casos borde obligatorios: monto distinto, referencia inexistente, webhook duplicado (idempotencia), pago tardío de pedido expirado.
 
+## Atención por un empleado
+
+- Si el cliente pide hablar con alguien o el agente no puede resolver algo, el agente llama a `transferir_a_empleado` y se crea una alerta "Cliente requiere atención" para caja y admin, con teléfono (obligatorio), nombre, folio y el motivo que resume el agente ([D59](decisiones.md)).
+- Una alerta pendiente por conversación: si el agente la vuelve a pedir mientras nadie la atiende, se le responde que ya se avisó; ya atendida, la misma conversación puede pedir otra. La conversación no se guarda.
+- El folio solo se liga si existe y es de ese teléfono; si no, la alerta se guarda sin folio.
+- Caja ve el teléfono completo mientras la alerta está pendiente; un empleado la marca como atendida y desde ahí solo se ven los últimos 4 dígitos.
+
 ## Inventario
 
 - Cada producto, variante y extra tiene receta (ingredientes y cantidad).

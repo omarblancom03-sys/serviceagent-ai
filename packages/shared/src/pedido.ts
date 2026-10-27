@@ -63,7 +63,8 @@ const comoAusente = (valor: unknown) =>
   valor === null || (typeof valor === 'string' && valor.trim() === '') ? undefined : valor;
 
 /** Campo opcional de la petición que acepta `null` y `""` como si no hubiera venido. */
-const opcional = <T extends z.ZodType>(schema: T) => z.preprocess(comoAusente, schema.optional());
+export const opcional = <T extends z.ZodType>(schema: T) =>
+  z.preprocess(comoAusente, schema.optional());
 
 /** Lista opcional de la petición: si no vino (o vino `null` o `""`), vale `[]`. */
 const listaOpcional = <T extends z.ZodType>(item: T, maximo: number) =>
@@ -276,7 +277,7 @@ export const EstadoPedidoSchema = z.enum(ESTADOS_PEDIDO);
  * agente sabe qué volver a pedir. Si no vienen (o vienen `null` o `""`), el
  * servicio también lo aclara. El tope de longitud es anti-abuso.
  */
-const DatoClienteSchema = opcional(z.string().max(80));
+export const DatoClienteSchema = opcional(z.string().max(80));
 
 /** Texto que reemplaza a un teléfono numérico con signo o decimales: no pasa la regla de D32. */
 const TELEFONO_NUMERO_INVALIDO = 'número no válido';
@@ -288,7 +289,7 @@ const TELEFONO_NUMERO_INVALIDO = 'número no válido';
  * separadores y el teléfono pasaría. Cualquier otro número se vuelve un texto que no pasa la regla,
  * así que el servicio responde la aclaración del teléfono, igual que con un texto mal escrito.
  */
-const TelefonoSchema = z.preprocess((valor) => {
+export const TelefonoSchema = z.preprocess((valor) => {
   if (typeof valor !== 'number') return valor;
   return Number.isSafeInteger(valor) && valor > 0 ? String(valor) : TELEFONO_NUMERO_INVALIDO;
 }, DatoClienteSchema);
