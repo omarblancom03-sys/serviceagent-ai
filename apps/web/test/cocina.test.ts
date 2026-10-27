@@ -35,6 +35,11 @@ describe('foliosNuevos', () => {
   it('un pedido que se fue de la lista no cuenta como nuevo', () => {
     expect(foliosNuevos([ticket(1001), ticket(1002)], [ticket(1002)])).toEqual([]);
   });
+
+  it('un pedido que regresa por Deshacer de Terminado (llega preparando) no es nuevo', () => {
+    const regreso: TicketCocina = { ...ticket(1002), estado: 'preparando' };
+    expect(foliosNuevos([ticket(1001)], [ticket(1001), regreso])).toEqual([]);
+  });
 });
 
 describe('lineaDe', () => {

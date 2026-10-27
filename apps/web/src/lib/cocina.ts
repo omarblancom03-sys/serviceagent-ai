@@ -37,8 +37,9 @@ export const ETIQUETA_ESTADO: Record<EstadoCocina, string> = {
 };
 
 /**
- * Folios que no estaban en la lista anterior. En la primera carga (`anteriores` es `null`) no hay
- * nuevos: todo lo que ya estaba esperando no se resalta.
+ * Folios en cola que no estaban en la lista anterior. En la primera carga (`anteriores` es `null`)
+ * no hay nuevos: todo lo que ya estaba esperando no se resalta. Solo cuentan los `en_cola`: un
+ * pedido que regresa por Deshacer de Terminado llega `preparando` y no es nuevo (D56).
  */
 export function foliosNuevos(
   anteriores: readonly TicketCocina[] | null,
@@ -46,7 +47,7 @@ export function foliosNuevos(
 ): number[] {
   if (anteriores === null) return [];
   const antes = new Set(anteriores.map((t) => t.folio));
-  return actuales.filter((t) => !antes.has(t.folio)).map((t) => t.folio);
+  return actuales.filter((t) => t.estado === 'en_cola' && !antes.has(t.folio)).map((t) => t.folio);
 }
 
 export interface LineaTicket {
