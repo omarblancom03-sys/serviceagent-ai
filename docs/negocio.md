@@ -64,6 +64,7 @@ confirmado → (esperando_pago) → en_cola → preparando → listo → entrega
 | → expirado           | Sistema, si una transferencia no llega a tiempo                                      |
 
 - Cada transición guarda su hora exacta, puesta por Postgres ([D42](decisiones.md)); se usa para el tiempo estimado que aprende.
+- **Cocina** ([D56](decisiones.md)): Empezar solo desde `en_cola` y Terminado solo desde `preparando`; si otra pantalla ya lo cambió, no se aplica. El historial guarda qué empleado lo hizo. Deshacer regresa al estado anterior y borra ese paso del historial: la pantalla lo ofrece 10 s y el servidor lo acepta hasta 15 s, solo si es el último cambio del pedido.
 - El **modo de pago** es configuración del restaurante y decide cuándo va el pedido a cocina: `al_recoger` (pago en caja; a cocina al confirmar) o `transferencia` (pago antes; a cocina al pagar). Lo cambia el administrador en `/admin` y solo afecta a los pedidos nuevos ([D55](decisiones.md)).
 - El ticket de cocina muestra los minutos desde que el pedido entró a la cola; a partir de 20 min se marca como atrasado ([D57](decisiones.md)).
 

@@ -1,0 +1,33 @@
+{
+  "id": "busqueda-elige-y-cotiza",
+  "historia": "US-16",
+  "criterios": ["C2"],
+  "categoria": "busqueda",
+  "titulo": "Elige uno de los resultados: lo cotiza con el nombre oficial",
+  "mensajes": ["Algo con camarones envueltos en tocino", "Los Camarones Fiesta"],
+  "argsBuscarMenu": [
+    {
+      "consulta": "camarones envueltos en tocino"
+    }
+  ],
+  "argsEsperados": [
+    {
+      "productos": [
+        {
+          "producto": "Camarones Fiesta",
+          "cantidad": 1
+        }
+      ]
+    }
+  ],
+  "debe": [
+    "Primero llama a buscar_menu y nombra lo que encontró.",
+    "Cuando el cliente elige, llama a cotizar_pedido con el nombre tal como vino en los resultados.",
+    "Da el resumen con el total de cotizar_pedido y pregunta si quiere cambiar algo."
+  ],
+  "noDebe": [
+    "Cotizar antes de que el cliente elija.",
+    "Decir un total distinto al de cotizar_pedido.",
+    "Decir que el pedido quedó registrado."
+  ]
+}

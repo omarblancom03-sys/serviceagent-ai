@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { z } from 'zod';
-import { CotizarPedidoArgsSchema } from '@serviceagent/shared';
+import { BuscarMenuArgsSchema, CotizarPedidoArgsSchema } from '@serviceagent/shared';
 
 // Este test no habla con Retell: lee los archivos de agent/ como texto y
 // verifica que esten bien armados. Los casos se corren a mano en el chat de
@@ -27,6 +27,7 @@ const esquemaCaso = z.strictObject({
     'sin_inventar',
     'despedida',
     'pedido',
+    'busqueda',
   ]),
   titulo: textoNoVacio,
   mensajes: z.array(textoNoVacio).min(1),
@@ -35,6 +36,8 @@ const esquemaCaso = z.strictObject({
   // Args de cada llamada esperada a cotizar_pedido. Aqui solo se revisa que sean
   // objetos; contra el contrato se validan abajo ("peticion esperada").
   argsEsperados: z.array(z.record(z.string(), z.unknown())).min(1).optional(),
+  // Args de cada llamada esperada a buscar_menu; se validan contra su contrato.
+  argsBuscarMenu: z.array(z.record(z.string(), z.unknown())).min(1).optional(),
   debe: z.array(textoNoVacio).min(1),
   noDebe: z.array(textoNoVacio),
 });
@@ -126,6 +129,32 @@ describe('peticion esperada de los casos de pedido (argsEsperados)', () => {
   });
 });
 
+describe('cobertura de US-16', () => {
+  const casos = archivosCasos.map(leerCaso);
+  const casosBusqueda = casos.filter((caso) => caso.categoria === 'busqueda');
+
+  // C1, C4 y C5 son de la API (apps/api); C3 es el test del prompt de abajo.
+  it('el criterio C2 tiene al menos 5 casos de busqueda', () => {
+    expect(
+      casosBusqueda.filter((caso) => caso.criterios.includes('C2')).length,
+    ).toBeGreaterThanOrEqual(5);
+  });
+
+  it.each(casosBusqueda)('$id dice que args debe mandar a buscar_menu', (caso) => {
+    expect(caso.argsBuscarMenu?.length ?? 0).toBeGreaterThan(0);
+  });
+
+  it.each(casos.filter((caso) => caso.argsBuscarMenu))(
+    '$id cumple el contrato de buscar_menu',
+    (caso) => {
+      for (const args of caso.argsBuscarMenu ?? []) {
+        const resultado = BuscarMenuArgsSchema.safeParse(args);
+        expect(resultado.error?.issues ?? []).toEqual([]);
+      }
+    },
+  );
+});
+
 describe('prompt (agent/prompt.md)', () => {
   const prompt = readFileSync(path.join(raizAgente, 'prompt.md'), 'utf-8');
 
@@ -137,6 +166,25 @@ describe('prompt (agent/prompt.md)', () => {
   it('no contiene montos', () => {
     expect(prompt).not.toMatch(/\$\s*\d/);
     expect(prompt).not.toMatch(/\d\s*(pesos|mxn)/i);
+  });
+
+  // US-16, criterio 3: el menu se consulta con buscar_menu, no va en el prompt (ahorro de
+  // tokens). Puede nombrar unos cuantos platillos como ejemplo, nunca el menu.
+  it('no contiene el menu completo', () => {
+    const seed = readFileSync(
+      path.join(raizAgente, '..', 'supabase', 'seed', '01_menu_el_granero.sql'),
+      'utf-8',
+    );
+    const bloque = seed.slice(seed.indexOf('2) PLATILLOS'), seed.indexOf('3) VARIANTES'));
+    const platillos = [...bloque.matchAll(/^\s*\('[^']+',\s*'([^']+)',/gm)].map((m) => m[1] ?? '');
+    // En minúsculas: un menú pegado sin mayúsculas también cuenta.
+    const promptMinusculas = prompt.toLowerCase();
+    const enElPrompt = platillos.filter((nombre) =>
+      promptMinusculas.includes(nombre.toLowerCase()),
+    );
+
+    expect(platillos.length).toBeGreaterThan(90);
+    expect(enElPrompt.length).toBeLessThanOrEqual(10);
   });
 });
 

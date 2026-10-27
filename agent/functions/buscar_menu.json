@@ -1,0 +1,12 @@
+{
+  "type": "object",
+  "description": "Lo que el cliente describió que quiere, para buscarlo en el menú.",
+  "additionalProperties": false,
+  "required": ["consulta"],
+  "properties": {
+    "consulta": {
+      "type": "string",
+      "description": "Lo que dijo el cliente, con sus palabras y sin \"quiero\", \"tienen\" ni \"me das\". Ejemplos: \"algo picoso con camarones\", \"hamburguesa con piña\", \"algo para un niño\", \"Torre de mariscos\". Máximo 200 caracteres."
+    }
+  }
+}
