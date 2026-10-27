@@ -88,4 +88,12 @@ describe('clasesTicket', () => {
     expect(c).toContain('ring-4');
     expect(c).not.toContain('border-orange-400');
   });
+
+  it('terminado: verde, le gana al rojo y sin anillo', () => {
+    const c = clasesTicket({ nuevo: true, atrasado: true, terminado: true }).split(' ');
+    expect(c).toContain('border-green-500');
+    expect(c).toContain('bg-green-50');
+    expect(c).not.toContain('border-red-500');
+    expect(c).not.toContain('ring-4');
+  });
 });

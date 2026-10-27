@@ -34,13 +34,26 @@ export function textoTiempo(minutos: number): string {
   return `${horas} h ${resto} min`;
 }
 
-/** Clases del ticket: rojo si está atrasado y el anillo naranja mientras es nuevo. */
-export function clasesTicket({ nuevo, atrasado }: { nuevo: boolean; atrasado: boolean }): string {
-  const color = atrasado
-    ? 'border-red-500 bg-red-50'
-    : nuevo
-      ? 'border-orange-400 bg-white'
-      : 'border-orange-200 bg-white';
-  const anillo = nuevo ? ' ring-4 ring-orange-300' : '';
+/**
+ * Clases del ticket: rojo si está atrasado y el anillo naranja mientras es nuevo. Terminado (US-11,
+ * solo en la tablet que lo tocó y durante el plazo de Deshacer) va en verde y le gana a los demás.
+ */
+export function clasesTicket({
+  nuevo,
+  atrasado,
+  terminado = false,
+}: {
+  nuevo: boolean;
+  atrasado: boolean;
+  terminado?: boolean;
+}): string {
+  const color = terminado
+    ? 'border-green-500 bg-green-50'
+    : atrasado
+      ? 'border-red-500 bg-red-50'
+      : nuevo
+        ? 'border-orange-400 bg-white'
+        : 'border-orange-200 bg-white';
+  const anillo = nuevo && !terminado ? ' ring-4 ring-orange-300' : '';
   return `rounded-2xl border p-4 shadow-sm ${color}${anillo}`;
 }
