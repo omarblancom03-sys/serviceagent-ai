@@ -4,8 +4,8 @@ import { estadoConexionDe, type EstadoConexion } from './cocina';
 
 /*
  * Señal de Realtime "cambió un pedido" (D12, D47). Solo se escucha: no trae datos, y los pedidos
- * se piden a la API con la sesión del empleado. La llave anon es pública por diseño; con ella no
- * se puede leer ninguna tabla (D15).
+ * se piden a la API con la sesión del empleado. Llave pública de Supabase (cuál va:
+ * docs/despliegue.md); con ella no se puede leer ninguna tabla (D15).
  */
 
 let cliente: SupabaseClient | null | undefined;
@@ -24,18 +24,39 @@ const oyentes = new Set<Oyente>();
 let canal: RealtimeChannel | null = null;
 let ultimoEstado: EstadoConexion | null = null;
 
-/** `null` si faltan `VITE_SUPABASE_URL` o `VITE_SUPABASE_ANON_KEY`: la pantalla vive del refresco. */
+/**
+ * Cliente de Realtime con la URL y la llave públicas de Supabase, o `null` si falta alguna o si
+ * `createClient` las rechaza (solo pasa con una URL sin forma de URL). Con `null` la pantalla
+ * funciona igual, con el refresco de 30 s, en lugar de quedarse en blanco. Una URL bien formada
+ * pero equivocada o una llave mala no truenan aquí: el canal no conecta y sale "Sin conexión en vivo".
+ */
+export function crearClienteRealtime(
+  url: string | undefined,
+  llave: string | undefined,
+  crear: typeof createClient = createClient,
+): SupabaseClient | null {
+  if (!url || !llave) return null;
+  try {
+    return crear(url, llave, {
+      // Sin Supabase Auth (usamos JWT propio, D12): nada se guarda en el navegador.
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+    });
+  } catch {
+    // Sin la URL ni la llave en el aviso: solo que la configuración no sirve.
+    console.warn(
+      'Realtime desactivado: VITE_SUPABASE_URL o VITE_SUPABASE_ANON_KEY no son válidas.',
+    );
+    return null;
+  }
+}
+
+/** Un solo cliente para toda la app; `null` si no hay configuración válida (vive del refresco). */
 function clienteRealtime(): SupabaseClient | null {
   if (cliente !== undefined) return cliente;
-  const url = import.meta.env.VITE_SUPABASE_URL;
-  const llave = import.meta.env.VITE_SUPABASE_ANON_KEY;
-  cliente =
-    url && llave
-      ? createClient(url, llave, {
-          // Sin Supabase Auth (usamos JWT propio, D12): nada se guarda en el navegador.
-          auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
-        })
-      : null;
+  cliente = crearClienteRealtime(
+    import.meta.env.VITE_SUPABASE_URL,
+    import.meta.env.VITE_SUPABASE_ANON_KEY,
+  );
   return cliente;
 }
 
