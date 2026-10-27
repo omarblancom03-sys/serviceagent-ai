@@ -151,8 +151,8 @@ export function clienteConfirmo(mensajes: readonly MensajeConversacion[]): boole
   if (despues.some((m) => m.role === 'tool_call_invocation' && m.name === 'cotizar_pedido')) {
     return false;
   }
-  // Un mensaje que no se pudo leer ocupa su lugar: si es el primero después de la pregunta, pudo ser
-  // la respuesta del cliente, así que no hay confirmación (falla hacia lo seguro).
+  // Un mensaje que no se pudo leer ocupa su lugar: si es el primero después de la pregunta, pudo
+  // ser la respuesta del cliente, así que no hay confirmación (falla hacia lo seguro).
   const respuesta = despues.find((m) => m.role === 'user' || m.role === ROL_ILEGIBLE);
   return respuesta?.role === 'user' && esAfirmativo(respuesta.content ?? '');
 }
