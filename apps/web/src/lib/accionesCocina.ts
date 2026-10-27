@@ -30,7 +30,8 @@ export interface CambioLocal {
   deshacer: boolean;
   /**
    * Número de la última lista pedida cuando se aplicó el cambio. Una lista con número menor o igual
-   * se pidió antes y puede no traerlo; solo una lista posterior manda sobre el cambio.
+   * se pidió antes y puede no traerlo; solo una lista posterior manda sobre el cambio. Mientras se
+   * guarda un Deshacer vale `Infinity`, para que el ticket no se vaya a media petición.
    */
   lista: number;
 }
