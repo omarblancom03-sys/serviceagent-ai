@@ -45,6 +45,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). *
 
 ### Corregido
 
+- US-08-P2-T1: `POST /pedidos` lee la conversación de `chat`, que es donde la manda Retell en un agente de chat (comprobado en un chat real); antes solo leía `call` y ningún pedido de chat se habría podido crear. `call` ya no se lee: voz queda pendiente para el Sprint 10 (D48).
 - US-10-T1: si `VITE_SUPABASE_URL` no tiene forma de URL, `/cocina` y `/caja` ya no se quedan en blanco: funcionan con el refresco de 30 s. Los docs aclaran que la llave pública puede ser la anon o la publishable, nunca la secreta.
 - US-07-P1: los 500 intermitentes de `POST /pedidos/cotizar` y `GET /menu` ("JWT issued at future" de Supabase) se reintentan en el cliente de Supabase, solo ante ese error y hasta ~3 s, para toda la API (D41).
 - US-07-P2: el agente de chat ya no lee la memoria de contacto de Retell (evita mezclar datos entre clientes).

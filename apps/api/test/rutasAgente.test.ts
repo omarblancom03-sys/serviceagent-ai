@@ -36,9 +36,12 @@ function nuevaApp(embedder: Embedder | null = embedderHawaiana) {
   return { app, repo };
 }
 
-/** Cuerpo como lo manda Retell con "Payload: args only" apagado: `{ name, call, args }`. */
+/**
+ * Cuerpo como lo manda Retell a un agente de chat con "Payload: args only" apagado:
+ * `{ name, chat, args }`.
+ */
 const sobre = (args: unknown, name = 'buscar_menu') =>
-  JSON.stringify({ name, call: { chat_id: 'chat_123' }, args });
+  JSON.stringify({ name, chat: { chat_id: 'chat_123' }, args });
 
 async function buscar(
   cuerpo: string,

@@ -51,7 +51,7 @@ async function firmar(cuerpo: string, timestamp: number): Promise<string> {
 
 /** Nombres de los platillos que devuelve la búsqueda, en orden. */
 async function buscar(consulta: string): Promise<string[]> {
-  const cuerpo = JSON.stringify({ name: 'buscar_menu', call: {}, args: { consulta } });
+  const cuerpo = JSON.stringify({ name: 'buscar_menu', chat: {}, args: { consulta } });
   const res = await fetch(`${urlApi}/agente/buscar-menu`, {
     method: 'POST',
     headers: {
