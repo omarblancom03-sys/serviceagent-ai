@@ -101,6 +101,7 @@ export function Cocina() {
       avisoSonoro.current = null;
       document.removeEventListener('pointerdown', alTocar);
       document.removeEventListener('keydown', alTocar);
+      sonoro.cerrar();
     };
   }, []);
 

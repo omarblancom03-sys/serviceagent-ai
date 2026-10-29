@@ -26,6 +26,7 @@ function sonadorFalso({ disponible = true, activa = true, suena = true } = {}) {
     disponible,
     activar: vi.fn(() => Promise.resolve(activa)),
     sonar: vi.fn(() => suena),
+    cerrar: vi.fn(),
   } satisfies Sonador;
   const alCambiar = vi.fn();
   const aviso = crearAvisoSonoro(sonador, alCambiar);
@@ -168,5 +169,13 @@ describe('crearAvisoSonoro', () => {
     aviso.pedidosNuevos([ticket(1001)]);
     aviso.alternarSilencio();
     expect(alCambiar.mock.calls).toEqual([['activo'], ['silenciado']]);
+  });
+
+  it('al salir de la pantalla cierra el audio', async () => {
+    const { sonador, aviso } = sonadorFalso();
+    await aviso.interaccion();
+    expect(sonador.cerrar).not.toHaveBeenCalled();
+    aviso.cerrar();
+    expect(sonador.cerrar).toHaveBeenCalledTimes(1);
   });
 });

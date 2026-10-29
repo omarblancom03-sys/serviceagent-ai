@@ -40,17 +40,20 @@ export function textoBotonSonido(estado: EstadoSonido): string {
   return estado === 'silenciado' ? 'Activar sonido' : 'Silenciar aviso';
 }
 
-/** El sonido real. `sonar` devuelve `false` si el navegador volvió a bloquear el audio. */
+/**
+ * El sonido real. `sonar` devuelve `false` si el navegador volvió a bloquear el audio o no pudo
+ * sonar. `cerrar` libera el audio al salir de la pantalla.
+ */
 export interface Sonador {
   disponible: boolean;
   activar(): Promise<boolean>;
   sonar(): boolean;
+  cerrar(): void;
 }
 
 /**
- * Si una tanda de pedidos nuevos merece aviso (supuesto por confirmar con el PO). Solo cuentan los
- * que llegan `en_cola`: un pedido que vuelve a la lista por Deshacer de Terminado (D56) llega en
- * `preparando` y no debe sonar.
+ * Si una tanda de pedidos nuevos merece aviso (D58). Solo cuentan los que llegan `en_cola`: un
+ * pedido que vuelve a la lista por Deshacer de Terminado (D56) llega en `preparando` y no suena.
  */
 export function debeSonar(nuevos: readonly TicketCocina[]): boolean {
   return nuevos.some((t) => t.estado === 'en_cola');
@@ -64,6 +67,8 @@ export interface AvisoSonoro {
   alternarSilencio(): void;
   /** Pedidos que acaban de aparecer en una recarga: suena una sola vez por tanda. */
   pedidosNuevos(nuevos: readonly TicketCocina[]): void;
+  /** Al salir de la pantalla: cierra el audio para no dejar un `AudioContext` abierto por visita. */
+  cerrar(): void;
 }
 
 export function crearAvisoSonoro(
@@ -107,6 +112,9 @@ export function crearAvisoSonoro(
     pedidosNuevos(nuevos) {
       if (estado() !== 'activo' || !debeSonar(nuevos)) return;
       if (!sonador.sonar()) cambiar(() => (desbloqueado = false));
+    },
+    cerrar() {
+      sonador.cerrar();
     },
   };
 }
