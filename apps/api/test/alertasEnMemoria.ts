@@ -22,7 +22,8 @@ function relojPorMinuto() {
  * alerta se guarda sin folio. `marcar_alerta_atendida`: solo si sigue pendiente; si no,
  * `ya_atendida` o `no_encontrada`. Prueba la API, no el SQL (ese se prueba a mano). `alertas` (lo
  * que se mandó a guardar) y `filas` quedan expuestos para que el test los revise, `llamadas` cuenta
- * las veces que se usó `crearAlerta` y `reloj` da la hora de cada alerta nueva (`creado_en`).
+ * las veces que se usó `crearAlerta` y `reloj` da la hora de cada alerta nueva (`creado_en`). La
+ * hora de atendida es `creadaEn` + 5 min (por eso la alerta de las 18:05 se atiende a las 18:10).
  */
 export function crearRepoAlertasEnMemoria(
   pedidos: { folio: number; telefono: string }[] = [],

@@ -160,6 +160,12 @@ describe('GET /caja/alertas (US-18 P1-B)', () => {
 
     const { alertas } = RespuestaAlertasPendientesSchema.parse(await (await listar(repo)).json());
     expect(alertas.map((a) => [a.idAlerta, a.motivo])).toEqual([[2, 'Segunda vez.']]);
+
+    const { atendidaEn, atendidaPor } = repo.filas[0] ?? {};
+    expect((await atender(repo, 2, 'admin')).status).toBe(200);
+    expect(repo.filas[0]?.atendidaEn).toEqual(atendidaEn);
+    expect(repo.filas[0]?.atendidaPor).toBe(atendidaPor);
+    expect((await atender(repo, 1)).status).toBe(409);
   });
 
   it('si falla la lectura responde 500 con un mensaje en español', async () => {
@@ -206,7 +212,7 @@ describe('POST /caja/alertas/{idAlerta}/atender (US-18 P1-B)', () => {
     expect(ErrorAlertaSchema.parse(await res.json()).error).toMatch(/no encontramos/i);
   });
 
-  it.each(['abc', '0', '-1', '1.5', '99999999999'])(
+  it.each(['abc', '0', '-1', '1.5', '1e3', '99999999999', '2147483648'])(
     'id %j responde 400 sin tocar las alertas',
     async (id) => {
       const repo = await repoConTres();
