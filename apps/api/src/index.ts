@@ -17,6 +17,7 @@ import { crearRepoMenu } from './lib/repoMenu';
 import { crearRepoPedidos } from './lib/repoPedidos';
 import { crearClienteSupabase } from './lib/supabase';
 import { registrarAgente, type DependenciasAgente } from './routes/agente';
+import { registrarAlertas, type DependenciasAlertas } from './routes/alertas';
 import { registrarAuth, type DependenciasAuth } from './routes/auth';
 import { registrarCaja, type DependenciasCaja } from './routes/caja';
 import { ERROR_PETICION_INVALIDA, registrarChat, type DependenciasChat } from './routes/chat';
@@ -34,6 +35,7 @@ export type Dependencias = DependenciasAuth &
   DependenciasCocina &
   DependenciasCaja &
   DependenciasAgente &
+  DependenciasAlertas &
   DependenciasConfiguracion;
 
 const dependenciasReales: Dependencias = {
@@ -77,6 +79,7 @@ export function crearApp(reemplazos: Partial<Dependencias> = {}) {
   registrarCocina(app, dependencias);
   registrarCaja(app, dependencias);
   registrarAgente(app, dependencias);
+  registrarAlertas(app, dependencias);
   registrarConfiguracion(app, dependencias);
 
   // Igual que el manejador por defecto de Hono, salvo una cosa: en /chat/* y /cocina/* el 400 de

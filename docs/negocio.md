@@ -81,6 +81,7 @@ confirmado → (esperando_pago) → en_cola → preparando → listo → entrega
 - Una alerta pendiente por conversación: si el agente la vuelve a pedir mientras nadie la atiende, se le responde que ya se avisó; ya atendida, la misma conversación puede pedir otra. La conversación no se guarda.
 - El folio solo se liga si existe y es de ese teléfono; si no, la alerta se guarda sin folio.
 - Caja ve el teléfono completo mientras la alerta está pendiente; un empleado la marca como atendida y desde ahí solo se ven los últimos 4 dígitos.
+- Se marca atendida una sola vez, a nombre del empleado de la sesión; si dos la marcan casi al mismo tiempo, el segundo se entera de que ya estaba atendida.
 
 ## Inventario
 
