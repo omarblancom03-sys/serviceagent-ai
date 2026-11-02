@@ -45,6 +45,14 @@ describe('foliosNuevos', () => {
     const regreso: TicketCocina = { ...ticket(1002), estado: 'preparando' };
     expect(foliosNuevos([ticket(1001)], [ticket(1001), regreso])).toEqual([]);
   });
+
+  it('un pedido que regresa a la cola por Deshacer de Empezar en otra tablet no es nuevo', () => {
+    const empezado: TicketCocina = { ...ticket(1001), estado: 'preparando' };
+    // Esta tablet lo vio en_cola, luego preparando; al deshacer vuelve en_cola con el mismo folio.
+    const enPreparacion = [empezado, ticket(1002)];
+    expect(foliosNuevos([ticket(1001), ticket(1002)], enPreparacion)).toEqual([]);
+    expect(foliosNuevos(enPreparacion, [ticket(1001), ticket(1002)])).toEqual([]);
+  });
 });
 
 describe('lineaDe', () => {
