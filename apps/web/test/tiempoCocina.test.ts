@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   MINUTOS_ATRASO,
+  atrasadoVisible,
   clasesTicket,
   estaAtrasado,
   minutosDesde,
@@ -39,6 +40,22 @@ describe('estaAtrasado', () => {
     expect(estaAtrasado(19)).toBe(false);
     expect(estaAtrasado(20)).toBe(true);
     expect(estaAtrasado(21)).toBe(true);
+  });
+});
+
+describe('atrasadoVisible', () => {
+  it('un ticket terminado no se pinta atrasado aunque pasen 20 min', () => {
+    expect(atrasadoVisible(36, true)).toBe(false);
+  });
+
+  it('sin terminar, sigue la regla de estaAtrasado', () => {
+    expect(atrasadoVisible(36, false)).toBe(true);
+    expect(atrasadoVisible(19, false)).toBe(false);
+  });
+
+  it('en el límite de 20 min: atrasado sin terminar, no terminado', () => {
+    expect(atrasadoVisible(MINUTOS_ATRASO, false)).toBe(true);
+    expect(atrasadoVisible(MINUTOS_ATRASO, true)).toBe(false);
   });
 });
 
@@ -87,5 +104,13 @@ describe('clasesTicket', () => {
     expect(c).toContain('border-red-500');
     expect(c).toContain('ring-4');
     expect(c).not.toContain('border-orange-400');
+  });
+
+  it('terminado: verde, le gana al rojo y sin anillo', () => {
+    const c = clasesTicket({ nuevo: true, atrasado: true, terminado: true }).split(' ');
+    expect(c).toContain('border-green-500');
+    expect(c).toContain('bg-green-50');
+    expect(c).not.toContain('border-red-500');
+    expect(c).not.toContain('ring-4');
   });
 });
