@@ -1,0 +1,24 @@
+{
+  "id": "busqueda-que-lleva-inexistente",
+  "historia": "US-16",
+  "criterios": ["C2"],
+  "categoria": "busqueda",
+  "titulo": "Qué lleva un platillo que no existe: no describe otro como si fuera ese",
+  "mensajes": ["¿Qué lleva la hamburguesa clásica?"],
+  "argsBuscarMenu": [
+    {
+      "consulta": "hamburguesa clásica"
+    }
+  ],
+  "debe": [
+    "Llama a buscar_menu con el nombre que dijo el cliente.",
+    "Dice que la hamburguesa clásica no la encontró en el menú o que no la tienen.",
+    "Da el enlace del menú tal cual y pregunta si le ayuda con algo más."
+  ],
+  "noDebe": [
+    "Describir otro platillo (por ejemplo, la Hamburguesa Delicias) como si fuera la hamburguesa clásica, o decir que \"la clásica\" es alguno de los resultados.",
+    "Mencionar ingredientes como si fueran de la hamburguesa clásica.",
+    "Ofrecer o nombrar otros platillos en su lugar, aunque vengan en la respuesta.",
+    "Llamar a cotizar_pedido o dar un precio."
+  ]
+}
