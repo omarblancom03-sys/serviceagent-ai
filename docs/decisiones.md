@@ -68,3 +68,4 @@ Decisiones de arquitectura y de producto que ya aplican al repo.
 ## Pendientes (se resuelven en su historia)
 
 - **Proveedor real de WhatsApp** (US-50, opcional): API de Meta en modo prueba vs. sandbox de Twilio.
+- **Alerta "no atendida"** (US-18, criterio 7, con la pantalla `/caja`): a los cuántos segundos una alerta pendiente pasa a "no atendida" y qué pasa fuera del horario. Hoy una alerta sin atender se queda pendiente para siempre.
