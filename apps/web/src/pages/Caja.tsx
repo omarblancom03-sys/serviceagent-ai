@@ -1,6 +1,8 @@
 import { RespuestaPedidosCajaSchema, type PedidoCaja } from '@serviceagent/shared';
+import { Check } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSesion } from '../auth/SesionContext';
+import { AlertasCaja } from '../components/AlertasCaja';
 import { IndicadorConexion } from '../components/IndicadorConexion';
 import {
   ETIQUETA_ESTADO_CAJA,
@@ -84,6 +86,9 @@ export function Caja() {
         )}
         <IndicadorConexion estado={conexion} />
       </div>
+
+      {/* US-18: antes del buscador, para que se vea que buscar nunca esconde una alerta. */}
+      <AlertasCaja />
 
       <label className="mt-4 block max-w-md">
         <span className="sr-only">Buscar por folio o nombre</span>
@@ -178,8 +183,10 @@ function TarjetaPedido({ pedido }: { pedido: PedidoCaja }) {
       </p>
       <div className="mt-3 flex items-center justify-between gap-2">
         <span className="text-xl font-semibold text-stone-900">{pedido.totalTexto}</span>
-        <span className={`rounded-full px-3 py-1 text-sm font-semibold ${CLASE_PAGO[pago.tipo]}`}>
-          {pago.tipo === 'pagado' && <span aria-hidden="true">✓ </span>}
+        <span
+          className={`flex items-center gap-1 rounded-full px-3 py-1 text-sm font-semibold ${CLASE_PAGO[pago.tipo]}`}
+        >
+          {pago.tipo === 'pagado' && <Check aria-hidden="true" className="size-4" />}
           {pago.texto}
         </span>
       </div>

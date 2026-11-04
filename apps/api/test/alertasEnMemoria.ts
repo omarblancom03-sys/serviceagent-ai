@@ -1,3 +1,4 @@
+import { MAX_ALERTAS_PENDIENTES } from '@serviceagent/shared';
 import type { AlertasRepo, NuevaAlerta } from '../src/services/alerta';
 
 /** Una fila de `alertas_atencion` en memoria. */
@@ -20,7 +21,7 @@ function relojPorMinuto() {
  * una alerta pendiente por `idChat` (el índice único parcial de la tabla); ya atendida, el mismo
  * chat puede crear otra. El folio solo se guarda si está en `pedidos` con ese teléfono; si no, la
  * alerta se guarda sin folio. `marcar_alerta_atendida`: solo si sigue pendiente; si no,
- * `ya_atendida` o `no_encontrada`. Prueba la API, no el SQL (ese se prueba a mano). `alertas` (lo
+ * `ya_atendida` o `no_encontrada`. `leerPendientes` ordena y corta en `MAX_ALERTAS_PENDIENTES`. Prueba la API, no el SQL (ese se prueba a mano). `alertas` (lo
  * que se mandó a guardar) y `filas` quedan expuestos para que el test los revise, `llamadas` cuenta
  * las veces que se usó `crearAlerta` y `reloj` da la hora de cada alerta nueva (`creado_en`). La
  * hora de atendida es `creadaEn` + 5 min (por eso la alerta de las 18:05 se atiende a las 18:10).
@@ -59,8 +60,12 @@ export function crearRepoAlertasEnMemoria(
       return { creada: true, folioNoEncontrado: alerta.folio !== null && !folioValido };
     },
     async leerPendientes() {
+      // Igual que la consulta real: ordena de la más antigua a la más nueva y corta en 100. Sin el
+      // corte aquí, el test del límite pasaría sin probar nada.
       return filas
         .filter((f) => f.atendidaEn === null)
+        .sort((a, b) => a.creadaEn.getTime() - b.creadaEn.getTime() || a.idAlerta - b.idAlerta)
+        .slice(0, MAX_ALERTAS_PENDIENTES)
         .map((f) => ({
           idAlerta: f.idAlerta,
           telefono: f.alerta.telefono,

@@ -27,6 +27,12 @@ export const MAX_CARACTERES_MOTIVO_PETICION = 1000;
  */
 export const EVENTO_SENAL_ALERTAS = 'alerta';
 
+/**
+ * Lo más que devuelve `GET /caja/alertas`, las más antiguas primero. Al llegar a este número, la
+ * pantalla avisa que puede haber más ("100+") en lugar de cortar en silencio.
+ */
+export const MAX_ALERTAS_PENDIENTES = 100;
+
 // ─── Petición ───────────────────────────────────────────────────────────────
 
 /**
@@ -112,9 +118,9 @@ export const AlertaAtencionSchema = z.object({
   creadaEn: z.iso.datetime({ offset: true }),
 });
 
-/** `GET /caja/alertas`: solo las pendientes, de la más antigua a la más nueva. */
+/** `GET /caja/alertas`: solo las pendientes, de la más antigua a la más nueva, hasta 100. */
 export const RespuestaAlertasPendientesSchema = z.object({
-  alertas: z.array(AlertaAtencionSchema),
+  alertas: z.array(AlertaAtencionSchema).max(MAX_ALERTAS_PENDIENTES),
 });
 
 /** `{idAlerta}` de la ruta: solo dígitos, hasta `MAX_ID` (igual que `ParamsProductoSchema`). */
