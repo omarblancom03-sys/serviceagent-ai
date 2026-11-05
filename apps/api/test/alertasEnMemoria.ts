@@ -21,10 +21,11 @@ function relojPorMinuto() {
  * una alerta pendiente por `idChat` (el índice único parcial de la tabla); ya atendida, el mismo
  * chat puede crear otra. El folio solo se guarda si está en `pedidos` con ese teléfono; si no, la
  * alerta se guarda sin folio. `marcar_alerta_atendida`: solo si sigue pendiente; si no,
- * `ya_atendida` o `no_encontrada`. `leerPendientes` ordena y corta en `MAX_ALERTAS_PENDIENTES`. Prueba la API, no el SQL (ese se prueba a mano). `alertas` (lo
- * que se mandó a guardar) y `filas` quedan expuestos para que el test los revise, `llamadas` cuenta
- * las veces que se usó `crearAlerta` y `reloj` da la hora de cada alerta nueva (`creado_en`). La
- * hora de atendida es `creadaEn` + 5 min (por eso la alerta de las 18:05 se atiende a las 18:10).
+ * `ya_atendida` o `no_encontrada`. `leerPendientes` ordena y corta en `MAX_ALERTAS_PENDIENTES`.
+ * Prueba la API, no el SQL (ese se prueba a mano). `alertas` (lo que se mandó a guardar) y
+ * `filas` quedan expuestos para que el test los revise, `llamadas` cuenta las veces que se usó
+ * `crearAlerta` y `reloj` da la hora de cada alerta nueva (`creado_en`). La hora de atendida es
+ * `creadaEn` + 5 min (por eso la alerta de las 18:05 se atiende a las 18:10).
  */
 export function crearRepoAlertasEnMemoria(
   pedidos: { folio: number; telefono: string }[] = [],

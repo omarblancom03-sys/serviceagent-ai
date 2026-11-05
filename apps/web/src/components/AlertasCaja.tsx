@@ -1,4 +1,5 @@
 import {
+  MAX_ALERTAS_PENDIENTES,
   RespuestaAlertaAtendidaSchema,
   RespuestaAlertasPendientesSchema,
   type AlertaAtencion,
@@ -44,9 +45,19 @@ export function AlertasCaja() {
   const [alertas, setAlertas] = useState<AlertaAtencion[] | null>(null);
   const [errorCarga, setErrorCarga] = useState<{ causa: unknown } | null>(null);
   const [atender, setAtender] = useState<EstadoAtender>(estadoAtenderInicial);
+  // Copia siempre al día del estado del botón Atendida. El temporizador la lee al dispararse, no la
+  // copia de `atender` de cuando se programó: así no manda una alerta que se deshizo en medio.
+  const atenderActual = useRef(atender);
   const [candado] = useState(crearCandadoAtender);
   const ahora = useAhora(INTERVALO_RELOJ_MS);
   const recargador = useRef<Recargador | null>(null);
+
+  /** Todo cambio al estado de Atendida pasa por aquí para que `atenderActual` no se quede atrás. */
+  const actualizarAtender = useCallback((cambio: (previo: EstadoAtender) => EstadoAtender) => {
+    const siguiente = cambio(atenderActual.current);
+    atenderActual.current = siguiente;
+    setAtender(siguiente);
+  }, []);
 
   const cargarUnaVez = useCallback(async () => {
     try {
@@ -88,10 +99,12 @@ export function AlertasCaja() {
       } finally {
         candado.soltar(idAlerta);
       }
-      setAtender((previo) => terminarEnvio(previo, idAlerta, resultadoAtender(error), Date.now()));
+      actualizarAtender((previo) =>
+        terminarEnvio(previo, idAlerta, resultadoAtender(error), Date.now()),
+      );
       void recargador.current?.recargar();
     },
-    [pedirConSesion, candado],
+    [pedirConSesion, candado, actualizarAtender],
   );
 
   useEffect(() => {
@@ -102,14 +115,15 @@ export function AlertasCaja() {
     const id = setTimeout(
       () => {
         const t = Date.now();
-        const ids = vencidas(atender, t);
-        setAtender((previo) => quitarAvisosVencidos(empezarEnvio(previo, ids), t));
-        for (const idAlerta of ids) if (candado.tomar(idAlerta)) void enviar(idAlerta);
+        const previo = atenderActual.current;
+        const { estado, movidas } = empezarEnvio(previo, vencidas(previo, t));
+        actualizarAtender(() => quitarAvisosVencidos(estado, t));
+        for (const idAlerta of movidas) if (candado.tomar(idAlerta)) void enviar(idAlerta);
       },
       Math.max(0, proximo - Date.now()),
     );
     return () => clearTimeout(id);
-  }, [atender, candado, enviar]);
+  }, [atender, candado, enviar, actualizarAtender]);
 
   const visibles = alertas ? alertasVisibles(alertas, atender) : [];
   const enPlazo = [...atender.enPlazo.values()];
@@ -141,7 +155,9 @@ export function AlertasCaja() {
             <button
               type="button"
               className="font-semibold text-amber-300 underline"
-              onClick={() => setAtender((previo) => deshacerAtendida(previo, alerta.idAlerta))}
+              onClick={() =>
+                actualizarAtender((previo) => deshacerAtendida(previo, alerta.idAlerta))
+              }
             >
               Deshacer
             </button>
@@ -189,7 +205,7 @@ export function AlertasCaja() {
 
       {alertas && hayMasAlertas(alertas.length) && (
         <p className="mt-2 text-sm text-stone-600">
-          Se muestran las 100 más antiguas; puede haber más.
+          Se muestran las {MAX_ALERTAS_PENDIENTES} más antiguas; puede haber más.
         </p>
       )}
 
@@ -201,7 +217,9 @@ export function AlertasCaja() {
               alerta={alerta}
               ahora={ahora}
               error={atender.errores.get(alerta.idAlerta) ?? null}
-              alAtender={() => setAtender((previo) => marcarAtendida(previo, alerta, Date.now()))}
+              alAtender={() =>
+                actualizarAtender((previo) => marcarAtendida(previo, alerta, Date.now()))
+              }
             />
           ))}
         </ul>

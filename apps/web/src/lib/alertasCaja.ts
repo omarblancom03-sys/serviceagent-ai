@@ -170,18 +170,25 @@ export function vencidas(estado: EstadoAtender, ahora: number): number[] {
   return [...estado.enPlazo].filter(([, { venceEn }]) => venceEn <= ahora).map(([id]) => id);
 }
 
-/** Pasa esas alertas de "en plazo" a "enviando" (el Deshacer ya no aplica). */
-export function empezarEnvio(estado: EstadoAtender, ids: readonly number[]): EstadoAtender {
-  const mover = ids.filter((id) => estado.enPlazo.has(id));
-  if (mover.length === 0) return estado;
+/**
+ * Pasa esas alertas de "en plazo" a "enviando" (el Deshacer ya no aplica). `movidas` son las que
+ * de verdad seguían en su plazo y se movieron: solo esas se mandan a la API. Una que se deshizo
+ * después de calcular `ids` no aparece en `movidas`.
+ */
+export function empezarEnvio(
+  estado: EstadoAtender,
+  ids: readonly number[],
+): { estado: EstadoAtender; movidas: number[] } {
+  const movidas = ids.filter((id) => estado.enPlazo.has(id));
+  if (movidas.length === 0) return { estado, movidas };
   const enPlazo = new Map(estado.enPlazo);
   const enviando = new Map(estado.enviando);
-  for (const id of mover) {
+  for (const id of movidas) {
     const enSuPlazo = enPlazo.get(id);
     if (enSuPlazo) enviando.set(id, enSuPlazo.alerta);
     enPlazo.delete(id);
   }
-  return { ...estado, enPlazo, enviando };
+  return { estado: { ...estado, enPlazo, enviando }, movidas };
 }
 
 /** Llegó la respuesta: la alerta se quita (con aviso si toca) o regresa con su error. */

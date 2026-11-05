@@ -178,7 +178,7 @@ describe('botón Atendida con Deshacer (US-18)', () => {
     let estado = marcarAtendida(estadoAtenderInicial(), alerta(1), T0);
     estado = marcarAtendida(estado, alerta(2), T0);
     estado = marcarAtendida(estado, alerta(3), T0 + 1_000);
-    estado = empezarEnvio(estado, vencidas(estado, T0 + 5_000));
+    estado = empezarEnvio(estado, vencidas(estado, T0 + 5_000)).estado;
     estado = terminarEnvio(estado, 1, resultadoAtender(null), T0 + 5_500);
     // 1 ya atendida, 2 mandándose, 3 en plazo: la lista vieja de la API trae las tres.
     const lista = [alerta(1), alerta(2), alerta(3), alerta(4)];
@@ -187,16 +187,32 @@ describe('botón Atendida con Deshacer (US-18)', () => {
 
   it('al terminar el plazo pasa a "mandándose" y ya no se puede deshacer', () => {
     let estado = marcarAtendida(estadoAtenderInicial(), alerta(1), T0);
-    estado = empezarEnvio(estado, [1]);
+    estado = empezarEnvio(estado, [1]).estado;
     expect(estado.enPlazo.size).toBe(0);
     expect(estado.enviando.get(1)?.telefono).toBe('6145550101');
     expect(deshacerAtendida(estado, 1)).toBe(estado);
     // Una alerta que ya se había deshecho no se manda aunque venga en la lista de vencidas.
-    expect(empezarEnvio(estadoAtenderInicial(), [1]).enviando.size).toBe(0);
+    const nada = empezarEnvio(estadoAtenderInicial(), [1]);
+    expect(nada.estado.enviando.size).toBe(0);
+    expect(nada.movidas).toEqual([]);
+  });
+
+  it('solo se mandan las que empezarEnvio movió, aunque la lista de vencidas sea vieja', () => {
+    // El temporizador calculó las vencidas con [1, 2] en plazo, pero antes de mover se deshizo la 1.
+    let estado = marcarAtendida(estadoAtenderInicial(), alerta(1), T0);
+    estado = marcarAtendida(estado, alerta(2), T0);
+    const idsViejos = vencidas(estado, T0 + 5_000);
+    expect(idsViejos).toEqual([1, 2]);
+    estado = deshacerAtendida(estado, 1);
+
+    const { estado: despues, movidas } = empezarEnvio(estado, idsViejos);
+    expect(movidas).toEqual([2]);
+    expect([...despues.enviando.keys()]).toEqual([2]);
+    expect(alertasVisibles([alerta(1), alerta(2)], despues).map((a) => a.idAlerta)).toEqual([1]);
   });
 
   it('200: queda quitada sin aviso', () => {
-    let estado = empezarEnvio(marcarAtendida(estadoAtenderInicial(), alerta(1), T0), [1]);
+    let { estado } = empezarEnvio(marcarAtendida(estadoAtenderInicial(), alerta(1), T0), [1]);
     estado = terminarEnvio(estado, 1, resultadoAtender(null), T0 + 5_200);
     expect(estado.enviando.size).toBe(0);
     expect(estado.quitadas.has(1)).toBe(true);
@@ -206,7 +222,7 @@ describe('botón Atendida con Deshacer (US-18)', () => {
   });
 
   it('409: quitada con aviso informativo que se borra solo a los 6 s', () => {
-    let estado = empezarEnvio(marcarAtendida(estadoAtenderInicial(), alerta(1), T0), [1]);
+    let { estado } = empezarEnvio(marcarAtendida(estadoAtenderInicial(), alerta(1), T0), [1]);
     estado = terminarEnvio(estado, 1, resultadoAtender(new ErrorApi(409, null)), T0 + 5_000);
     expect(estado.quitadas.has(1)).toBe(true);
     expect(estado.avisos.get(1)?.texto).toBe('Esta alerta ya estaba atendida.');
@@ -216,7 +232,7 @@ describe('botón Atendida con Deshacer (US-18)', () => {
   });
 
   it('red o 500: regresa con el error; al volver a tocar, se limpia y empieza otro plazo', () => {
-    let estado = empezarEnvio(marcarAtendida(estadoAtenderInicial(), alerta(1), T0), [1]);
+    let { estado } = empezarEnvio(marcarAtendida(estadoAtenderInicial(), alerta(1), T0), [1]);
     estado = terminarEnvio(estado, 1, resultadoAtender(new TypeError('Failed')), T0 + 5_100);
     expect(alertasVisibles([alerta(1)], estado)).toHaveLength(1);
     expect(estado.errores.get(1)).toBe('No se pudo marcar la alerta. Intenta de nuevo.');
