@@ -36,9 +36,9 @@ Usa los nombres de campo de la API de Retell, para que no haya duda de a qué aj
 | `contact_memory_config`          | Ajustes de memoria de contacto                         | Apagada (`enable_read` y `enable_update` en `false`). El 20 de octubre de 2026, en /pedir y con la lectura encendida, el agente agregó "A tu hija le va a gustar" al responder "Ver menú", sin nada en la conversación ni en el prompt que lo explicara. No se confirmó la causa, pero apagarla evita mezclar datos entre clientes y el agente no la necesita. Versión publicada en Retell: V2 "US-07-P2 sin memoria de contacto". |
 | `webhook_url`                    | Webhook                                                | Sin webhook: todavía no hay un endpoint que lo reciba.                                                                                                                                                                                                                                                                                                                                                                             |
 
-### Solo por API (decide Omar)
+### Solo por API (decide el PO)
 
-Un valor acordado no se puede fijar desde el dashboard. Se fija con la API de Retell, que necesita la llave de la cuenta; usarla o no es decisión de Omar.
+Un valor acordado no se puede fijar desde el dashboard. Se fija con la API de Retell, que necesita la llave de la cuenta; usarla o no es decisión del PO (Omar o Martín, [D61](../docs/decisiones.md)).
 
 | Valor acordado                   | Campo y endpoint                                    |
 | -------------------------------- | --------------------------------------------------- |

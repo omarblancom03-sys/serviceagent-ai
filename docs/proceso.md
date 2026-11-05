@@ -2,12 +2,14 @@
 
 ## Equipo
 
-| Persona | Rol Scrum                 |
-| ------- | ------------------------- |
-| Omar    | Product Owner + Developer |
-| Martín  | Scrum Master + Developer  |
-| Jorge   | Developer                 |
-| Saúl    | Developer                 |
+| Persona | Rol Scrum                                |
+| ------- | ---------------------------------------- |
+| Omar    | Product Owner + Developer                |
+| Martín  | Product Owner + Scrum Master + Developer |
+| Jorge   | Developer                                |
+| Saúl    | Developer                                |
+
+Omar y Martín son Product Owner ([D61](decisiones.md)): cualquiera de los dos responde preguntas de producto, acepta historias y aprueba lo que los docs reservan al PO o a Omar.
 
 Nadie es "el del backend" o "el del frontend": todos tocan todas las áreas. Las historias de 8 puntos se hacen en pareja.
 
