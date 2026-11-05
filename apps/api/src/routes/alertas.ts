@@ -1,6 +1,7 @@
 import { createRoute, type OpenAPIHono } from '@hono/zod-openapi';
 import {
   ErrorAlertaSchema,
+  MAX_ALERTAS_PENDIENTES,
   ParamsAlertaSchema,
   RespuestaAlertaAtendidaSchema,
   RespuestaAlertasPendientesSchema,
@@ -29,7 +30,8 @@ export const alertasPendientesRoute = createRoute({
   summary: 'Alertas "Cliente requiere atención" pendientes (pantalla /caja)',
   description:
     'Rol `caja` (y `admin`). Solo las alertas que nadie ha atendido, de la más antigua a la más ' +
-    'nueva. Por alerta: id, teléfono completo (para llamar al cliente; excepción a D54, D59), ' +
+    `nueva, hasta ${MAX_ALERTAS_PENDIENTES} (si hay más, salen las más antiguas). ` +
+    'Por alerta: id, teléfono completo (para llamar al cliente; excepción a D54, D59), ' +
     'nombre, folio y motivo. Nunca el id del chat de Retell. La pantalla la vuelve a pedir ' +
     "cuando llega la señal de Realtime (canal 'pedidos', evento 'alerta').",
   security: [{ Bearer: [] }],

@@ -1,5 +1,6 @@
 import {
   ErrorAlertaSchema,
+  MAX_ALERTAS_PENDIENTES,
   RespuestaAlertaAtendidaSchema,
   RespuestaAlertasPendientesSchema,
   type Rol,
@@ -39,6 +40,15 @@ async function repoConTres() {
   await repo.crearAlerta(alerta(CHAT_A, '6145550101', { folio: 1024 }));
   await repo.crearAlerta(alerta(CHAT_B, '6145550102', { nombreCliente: null }));
   await repo.crearAlerta(alerta(CHAT_C, '6145550103'));
+  return repo;
+}
+
+/** Repo con `cuantas` alertas de chats distintos, un minuto entre cada una (la 1 es la más antigua). */
+async function repoCon(cuantas: number) {
+  const repo = crearRepoAlertasEnMemoria();
+  for (let i = 1; i <= cuantas; i++) {
+    await repo.crearAlerta(alerta(`chat_${i}`, '6145550101'));
+  }
   return repo;
 }
 
@@ -168,6 +178,26 @@ describe('GET /caja/alertas (US-18 P1-B)', () => {
     expect((await atender(repo, 1)).status).toBe(409);
   });
 
+  it('con 100 pendientes las manda todas', async () => {
+    const repo = await repoCon(MAX_ALERTAS_PENDIENTES);
+    const { alertas } = RespuestaAlertasPendientesSchema.parse(await (await listar(repo)).json());
+    expect(alertas).toHaveLength(100);
+  });
+
+  it('con 101 manda las 100 más antiguas; al atender una, entra la 101', async () => {
+    const repo = await repoCon(MAX_ALERTAS_PENDIENTES + 1);
+    const antes = RespuestaAlertasPendientesSchema.parse(await (await listar(repo)).json());
+    expect(antes.alertas.map((a) => a.idAlerta)).toEqual(
+      Array.from({ length: 100 }, (_, i) => i + 1),
+    );
+
+    expect((await atender(repo, 50)).status).toBe(200);
+    const despues = RespuestaAlertasPendientesSchema.parse(await (await listar(repo)).json());
+    expect(despues.alertas).toHaveLength(100);
+    expect(despues.alertas.map((a) => a.idAlerta)).not.toContain(50);
+    expect(despues.alertas.at(-1)?.idAlerta).toBe(101);
+  });
+
   it('si falla la lectura responde 500 con un mensaje en español', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     const res = await listar(repoAlertasQueFalla);
@@ -263,5 +293,14 @@ describe('alertas de caja en el OpenAPI (US-18 P1-B)', () => {
       '409',
       '500',
     ]);
+  });
+
+  it('GET /caja/alertas documenta el límite de 100', async () => {
+    const doc = (await (await crearApp().request('/openapi.json')).json()) as {
+      paths: Record<string, Record<string, { description?: string; responses: unknown }>>;
+    };
+    const lista = doc.paths['/caja/alertas']?.get;
+    expect(lista?.description).toContain('hasta 100');
+    expect(JSON.stringify(lista?.responses)).toContain('"maxItems":100');
   });
 });

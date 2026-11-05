@@ -1,3 +1,4 @@
+import { MAX_ALERTAS_PENDIENTES } from '@serviceagent/shared';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import type { AlertasRepo } from '../services/alerta';
@@ -50,12 +51,14 @@ export function crearRepoAlertas(cliente: SupabaseClient): AlertasRepo {
 
     async leerPendientes() {
       // Usa el índice parcial alertas_atencion_pendientes (creado_en where atendida_en is null).
+      // Solo las más antiguas: quien lleva más tiempo esperando se atiende primero.
       const { data, error } = await cliente
         .from('alertas_atencion')
         .select(COLUMNAS_PENDIENTE)
         .is('atendida_en', null)
         .order('creado_en', { ascending: true })
-        .order('id_alerta', { ascending: true });
+        .order('id_alerta', { ascending: true })
+        .limit(MAX_ALERTAS_PENDIENTES);
       if (error) {
         throw new Error(`No se pudieron leer las alertas (código ${error.code ?? 'desconocido'})`);
       }

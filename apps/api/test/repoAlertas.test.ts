@@ -5,8 +5,8 @@ import { crearRepoAlertas } from '../src/lib/repoAlertas';
 type Respuesta = { data: unknown; error: { code?: string; message: string } | null };
 
 /**
- * Cliente de Supabase falso: `rpc` y la cadena `from().select().is().order().order()`, con la
- * respuesta que diga cada test. Anota lo que se pidió para revisarlo.
+ * Cliente de Supabase falso: `rpc` y la cadena `from().select().is().order().order().limit()`, con
+ * la respuesta que diga cada test. Anota lo que se pidió para revisarlo.
  */
 function clienteFalso(respuesta: Respuesta) {
   const llamadas: unknown[][] = [];
@@ -15,6 +15,10 @@ function clienteFalso(respuesta: Respuesta) {
     is: (columna: string, valor: unknown) => (llamadas.push(['is', columna, valor]), consulta),
     order: (columna: string, opciones: unknown) => {
       llamadas.push(['order', columna, opciones]);
+      return Object.assign(Promise.resolve(respuesta), consulta);
+    },
+    limit: (cuantas: number) => {
+      llamadas.push(['limit', cuantas]);
       return Object.assign(Promise.resolve(respuesta), consulta);
     },
   };
@@ -29,7 +33,7 @@ function clienteFalso(respuesta: Respuesta) {
 }
 
 describe('repoAlertas sobre Supabase (US-18 P1-B)', () => {
-  it('leerPendientes pide solo las pendientes, en orden y sin chat_id_retell', async () => {
+  it('leerPendientes pide solo las pendientes, en orden, hasta 100 y sin chat_id_retell', async () => {
     const { repo, llamadas } = clienteFalso({
       data: [
         {
@@ -59,6 +63,8 @@ describe('repoAlertas sobre Supabase (US-18 P1-B)', () => {
       ['is', 'atendida_en', null],
       ['order', 'creado_en', { ascending: true }],
       ['order', 'id_alerta', { ascending: true }],
+      // Después de ordenar: corta las más antiguas, no unas cualesquiera.
+      ['limit', 100],
     ]);
   });
 
