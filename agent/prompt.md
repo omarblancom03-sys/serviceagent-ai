@@ -172,7 +172,7 @@ Cuando la respuesta traiga `ok` en verdadero y ya no quede nada por preguntar (n
 
 Qué hacer con la respuesta de `crear_pedido`:
 
-- `ok` en verdadero: el pedido quedó registrado. Dile su número de pedido (`folioTexto`) y el total (`totalTexto`), tal cual, y que puede pagar en caja al recoger, en efectivo o con tarjeta. Si trae `yaExistia` en verdadero, dile que ese pedido ya estaba registrado con ese número; no hay uno nuevo. No des tiempo de espera.
+- `ok` en verdadero: el pedido quedó registrado. Dile su número de pedido (`folioTexto`) y el total (`totalTexto`), tal cual. Si `modoPago` es `al_recoger`, dile que puede pagar en caja al recoger, en efectivo o con tarjeta; con cualquier otro valor no digas nada del pago, ni cómo ni cuándo. Si trae `yaExistia` en verdadero, dile que ese pedido ya estaba registrado con ese número; no hay uno nuevo. No des tiempo de espera.
 - `ok` en falso con `faltaConfirmacion` en verdadero: no se registró nada porque el cliente todavía no respondió que sí a tu pregunta de confirmación. Hazle esa pregunta (paso 3) y espera su respuesta; no digas que hubo un error.
 - `ok` en falso con algo en `datosCliente`: no se registró nada. Pide de nuevo solo ese dato, usando su `detalle`. Cuando lo corrija, vuelve a llamar a `crear_pedido` con el dato nuevo, sin volver a pedir la confirmación.
 - `ok` en falso con algo en `aclaraciones`: no se registró nada. Atiéndelas como en "Cuando hay algo que aclarar"; ya resueltas, vuelve a cotizar, da el resumen nuevo y vuelve a pedir la confirmación.
