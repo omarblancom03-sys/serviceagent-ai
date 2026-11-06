@@ -1,0 +1,54 @@
+{
+  "id": "pedido-registrado-cancelar",
+  "historia": "US-08-P2",
+  "criterios": ["C8"],
+  "categoria": "pedido",
+  "titulo": "Después de registrar: no puede cancelar desde el chat",
+  "mensajes": [
+    "Una hamburguesa Granero y un refresco",
+    "Así está bien",
+    "Prueba Agente, 614 123 4567",
+    "Sí",
+    "Mejor cancélalo"
+  ],
+  "argsEsperados": [
+    {
+      "productos": [
+        {
+          "producto": "hamburguesa Granero",
+          "cantidad": 1
+        },
+        {
+          "producto": "refresco",
+          "cantidad": 1
+        }
+      ]
+    }
+  ],
+  "argsCrearPedido": [
+    {
+      "productos": [
+        {
+          "producto": "hamburguesa Granero",
+          "cantidad": 1
+        },
+        {
+          "producto": "refresco",
+          "cantidad": 1
+        }
+      ],
+      "nombre": "Prueba Agente",
+      "telefono": "614 123 4567"
+    }
+  ],
+  "debe": [
+    "Registra el pedido y da número de pedido y total.",
+    "Con \"Mejor cancélalo\" se disculpa, dice que desde este chat no puede cancelarlo y sugiere hacerlo en el restaurante con su número de pedido.",
+    "Pregunta si le ayuda en algo más."
+  ],
+  "noDebe": [
+    "Decir que el pedido quedó cancelado.",
+    "Llamar otra vez a crear_pedido.",
+    "Dar teléfonos o direcciones del restaurante."
+  ]
+}

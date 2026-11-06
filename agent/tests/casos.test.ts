@@ -3,7 +3,11 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { z } from 'zod';
-import { BuscarMenuArgsSchema, CotizarPedidoArgsSchema } from '@serviceagent/shared';
+import {
+  BuscarMenuArgsSchema,
+  CotizarPedidoArgsSchema,
+  CrearPedidoArgsSchema,
+} from '@serviceagent/shared';
 
 // Este test no habla con Retell: lee los archivos de agent/ como texto y
 // verifica que esten bien armados. Los casos se corren a mano en el chat de
@@ -38,6 +42,8 @@ const esquemaCaso = z.strictObject({
   argsEsperados: z.array(z.record(z.string(), z.unknown())).min(1).optional(),
   // Args de cada llamada esperada a buscar_menu; se validan contra su contrato.
   argsBuscarMenu: z.array(z.record(z.string(), z.unknown())).min(1).optional(),
+  // Args de cada llamada esperada a crear_pedido; se validan contra su contrato.
+  argsCrearPedido: z.array(z.record(z.string(), z.unknown())).min(1).optional(),
   debe: z.array(textoNoVacio).min(1),
   noDebe: z.array(textoNoVacio),
 });
@@ -109,6 +115,27 @@ describe('cobertura de US-07-P2', () => {
   });
 });
 
+describe('cobertura de US-08-P2', () => {
+  const casosConfirmar = archivosCasos
+    .map(leerCaso)
+    .filter((caso) => caso.historia === 'US-08-P2' && caso.categoria === 'pedido');
+
+  // C1 (la custom function) se prueba en funciones.test.ts. C7 (la herramienta falla) no se
+  // puede provocar desde el chat de prueba: lo cubre el prompt. C9 son estos casos y C10, la corrida.
+  it.each(['C2', 'C3', 'C4', 'C5', 'C6', 'C8'])(
+    'el criterio %s tiene al menos un caso',
+    (criterio) => {
+      expect(
+        casosConfirmar.filter((caso) => caso.criterios.includes(criterio)).length,
+      ).toBeGreaterThan(0);
+    },
+  );
+
+  it('algun caso registra el pedido (trae argsCrearPedido)', () => {
+    expect(casosConfirmar.some((caso) => caso.argsCrearPedido)).toBe(true);
+  });
+});
+
 describe('peticion esperada de los casos de pedido (argsEsperados)', () => {
   const casos = archivosCasos.map(leerCaso);
 
@@ -127,6 +154,16 @@ describe('peticion esperada de los casos de pedido (argsEsperados)', () => {
       expect(resultado.error?.issues ?? []).toEqual([]);
     }
   });
+
+  it.each(casos.filter((caso) => caso.argsCrearPedido))(
+    '$id cumple el contrato de crear_pedido',
+    (caso) => {
+      for (const args of caso.argsCrearPedido ?? []) {
+        const resultado = CrearPedidoArgsSchema.safeParse(args);
+        expect(resultado.error?.issues ?? []).toEqual([]);
+      }
+    },
+  );
 });
 
 describe('cobertura de US-16', () => {
@@ -160,6 +197,12 @@ describe('prompt (agent/prompt.md)', () => {
 
   it('nombra al restaurante', () => {
     expect(prompt).toContain('El Granero');
+  });
+
+  // El backend solo crea el pedido si el cliente dijo que sí a esta pregunta (D48): es
+  // FRASE_PREGUNTA_CONFIRMACION de apps/api/src/services/confirmacion.ts. Si cambia, cambian los dos.
+  it('pide la confirmación con la frase fija que busca el backend', () => {
+    expect(prompt).toContain('¿Confirmo tu pedido?');
   });
 
   // docs/negocio.md -> Dinero: el modelo nunca calcula ni inventa precios.
@@ -219,13 +262,13 @@ describe('configuracion (agent/retell.json)', () => {
     }),
   });
   const { retell_llm: llm } = esquemaTextosDelModelo.parse(JSON.parse(contenido));
-  const cotizarPedido = llm.general_tools.find(
-    (herramienta) => herramienta.name === 'cotizar_pedido',
-  );
+  const descripcion = (nombre: string) =>
+    llm.general_tools.find((herramienta) => herramienta.name === nombre)?.description;
 
   it.each([
     ['el saludo fijo (begin_message)', llm.begin_message ?? ''],
-    ['la descripcion de cotizar_pedido', cotizarPedido?.description],
+    ['la descripcion de cotizar_pedido', descripcion('cotizar_pedido')],
+    ['la descripcion de crear_pedido', descripcion('crear_pedido')],
   ])('%s no contiene montos', (_nombre, texto) => {
     expect(texto).toBeDefined();
     expect(texto).not.toMatch(/\$\s*\d/);

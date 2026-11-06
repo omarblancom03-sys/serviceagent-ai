@@ -6,6 +6,7 @@ import { z } from 'zod';
 import {
   BuscarMenuArgsSchema,
   CotizarPedidoArgsSchema,
+  CrearPedidoArgsSchema,
   ExtraPedidoSchema,
   ExtraSueltoPedidoSchema,
   ProductoPedidoSchema,
@@ -99,6 +100,11 @@ const funciones: { nombre: string; url: string; niveles: (raiz: Nodo) => Nivel[]
     nombre: 'cotizar_pedido',
     url: '/pedidos/cotizar',
     niveles: (raiz) => nivelesDelPedido(raiz, CotizarPedidoArgsSchema),
+  },
+  {
+    nombre: 'crear_pedido',
+    url: '/pedidos',
+    niveles: (raiz) => nivelesDelPedido(raiz, CrearPedidoArgsSchema),
   },
   {
     nombre: 'buscar_menu',
