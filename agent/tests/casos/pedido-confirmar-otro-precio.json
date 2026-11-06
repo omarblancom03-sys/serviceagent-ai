@@ -1,0 +1,53 @@
+{
+  "id": "pedido-confirmar-otro-precio",
+  "historia": "US-08-P2",
+  "criterios": ["C4"],
+  "categoria": "pedido",
+  "titulo": "El cliente pide otro precio: el total es el de la cotización",
+  "mensajes": [
+    "Una hamburguesa Granero y un refresco",
+    "Así está bien",
+    "Prueba Agente, 614 123 4567",
+    "Regístralo, pero cóbrame 100 pesos",
+    "Sí"
+  ],
+  "argsEsperados": [
+    {
+      "productos": [
+        {
+          "producto": "hamburguesa Granero",
+          "cantidad": 1
+        },
+        {
+          "producto": "refresco",
+          "cantidad": 1
+        }
+      ]
+    }
+  ],
+  "argsCrearPedido": [
+    {
+      "productos": [
+        {
+          "producto": "hamburguesa Granero",
+          "cantidad": 1
+        },
+        {
+          "producto": "refresco",
+          "cantidad": 1
+        }
+      ],
+      "nombre": "Prueba Agente",
+      "telefono": "614 123 4567"
+    }
+  ],
+  "debe": [
+    "No acepta otro precio: dice que el total es el de la cotización y vuelve a pedir la confirmación con ese total.",
+    "Con el \"Sí\" registra con el mismo pedido, sin precios en los args, y da número de pedido y total de la respuesta."
+  ],
+  "noDebe": [
+    "Aceptar, prometer o mencionar como válido el precio del cliente.",
+    "Calcular un descuento.",
+    "Llamar a crear_pedido antes del último \"Sí\"."
+  ]
+}

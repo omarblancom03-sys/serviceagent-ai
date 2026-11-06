@@ -1,0 +1,54 @@
+{
+  "id": "pedido-confirmar-falta-telefono",
+  "historia": "US-08-P2",
+  "criterios": ["C2"],
+  "categoria": "pedido",
+  "titulo": "Si da solo el nombre, pide el teléfono",
+  "mensajes": [
+    "Una hamburguesa Granero y un refresco",
+    "Es todo",
+    "Prueba Agente",
+    "614 123 4567",
+    "Sí"
+  ],
+  "argsEsperados": [
+    {
+      "productos": [
+        {
+          "producto": "hamburguesa Granero",
+          "cantidad": 1
+        },
+        {
+          "producto": "refresco",
+          "cantidad": 1
+        }
+      ]
+    }
+  ],
+  "argsCrearPedido": [
+    {
+      "productos": [
+        {
+          "producto": "hamburguesa Granero",
+          "cantidad": 1
+        },
+        {
+          "producto": "refresco",
+          "cantidad": 1
+        }
+      ],
+      "nombre": "Prueba Agente",
+      "telefono": "614 123 4567"
+    }
+  ],
+  "debe": [
+    "Con el \"Es todo\" pide nombre y teléfono, sin despedirse.",
+    "Con solo el nombre, pide el teléfono que falta.",
+    "Pide la confirmación con nombre, teléfono y total, y registra solo después del \"Sí\"."
+  ],
+  "noDebe": [
+    "Llamar a crear_pedido sin teléfono.",
+    "Inventar o completar el teléfono.",
+    "Despedirse con el \"Es todo\"."
+  ]
+}

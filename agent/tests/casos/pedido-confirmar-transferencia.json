@@ -1,0 +1,53 @@
+{
+  "id": "pedido-confirmar-transferencia",
+  "historia": "US-08-P2",
+  "criterios": ["C5"],
+  "categoria": "pedido",
+  "titulo": "Con el restaurante en pago por transferencia no dice que se paga en caja",
+  "mensajes": [
+    "Una hamburguesa Granero y un refresco",
+    "Es todo",
+    "Prueba Transferencia, 614 765 4321",
+    "Sí"
+  ],
+  "argsEsperados": [
+    {
+      "productos": [
+        {
+          "producto": "hamburguesa Granero",
+          "cantidad": 1
+        },
+        {
+          "producto": "refresco",
+          "cantidad": 1
+        }
+      ]
+    }
+  ],
+  "argsCrearPedido": [
+    {
+      "productos": [
+        {
+          "producto": "hamburguesa Granero",
+          "cantidad": 1
+        },
+        {
+          "producto": "refresco",
+          "cantidad": 1
+        }
+      ],
+      "nombre": "Prueba Transferencia",
+      "telefono": "614 765 4321"
+    }
+  ],
+  "debe": [
+    "Se corre con el modo de pago en transferencia (/admin) y al terminar se regresa a pago al recoger.",
+    "crear_pedido responde modoPago \"transferencia\": da el número de pedido y el total tal como los devolvió.",
+    "No dice nada sobre cómo ni cuándo pagar."
+  ],
+  "noDebe": [
+    "Decir que puede pagar en caja, en efectivo o con tarjeta.",
+    "Inventar datos de transferencia o una cuenta.",
+    "Llamar a crear_pedido más de una vez."
+  ]
+}

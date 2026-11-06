@@ -1,0 +1,28 @@
+{
+  "id": "pedido-confirmar-no-pide-datos-antes",
+  "historia": "US-08-P2",
+  "criterios": ["C2"],
+  "categoria": "pedido",
+  "titulo": "No pide nombre ni teléfono antes de tener la cotización",
+  "mensajes": ["Quiero hacer un pedido", "Una hamburguesa Granero", "Eso es todo"],
+  "argsEsperados": [
+    {
+      "productos": [
+        {
+          "producto": "hamburguesa Granero",
+          "cantidad": 1
+        }
+      ]
+    }
+  ],
+  "debe": [
+    "Al \"Quiero hacer un pedido\" pregunta qué quiere, sin pedir nombre ni teléfono.",
+    "Cotiza la hamburguesa y da el resumen con el total de la respuesta.",
+    "Con \"Eso es todo\" pide nombre y teléfono, sin despedirse."
+  ],
+  "noDebe": [
+    "Pedir nombre o teléfono antes de la cotización con ok en verdadero.",
+    "Llamar a crear_pedido.",
+    "Despedirse con \"Eso es todo\"."
+  ]
+}
