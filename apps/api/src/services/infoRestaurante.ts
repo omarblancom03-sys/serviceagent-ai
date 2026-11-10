@@ -16,10 +16,18 @@ import { huellaDe, MODELO_EMBEDDINGS, TAMANO_LOTE, type Embedder } from './busqu
  */
 
 /**
- * Debajo de esta similitud coseno la entrada no responde la pregunta. Provisional: se calibra con
- * Workers AI real y los textos del seed antes de fusionar (D62).
+ * Debajo de esta similitud coseno la entrada no responde la pregunta. Calibrado con `bge-m3` y los
+ * textos del seed (D62): la respuesta correcta más baja quedó en 0.47 ("¿Dónde están?" → dirección)
+ * y lo que no tiene respuesta, entre 0.42 y 0.54.
  */
-export const UMBRAL_SIMILITUD_INFO = 0.5;
+export const UMBRAL_SIMILITUD_INFO = 0.45;
+
+/**
+ * Solo se devuelven las entradas que quedan a esta distancia de la mejor. Las entradas cortas se
+ * parecen a todo un poco ("Reservaciones… llama al 639…" sale segunda en casi cualquier pregunta);
+ * con el margen, "¿A qué hora abren?" devuelve solo el horario.
+ */
+export const MARGEN_SIMILITUD_INFO = 0.08;
 
 /** Candidatos que se piden a la base antes de filtrar lo inactivo y lo que no llega al umbral. */
 const CANDIDATOS_INFO = 10;
@@ -107,19 +115,24 @@ export async function sincronizarIndiceInfo(
 
 export interface OpcionesInfo {
   umbral?: number;
+  margen?: number;
   modelo?: string;
 }
 
 /**
  * Busca en la información del restaurante lo que preguntó el cliente. Lee las entradas activas en
  * ese momento, reindexa lo que haga falta y devuelve hasta 3, de la más parecida a la menos
- * parecida. Los errores del repo o de Workers AI se propagan (la ruta responde 500).
+ * parecida: las que pasan el umbral y quedan dentro del margen de la mejor. Los errores del repo o de Workers AI se propagan (la ruta responde 500).
  */
 export async function buscarInfo(
   repo: InfoRepo,
   embedder: Embedder,
   consulta: string,
-  { umbral = UMBRAL_SIMILITUD_INFO, modelo = MODELO_EMBEDDINGS }: OpcionesInfo = {},
+  {
+    umbral = UMBRAL_SIMILITUD_INFO,
+    margen = MARGEN_SIMILITUD_INFO,
+    modelo = MODELO_EMBEDDINGS,
+  }: OpcionesInfo = {},
 ): Promise<RespuestaInfoRestaurante> {
   const entradas = await repo.leerEntradas();
 
@@ -133,9 +146,12 @@ export async function buscarInfo(
 
   const activas = new Map(entradas.map((e) => [e.idInfo, e]));
   const similares = await repo.buscarSimilares(vector, modelo, CANDIDATOS_INFO);
-  const resultados: ResultadoInfo[] = [...similares]
+  const candidatas = [...similares]
     .sort((a, b) => b.similitud - a.similitud)
-    .filter((s) => s.similitud >= umbral)
+    .filter((s) => s.similitud >= umbral && activas.has(s.idInfo));
+  const mejor = candidatas[0]?.similitud ?? 0;
+  const resultados: ResultadoInfo[] = candidatas
+    .filter((s) => s.similitud >= mejor - margen)
     .map((s) => activas.get(s.idInfo))
     .filter((e) => e !== undefined)
     .slice(0, MAX_RESULTADOS_INFO)

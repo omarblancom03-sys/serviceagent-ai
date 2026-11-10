@@ -107,6 +107,30 @@ describe('buscarInfo', () => {
     expect(resultados.length).toBe(3);
   });
 
+  it('solo devuelve las que quedan dentro del margen de la mejor', async () => {
+    // Similitudes fijas: horario 0.72, reservaciones 0.53 y wifi 0.70.
+    const similitudes: Record<number, number> = { 1: 0.72, 2: 0.3, 3: 0.53, 4: 0.7 };
+    const repo = crearRepoInfoEnMemoria();
+    repo.buscarSimilares = async () =>
+      Object.entries(similitudes).map(([id, similitud]) => ({ idInfo: Number(id), similitud }));
+
+    const resultados = await buscar('¿a qué hora abren?', { repo, umbral: 0.45 });
+
+    expect(resultados.map((r) => r.tema)).toEqual(['horario', 'alergenos']);
+  });
+
+  it('el margen se mide contra la mejor entrada activa, no contra una desactivada', async () => {
+    const repo = crearRepoInfoEnMemoria();
+    repo.buscarSimilares = async () => [
+      { idInfo: 99, similitud: 0.9 },
+      { idInfo: 1, similitud: 0.6 },
+    ];
+
+    expect((await buscar('horario', { repo, umbral: 0.45 })).map((r) => r.tema)).toEqual([
+      'horario',
+    ]);
+  });
+
   it('si nada llega al umbral, la lista viene vacía (no inventa)', async () => {
     expect(await buscar('¿tienen wifi?')).toEqual([]);
   });

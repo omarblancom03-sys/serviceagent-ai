@@ -13,7 +13,7 @@
 insert into public.info_restaurante (tema, titulo, contenido) values
   ('horario', 'Horario',
    'Abrimos de lunes a sábado de 8:00 a. m. a 10:00 p. m. y los domingos de 8:00 a. m. a 7:00 p. m.'),
-  ('direccion', 'Dirección y ubicación',
+  ('direccion', 'Dirección, ubicación y cómo llegar',
    'Estamos en Avenida Río San Pedro 1227, colonia Granjas, C. P. 33077, Delicias, Chihuahua, México, en contraesquina del salón de eventos TEX-MEX.'),
   ('telefono', 'Teléfono',
    'Nuestro teléfono es 639 474 8888.'),
@@ -21,7 +21,7 @@ insert into public.info_restaurante (tema, titulo, contenido) values
    'Tenemos estacionamiento propio para 50 vehículos.'),
   ('formas_pago', 'Formas de pago',
    'En caja aceptamos efectivo y tarjeta de débito o crédito.'),
-  ('alergenos', 'Alérgenos y alergias',
+  ('alergenos', 'Alérgenos, alergias e intolerancias',
    'No podemos garantizar que un platillo esté libre de algún alérgeno, porque en la cocina se manejan muchos ingredientes. Si tienes una alergia, confírmalo con nuestro personal antes de pedir.'),
   ('reservaciones', 'Reservaciones',
    'Sí hacemos reservaciones. Para reservar, llama al 639 474 8888.'),
