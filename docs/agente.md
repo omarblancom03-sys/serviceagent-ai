@@ -88,6 +88,7 @@ Lógica en `apps/api/src/services/chat.ts`; Retell se llama con `fetch` directo 
 - Español mexicano, amable y breve.
 - Si falta información, pregunta una cosa a la vez sin adivinar ni elegir por el cliente ([prompt.md → Cuando hay algo que aclarar](../agent/prompt.md#cuando-hay-algo-que-aclarar)). No propone platillos: solo nombra las opciones que devuelven `cotizar_pedido` o `buscar_menu` ([D51](decisiones.md)).
 - **Repite el resumen del pedido UNA sola vez, al final, antes de confirmar.** No en cada paso.
+- Registra el pedido con `crear_pedido` solo tras confirmación explícita: pide nombre y teléfono, confirma una vez con los platillos, el total de la cotización, el nombre y el teléfono, y da folio y total ([D49](decisiones.md)).
 - Nunca inventa productos, precios ni ingredientes. Si no sabe, lo dice. Los montos siempre vienen del backend ([negocio.md → Dinero](negocio.md#dinero)).
 - Si no puede resolver algo, usa `transferir_a_empleado`.
 - El menú completo **no** va en el prompt: se consulta con `buscar_menu` (ahorro de tokens). Cuándo busca, cómo presenta los resultados y qué no hace: [D51](decisiones.md); cómo busca la API: [D50](decisiones.md).
