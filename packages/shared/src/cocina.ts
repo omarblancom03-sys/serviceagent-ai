@@ -49,9 +49,29 @@ export const TicketCocinaSchema = z.object({
   renglones: z.array(RenglonCocinaSchema).min(1),
 });
 
-/** Del más antiguo al más nuevo según `enColaDesde`: el primero es el que lleva más esperando. */
+/*
+ * Terminados recientes (US-52, D63): los pedidos en `listo` siguen a la vista de todas las tablets
+ * un rato, para regresarlos a preparación si se marcaron por error.
+ */
+
+/** Minutos que un pedido terminado sale en "Terminados recientes", desde su último Terminado. */
+export const MINUTOS_TERMINADOS_RECIENTES = 15;
+/** Plazo que revisa la base al regresar: un minuto más que la pantalla, por la red y el reloj. */
+export const MINUTOS_REGRESAR_SERVIDOR = 16;
+/** Máximo de terminados recientes que devuelve la API: los más recientes. */
+export const MAX_TERMINADOS_COCINA = 20;
+
+/** Un pedido terminado: lo mismo que el ticket, sin `estado` (siempre `listo`) y con su hora. */
+export const TicketTerminadoCocinaSchema = TicketCocinaSchema.omit({ estado: true }).extend({
+  /** Hora del último Terminado (historial, D42). De aquí cuentan los 15 minutos. */
+  terminadoEn: z.iso.datetime({ offset: true }),
+});
+
 export const RespuestaPedidosCocinaSchema = z.object({
+  /** Del más antiguo al más nuevo según `enColaDesde`: el primero es el que lleva más esperando. */
   pedidos: z.array(TicketCocinaSchema),
+  /** Del más reciente al más viejo según `terminadoEn`, como máximo `MAX_TERMINADOS_COCINA`. */
+  terminados: z.array(TicketTerminadoCocinaSchema).max(MAX_TERMINADOS_COCINA),
 });
 
 export const ErrorCocinaSchema = z.object({ error: z.string() });
@@ -108,11 +128,21 @@ export const RespuestaDeshacerCocinaSchema = z.object({
   estado: EstadoCocinaSchema,
 });
 
+/** Respuesta de `/regresar` (US-52, D63): el pedido volvió a preparación. */
+export const RespuestaRegresarCocinaSchema = z.object({
+  folio: z.number().int().positive(),
+  folioTexto: z.string(),
+  estado: z.literal('preparando'),
+  /** Hora del cambio, puesta por Postgres (D42). */
+  cambiadoEn: z.iso.datetime({ offset: true }),
+});
+
 /**
  * Motivos del 409: el pedido ya no está en el estado esperado (otra tablet lo cambió, o lo que se
- * quiere deshacer no fue el último cambio) o ya pasó el plazo para deshacer.
+ * quiere deshacer no fue el último cambio), ya pasó el plazo para deshacer o regresar, o caja ya
+ * lo entregó (Regresar, US-52).
  */
-export const CODIGOS_CONFLICTO_COCINA = ['estado_cambio', 'plazo_vencido'] as const;
+export const CODIGOS_CONFLICTO_COCINA = ['estado_cambio', 'plazo_vencido', 'ya_entregado'] as const;
 
 export const ConflictoCocinaSchema = z.object({
   error: z.string(),
@@ -125,6 +155,7 @@ export type EstadoCocina = z.infer<typeof EstadoCocinaSchema>;
 export type ExtraCocina = z.infer<typeof ExtraCocinaSchema>;
 export type RenglonCocina = z.infer<typeof RenglonCocinaSchema>;
 export type TicketCocina = z.infer<typeof TicketCocinaSchema>;
+export type TicketTerminadoCocina = z.infer<typeof TicketTerminadoCocinaSchema>;
 export type RespuestaPedidosCocina = z.infer<typeof RespuestaPedidosCocinaSchema>;
 export type ErrorCocina = z.infer<typeof ErrorCocinaSchema>;
 export type ParamsFolioCocina = z.infer<typeof ParamsFolioCocinaSchema>;
@@ -132,5 +163,6 @@ export type EstadoDeshacer = z.infer<typeof EstadoDeshacerSchema>;
 export type DeshacerCambioCocinaPeticion = z.infer<typeof DeshacerCambioCocinaPeticionSchema>;
 export type RespuestaCambioEstadoCocina = z.infer<typeof RespuestaCambioEstadoCocinaSchema>;
 export type RespuestaDeshacerCocina = z.infer<typeof RespuestaDeshacerCocinaSchema>;
+export type RespuestaRegresarCocina = z.infer<typeof RespuestaRegresarCocinaSchema>;
 export type CodigoConflictoCocina = (typeof CODIGOS_CONFLICTO_COCINA)[number];
 export type ConflictoCocina = z.infer<typeof ConflictoCocinaSchema>;
