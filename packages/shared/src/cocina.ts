@@ -50,7 +50,7 @@ export const TicketCocinaSchema = z.object({
 });
 
 /*
- * Terminados recientes (US-52, D62): los pedidos en `listo` siguen a la vista de todas las tablets
+ * Terminados recientes (US-52, D63): los pedidos en `listo` siguen a la vista de todas las tablets
  * un rato, para regresarlos a preparación si se marcaron por error.
  */
 
@@ -128,7 +128,7 @@ export const RespuestaDeshacerCocinaSchema = z.object({
   estado: EstadoCocinaSchema,
 });
 
-/** Respuesta de `/regresar` (US-52, D62): el pedido volvió a preparación. */
+/** Respuesta de `/regresar` (US-52, D63): el pedido volvió a preparación. */
 export const RespuestaRegresarCocinaSchema = z.object({
   folio: z.number().int().positive(),
   folioTexto: z.string(),

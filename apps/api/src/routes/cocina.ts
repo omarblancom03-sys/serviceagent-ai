@@ -41,7 +41,7 @@ export const pedidosCocinaRoute = createRoute({
   summary: 'Pedidos que cocina debe preparar (pantalla /cocina)',
   description:
     "Rol `cocina` (y `admin`). `pedidos`: los que están en 'en_cola' o 'preparando', del más " +
-    'antiguo al más nuevo según la hora en que entraron a la cola. `terminados` (US-52, D62): ' +
+    'antiguo al más nuevo según la hora en que entraron a la cola. `terminados` (US-52, D63): ' +
     `los que siguen en 'listo' y se terminaron hace a lo más ${MINUTOS_TERMINADOS_RECIENTES} ` +
     'min (reloj de Postgres), del más reciente al más viejo según `terminadoEn` y como máximo ' +
     `${MAX_TERMINADOS_COCINA}; al entregarse ya no vienen. Solo lo que cocina necesita: folio, ` +
@@ -131,7 +131,7 @@ export const regresarPedidoRoute = createRoute({
   tags,
   summary: 'Botón Regresar: listo → preparando (terminados recientes)',
   description:
-    "Rol `cocina` (y `admin`), sin cuerpo (US-52, D62). Regresa a 'preparando' un pedido de " +
+    "Rol `cocina` (y `admin`), sin cuerpo (US-52, D63). Regresa a 'preparando' un pedido de " +
     "Terminados recientes, solo si sigue en 'listo' y su último Terminado fue hace a lo más " +
     `${MINUTOS_REGRESAR_SERVIDOR} min (la pantalla lo muestra ${MINUTOS_TERMINADOS_RECIENTES}; el ` +
     "minuto de más cubre la red). Inserta una fila 'preparando' en el historial con la hora " +

@@ -1,5 +1,5 @@
 -- Ensayo manual de US-52-P1: leer_terminados_cocina y regresar_pedido_cocina
--- (migrations/20261110100000_cocina_terminados_recientes.sql, D62).
+-- (migrations/20261111100000_cocina_terminados_recientes.sql, D63).
 --
 -- Para qué: probar las funciones contra una base real, en tu proyecto personal de Supabase o en
 -- el ensayo del PO antes del db push a serviceagent-dev. No lo corren las migraciones ni el seed.

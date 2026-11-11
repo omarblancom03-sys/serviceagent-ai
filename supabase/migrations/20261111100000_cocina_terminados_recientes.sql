@@ -1,4 +1,4 @@
--- US-52-P1: "Terminados recientes" en cocina (docs/negocio.md → Estados del pedido, D62).
+-- US-52-P1: "Terminados recientes" en cocina (docs/negocio.md → Estados del pedido, D63).
 --
 -- 1. leer_terminados_cocina: pedidos en 'listo' cuyo último Terminado fue hace a lo más
 --    p_minutos, del más reciente al más viejo. El corte usa now() de Postgres (D42): la API no

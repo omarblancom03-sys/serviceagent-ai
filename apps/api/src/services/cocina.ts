@@ -25,7 +25,7 @@ import {
  * Cambio de estado (US-11-P1, D56): Empezar, Terminado y Deshacer. Cada uno es una sola función
  * SQL atómica (D14); aquí solo se decide qué pedirle y cómo contestar.
  *
- * Terminados recientes (US-52, D62): los pedidos en 'listo' de los últimos 15 minutos vienen en la
+ * Terminados recientes (US-52, D63): los pedidos en 'listo' de los últimos 15 minutos vienen en la
  * misma respuesta y Regresar los devuelve a 'preparando'.
  */
 
@@ -237,7 +237,7 @@ export async function deshacerCambioCocina(
   };
 }
 
-/** Textos del 409 de Regresar (US-52, D62), aprobados por el PO. */
+/** Textos del 409 de Regresar (US-52, D63), aprobados por el PO. */
 const textoYaEntregado = (folio: number) =>
   `Caja ya entregó el pedido ${folioTexto(folio)}; ya no se puede regresar a preparación.`;
 const textoPlazoRegresar = (folio: number) =>
