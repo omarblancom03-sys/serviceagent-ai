@@ -4,7 +4,7 @@ import {
   type EstadoPedido,
   type RenglonCocina,
 } from '@serviceagent/shared';
-import type { CocinaRepo, PedidoActivo } from '../src/services/cocina';
+import type { CocinaRepo, PedidoActivo, PedidoTerminado } from '../src/services/cocina';
 
 /** Una fila de `historial_estado_pedido`. */
 export interface FilaHistorialEnMemoria {
@@ -24,10 +24,19 @@ export interface PedidoEnMemoria {
 
 const ANTERIOR = { preparando: 'en_cola', listo: 'preparando' } as const;
 
+/** Última hora en que el historial dice `estado`, o `null` si nunca lo dice. */
+function ultimaHora(pedido: PedidoEnMemoria, estado: EstadoPedido): number | null {
+  const horas = pedido.historial
+    .filter((h) => h.estado === estado)
+    .map((h) => h.creadoEn.getTime());
+  return horas.length > 0 ? Math.max(...horas) : null;
+}
+
 /**
  * `CocinaRepo` en memoria con las mismas reglas que `cambiar_estado_cocina` y
- * `deshacer_estado_cocina` (supabase/migrations/*_cocina_cambio_estado.sql). `reloj.ahora` hace
- * de `now()`: el test lo mueve para probar el plazo de deshacer.
+ * `deshacer_estado_cocina` (supabase/migrations/*_cocina_cambio_estado.sql), y que
+ * `leer_terminados_cocina` y `regresar_pedido_cocina` (*_cocina_terminados_recientes.sql, US-52).
+ * `reloj.ahora` hace de `now()`: el test lo mueve para probar los plazos.
  */
 export function crearCocinaEnMemoria(pedidos: PedidoEnMemoria[] = []) {
   const reloj = { ahora: new Date('2026-10-22T18:00:00Z') };
@@ -41,14 +50,31 @@ export function crearCocinaEnMemoria(pedidos: PedidoEnMemoria[] = []) {
           folio: p.folio,
           nombreCliente: p.nombreCliente,
           estado: p.estado as EstadoCocina,
-          enColaDesde: new Date(
-            Math.max(
-              ...p.historial.filter((h) => h.estado === 'en_cola').map((h) => h.creadoEn.getTime()),
-            ),
-          ),
+          enColaDesde: new Date(ultimaHora(p, 'en_cola') ?? 0),
           renglones: p.renglones,
         }));
       return Promise.resolve(activos);
+    },
+
+    leerTerminados({ minutos, limite }) {
+      const corte = reloj.ahora.getTime() - minutos * 60_000;
+      const terminados: PedidoTerminado[] = pedidos.flatMap((p) => {
+        const terminadoEn = ultimaHora(p, 'listo');
+        if (p.estado !== 'listo' || terminadoEn === null || terminadoEn <= corte) return [];
+        return [
+          {
+            folio: p.folio,
+            nombreCliente: p.nombreCliente,
+            enColaDesde: new Date(ultimaHora(p, 'en_cola') ?? 0),
+            terminadoEn: new Date(terminadoEn),
+            renglones: p.renglones,
+          },
+        ];
+      });
+      terminados.sort(
+        (a, b) => b.terminadoEn.getTime() - a.terminadoEn.getTime() || b.folio - a.folio,
+      );
+      return Promise.resolve(terminados.slice(0, limite));
     },
 
     cambiarEstado({ folio, desde, hacia, idEmpleado }) {
@@ -78,6 +104,35 @@ export function crearCocinaEnMemoria(pedidos: PedidoEnMemoria[] = []) {
       pedido.historial = pedido.historial.filter((h) => h.id !== ultima.id);
       pedido.estado = ANTERIOR[estado];
       return Promise.resolve({ estadoActual: pedido.estado, motivo: null });
+    },
+
+    regresarPedido({ folio, idEmpleado, minutosPlazo }) {
+      const pedido = pedidos.find((p) => p.folio === folio);
+      if (!pedido) return Promise.resolve(null);
+      if (pedido.estado !== 'listo') {
+        return Promise.resolve({
+          estadoActual: pedido.estado,
+          motivo: 'estado_distinto' as const,
+          cambiadoEn: null,
+        });
+      }
+      const terminadoEn = ultimaHora(pedido, 'listo');
+      if (terminadoEn === null || reloj.ahora.getTime() - terminadoEn > minutosPlazo * 60_000) {
+        return Promise.resolve({
+          estadoActual: pedido.estado,
+          motivo: 'plazo_vencido' as const,
+          cambiadoEn: null,
+        });
+      }
+      const ahora = new Date(reloj.ahora);
+      pedido.estado = 'preparando';
+      pedido.historial.push({
+        id: siguienteId++,
+        estado: 'preparando',
+        creadoEn: ahora,
+        idEmpleado,
+      });
+      return Promise.resolve({ estadoActual: 'preparando', motivo: null, cambiadoEn: ahora });
     },
   };
 

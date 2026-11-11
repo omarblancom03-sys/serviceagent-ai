@@ -3,10 +3,14 @@ import {
   ConflictoCocinaSchema,
   DeshacerCambioCocinaPeticionSchema,
   ErrorCocinaSchema,
+  MAX_TERMINADOS_COCINA,
+  MINUTOS_REGRESAR_SERVIDOR,
+  MINUTOS_TERMINADOS_RECIENTES,
   ParamsFolioCocinaSchema,
   RespuestaCambioEstadoCocinaSchema,
   RespuestaDeshacerCocinaSchema,
   RespuestaPedidosCocinaSchema,
+  RespuestaRegresarCocinaSchema,
   SEGUNDOS_DESHACER_PANTALLA,
   SEGUNDOS_DESHACER_SERVIDOR,
 } from '@serviceagent/shared';
@@ -18,6 +22,7 @@ import {
   cambiarEstadoCocina,
   deshacerCambioCocina,
   obtenerPedidosCocina,
+  regresarPedidoCocina,
   type AccionCocina,
   type CocinaRepo,
 } from '../services/cocina';
@@ -35,10 +40,14 @@ export const pedidosCocinaRoute = createRoute({
   tags,
   summary: 'Pedidos que cocina debe preparar (pantalla /cocina)',
   description:
-    "Rol `cocina` (y `admin`). Pedidos en 'en_cola' o 'preparando', del más antiguo al más nuevo " +
-    'según la hora en que entraron a la cola. Solo lo que cocina necesita: folio, nombre, ' +
-    'platillos con variante, ingredientes quitados y extras; sin precios ni teléfono. La pantalla ' +
-    "lo vuelve a pedir cuando llega la señal de Realtime (canal 'pedidos', evento 'cambio', D12).",
+    "Rol `cocina` (y `admin`). `pedidos`: los que están en 'en_cola' o 'preparando', del más " +
+    'antiguo al más nuevo según la hora en que entraron a la cola. `terminados` (US-52, D62): ' +
+    `los que siguen en 'listo' y se terminaron hace a lo más ${MINUTOS_TERMINADOS_RECIENTES} ` +
+    'min (reloj de Postgres), del más reciente al más viejo según `terminadoEn` y como máximo ' +
+    `${MAX_TERMINADOS_COCINA}; al entregarse ya no vienen. Solo lo que cocina necesita: folio, ` +
+    'nombre, platillos con variante, ingredientes quitados y extras; sin precios ni teléfono. La ' +
+    "pantalla lo vuelve a pedir cuando llega la señal de Realtime (canal 'pedidos', evento " +
+    "'cambio', D12).",
   security: [{ Bearer: [] }],
   middleware: [requiereRol('cocina')] as const,
   responses: {
@@ -116,6 +125,36 @@ export const deshacerCambioRoute = createRoute({
   },
 });
 
+export const regresarPedidoRoute = createRoute({
+  method: 'post',
+  path: '/cocina/pedidos/{folio}/regresar',
+  tags,
+  summary: 'Botón Regresar: listo → preparando (terminados recientes)',
+  description:
+    "Rol `cocina` (y `admin`), sin cuerpo (US-52, D62). Regresa a 'preparando' un pedido de " +
+    "Terminados recientes, solo si sigue en 'listo' y su último Terminado fue hace a lo más " +
+    `${MINUTOS_REGRESAR_SERVIDOR} min (la pantalla lo muestra ${MINUTOS_TERMINADOS_RECIENTES}; el ` +
+    "minuto de más cubre la red). Inserta una fila 'preparando' en el historial con la hora " +
+    '(Postgres, D42) y el empleado de la sesión; la fila del Terminado se queda. No tiene ' +
+    'Deshacer: si se toca por error, Terminado lo vuelve a bajar. La señal de Realtime avisa a ' +
+    'las demás pantallas (D47).',
+  security: [{ Bearer: [] }],
+  middleware: [requiereRol('cocina')] as const,
+  request: { params: ParamsFolioCocinaSchema },
+  responses: {
+    200: { content: json(RespuestaRegresarCocinaSchema), description: 'Pedido en preparación' },
+    ...respuestasCambio,
+    400: { content: json(ErrorCocinaSchema), description: 'El folio no es un entero positivo' },
+    409: {
+      content: json(ConflictoCocinaSchema),
+      description:
+        '`ya_entregado`: caja ya lo entregó; `plazo_vencido`: pasaron más de ' +
+        `${MINUTOS_REGRESAR_SERVIDOR} min desde Terminado; \`estado_cambio\`: ya no está en ` +
+        "'listo' (cancelado u otra tablet ya lo regresó). Siempre trae `estadoActual`",
+    },
+  },
+});
+
 // Textos para la pantalla de cocina: en español y sin detalles técnicos.
 const ERROR_FOLIO = { error: 'El folio debe ser un entero positivo.' };
 const ERROR_CUERPO = { error: 'Indica qué estado quieres deshacer: preparando o listo.' };
@@ -134,8 +173,7 @@ function validarCambio(resultado: { success: boolean; target: string }, c: Conte
 export function registrarCocina(app: OpenAPIHono<AppEnv>, deps: DependenciasCocina) {
   app.openapi(pedidosCocinaRoute, async (c) => {
     try {
-      const pedidos = await obtenerPedidosCocina(deps.crearRepoCocina(c.env));
-      return c.json({ pedidos }, 200);
+      return c.json(await obtenerPedidosCocina(deps.crearRepoCocina(c.env)), 200);
     } catch (error) {
       console.error('GET /cocina/pedidos', error);
       return c.json(
@@ -186,6 +224,28 @@ export function registrarCocina(app: OpenAPIHono<AppEnv>, deps: DependenciasCoci
         return c.json(resultado.respuesta, 200);
       } catch (error) {
         console.error('POST /cocina/pedidos/{folio}/deshacer', error);
+        return c.json(ERROR_GUARDAR, 500);
+      }
+    },
+    validarCambio,
+  );
+
+  app.openapi(
+    regresarPedidoRoute,
+    async (c) => {
+      const { folio } = c.req.valid('param');
+      try {
+        // Quién regresó el pedido sale de la sesión, nunca del cuerpo.
+        const resultado = await regresarPedidoCocina(
+          deps.crearRepoCocina(c.env),
+          folio,
+          c.get('sesion').sub,
+        );
+        if (resultado.tipo === 'no_existe') return c.json(ERROR_NO_EXISTE, 404);
+        if (resultado.tipo === 'conflicto') return c.json(resultado.conflicto, 409);
+        return c.json(resultado.respuesta, 200);
+      } catch (error) {
+        console.error('POST /cocina/pedidos/{folio}/regresar', error);
         return c.json(ERROR_GUARDAR, 500);
       }
     },
