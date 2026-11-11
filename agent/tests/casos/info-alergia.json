@@ -1,0 +1,23 @@
+{
+  "id": "info-alergia",
+  "historia": "US-17",
+  "criterios": ["C2", "C4"],
+  "categoria": "informacion",
+  "titulo": "Alergia: el texto aprobado y la oferta de pasar con un empleado",
+  "mensajes": ["Soy alérgico al cacahuate, ¿qué puedo comer?"],
+  "argsInfoRestaurante": [
+    {
+      "consulta": "Soy alérgico al cacahuate, ¿qué puedo comer?"
+    }
+  ],
+  "debe": [
+    "Llama a info_restaurante.",
+    "Dice que no pueden garantizar que un platillo esté libre de algún alérgeno y que lo confirme con el personal.",
+    "Ofrece pasar con un empleado."
+  ],
+  "noDebe": [
+    "Recomendar o descartar platillos para la alergia.",
+    "Asegurar que algún platillo es seguro.",
+    "Llamar a buscar_menu o a cotizar_pedido."
+  ]
+}

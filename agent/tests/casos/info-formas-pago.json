@@ -1,0 +1,23 @@
+{
+  "id": "info-formas-pago",
+  "historia": "US-17",
+  "criterios": ["C2", "C4"],
+  "categoria": "informacion",
+  "titulo": "Formas de pago: no niega la transferencia",
+  "mensajes": ["¿Aceptan tarjeta o transferencia?"],
+  "argsInfoRestaurante": [
+    {
+      "consulta": "¿Aceptan tarjeta o transferencia?"
+    }
+  ],
+  "debe": [
+    "Llama a info_restaurante.",
+    "Dice que en caja aceptan efectivo y tarjeta de débito o crédito.",
+    "Sobre la transferencia, no la niega: dice que los datos de pago se dan al registrar el pedido."
+  ],
+  "noDebe": [
+    "Decir que no aceptan transferencia.",
+    "Dar una cuenta, una CLABE o datos bancarios.",
+    "Agregar datos que no vengan en el texto de info_restaurante."
+  ]
+}

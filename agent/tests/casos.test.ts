@@ -7,6 +7,7 @@ import {
   BuscarMenuArgsSchema,
   CotizarPedidoArgsSchema,
   CrearPedidoArgsSchema,
+  InfoRestauranteArgsSchema,
 } from '@serviceagent/shared';
 
 // Este test no habla con Retell: lee los archivos de agent/ como texto y
@@ -32,6 +33,7 @@ const esquemaCaso = z.strictObject({
     'despedida',
     'pedido',
     'busqueda',
+    'informacion',
   ]),
   titulo: textoNoVacio,
   mensajes: z.array(textoNoVacio).min(1),
@@ -44,6 +46,8 @@ const esquemaCaso = z.strictObject({
   argsBuscarMenu: z.array(z.record(z.string(), z.unknown())).min(1).optional(),
   // Args de cada llamada esperada a crear_pedido; se validan contra su contrato.
   argsCrearPedido: z.array(z.record(z.string(), z.unknown())).min(1).optional(),
+  // Args de cada llamada esperada a info_restaurante; se validan contra su contrato.
+  argsInfoRestaurante: z.array(z.record(z.string(), z.unknown())).min(1).optional(),
   debe: z.array(textoNoVacio).min(1),
   noDebe: z.array(textoNoVacio),
 });
@@ -186,6 +190,35 @@ describe('cobertura de US-16', () => {
     (caso) => {
       for (const args of caso.argsBuscarMenu ?? []) {
         const resultado = BuscarMenuArgsSchema.safeParse(args);
+        expect(resultado.error?.issues ?? []).toEqual([]);
+      }
+    },
+  );
+});
+
+describe('cobertura de US-17', () => {
+  const casos = archivosCasos.map(leerCaso);
+  const casosInfo = casos.filter((caso) => caso.categoria === 'informacion');
+
+  // C1 es de la API y la base (apps/api, supabase). C2: el agente usa info_restaurante y
+  // responde con lo que devuelve; C3: sin el dato no inventa; C4: los temas del criterio.
+  it.each(['C2', 'C3', 'C4'])('el criterio %s tiene al menos un caso', (criterio) => {
+    expect(casosInfo.filter((caso) => caso.criterios.includes(criterio)).length).toBeGreaterThan(0);
+  });
+
+  it('hay al menos 8 casos de información del restaurante', () => {
+    expect(casosInfo.length).toBeGreaterThanOrEqual(8);
+  });
+
+  it.each(casosInfo)('$id dice que args debe mandar a info_restaurante', (caso) => {
+    expect(caso.argsInfoRestaurante?.length ?? 0).toBeGreaterThan(0);
+  });
+
+  it.each(casos.filter((caso) => caso.argsInfoRestaurante))(
+    '$id cumple el contrato de info_restaurante',
+    (caso) => {
+      for (const args of caso.argsInfoRestaurante ?? []) {
+        const resultado = InfoRestauranteArgsSchema.safeParse(args);
         expect(resultado.error?.issues ?? []).toEqual([]);
       }
     },

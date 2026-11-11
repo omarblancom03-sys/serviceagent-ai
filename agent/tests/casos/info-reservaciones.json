@@ -1,0 +1,22 @@
+{
+  "id": "info-reservaciones",
+  "historia": "US-17",
+  "criterios": ["C2"],
+  "categoria": "informacion",
+  "titulo": "Reservaciones: se piden en el restaurante",
+  "mensajes": ["¿Puedo reservar una mesa para 6 el sábado?"],
+  "argsInfoRestaurante": [
+    {
+      "consulta": "¿Puedo reservar una mesa para 6 el sábado?"
+    }
+  ],
+  "debe": [
+    "Llama a info_restaurante.",
+    "Dice que sí hacen reservaciones y que se piden directamente en el restaurante."
+  ],
+  "noDebe": [
+    "Decir que ya quedó reservada o apartar una mesa.",
+    "Inventar disponibilidad o un horario de reservaciones.",
+    "Pedir nombre o teléfono para la reservación."
+  ]
+}

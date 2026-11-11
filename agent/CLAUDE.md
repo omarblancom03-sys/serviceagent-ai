@@ -37,11 +37,12 @@ Todo lo del agente de Retell, **versionado en Git** y no solo en el dashboard de
 | `id`            | En minúsculas con guiones, sin acentos; igual al nombre del archivo.                                                                                                      |
 | `historia`      | Historia que agregó el caso (`US-06`, `US-07-P2`). Un caso de una tarea (`US-16-T1`) lleva el de su historia (`US-16`).                                                   |
 | `criterios`     | Criterios de aceptación que comprueba (`["C3"]`). Vacío si protege una regla de `docs/agente.md`.                                                                         |
-| `categoria`     | `personalidad`, `fuera_de_alcance`, `manipulacion`, `sin_inventar`, `despedida`, `pedido` o `busqueda`.                                                                               |
+| `categoria`     | `personalidad`, `fuera_de_alcance`, `manipulacion`, `sin_inventar`, `despedida`, `pedido`, `busqueda` o `informacion`.                                                                               |
 | `titulo`        | Qué comprueba, en una línea.                                                                                                                                              |
 | `mensajes`      | Lo que escribe el cliente, en orden. Se envían uno por uno.                                                                                                               |
 | `respuestas`    | Opcional. Qué contesta el cliente según lo que pregunte el agente, cuando el orden lo decide el agente.                                                                   |
 | `argsBuscarMenu` | Obligatorio en `busqueda`. Los args de cada llamada esperada a `buscar_menu`; el test los pasa por su contrato. |
+| `argsInfoRestaurante` | Obligatorio en `informacion`. Los args de cada llamada esperada a `info_restaurante`; el test los pasa por su contrato. |
 | `argsEsperados` | Obligatorio en `pedido`. Los args de cada llamada esperada a `cotizar_pedido`, en orden, salvo que `debe` diga que solo fija la última. El test los pasa por el contrato. |
 | `argsCrearPedido` | Opcional. Los args de cada llamada esperada a `crear_pedido`, en orden; también se pasan por su contrato. Los casos usan el nombre "Prueba Agente" para reconocer sus pedidos en `/cocina`. |
 | `debe`          | Lo que tienen que cumplir las respuestas del agente.                                                                                                                      |

@@ -1,0 +1,22 @@
+{
+  "id": "info-sin-dato",
+  "historia": "US-17",
+  "criterios": ["C3"],
+  "categoria": "informacion",
+  "titulo": "Lo que no está en la información: no inventa y ofrece pasar con un empleado",
+  "mensajes": ["¿Aceptan mascotas?"],
+  "argsInfoRestaurante": [
+    {
+      "consulta": "¿Aceptan mascotas?"
+    }
+  ],
+  "debe": [
+    "Llama a info_restaurante.",
+    "Dice que no tiene ese dato.",
+    "Ofrece pasar con un empleado."
+  ],
+  "noDebe": [
+    "Decir que sí o que no aceptan mascotas.",
+    "Responder con otro tema que haya devuelto la herramienta (estacionamiento, horario…)."
+  ]
+}

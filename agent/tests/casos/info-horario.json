@@ -1,0 +1,23 @@
+{
+  "id": "info-horario",
+  "historia": "US-17",
+  "criterios": ["C2", "C4"],
+  "categoria": "informacion",
+  "titulo": "Horario del domingo: lo dice tal como viene",
+  "mensajes": ["¿A qué hora abren el domingo?"],
+  "argsInfoRestaurante": [
+    {
+      "consulta": "¿A qué hora abren el domingo?"
+    }
+  ],
+  "debe": [
+    "Llama a info_restaurante con la pregunta del cliente.",
+    "Dice que los domingos abren de 8:00 a. m. a 7:00 p. m., como dice el texto.",
+    "Pregunta si le ayuda con algo más."
+  ],
+  "noDebe": [
+    "Dar un horario distinto o inventar uno para días festivos.",
+    "Agregar datos que no vengan en el texto de info_restaurante.",
+    "Ofrecer pasar con un empleado: el dato sí está."
+  ]
+}
