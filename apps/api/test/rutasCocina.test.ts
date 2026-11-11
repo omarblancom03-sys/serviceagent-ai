@@ -1,9 +1,12 @@
 import {
   ConflictoCocinaSchema,
   ErrorCocinaSchema,
+  MINUTOS_REGRESAR_SERVIDOR,
+  MINUTOS_TERMINADOS_RECIENTES,
   RespuestaCambioEstadoCocinaSchema,
   RespuestaDeshacerCocinaSchema,
   RespuestaPedidosCocinaSchema,
+  RespuestaRegresarCocinaSchema,
   SEGUNDOS_DESHACER_PANTALLA,
   SEGUNDOS_DESHACER_SERVIDOR,
   type EstadoPedido,
@@ -514,8 +517,279 @@ describe('POST /cocina/pedidos/{folio}/deshacer (US-11-P1)', () => {
   });
 });
 
-describe('cambio de estado en el OpenAPI (US-11-P1)', () => {
-  it.each(['empezar', 'terminar', 'deshacer'])(
+const minutos = (n: number) => n * 60_000;
+
+/** Pide `GET /cocina/pedidos` con sesión de cocina y lo valida con el contrato. */
+async function lista(aplicacion: ReturnType<typeof crearApp>) {
+  const res = await aplicacion.request(
+    '/cocina/pedidos',
+    { headers: await encabezados('cocina') },
+    env,
+  );
+  expect(res.status).toBe(200);
+  return RespuestaPedidosCocinaSchema.parse(await res.json());
+}
+
+/** Empieza y termina el pedido 1001 en `reloj.ahora`. */
+async function terminar1001(aplicacion: ReturnType<typeof crearApp>) {
+  expect((await post(aplicacion, '/cocina/pedidos/1001/empezar')).status).toBe(200);
+  expect((await post(aplicacion, '/cocina/pedidos/1001/terminar')).status).toBe(200);
+}
+
+/** Lleva el pedido 1001 (ya en listo) a entregado o cancelado, como lo harán caja y la cancelación. */
+function cerrar1001(pedido: PedidoEnMemoria | undefined, estado: EstadoPedido, ahora: Date) {
+  if (!pedido) throw new Error('No hay pedido que cerrar');
+  pedido.historial.push({ id: 3000, estado, creadoEn: ahora, idEmpleado: null });
+  pedido.estado = estado;
+}
+
+describe('GET /cocina/pedidos: terminados recientes (US-52)', () => {
+  it('al marcar Terminado, el pedido sale de pedidos y entra a terminados con su hora', async () => {
+    const { aplicacion, reloj } = montar();
+    await terminar1001(aplicacion);
+
+    const { pedidos, terminados } = await lista(aplicacion);
+    expect(pedidos.map((t) => t.folio)).toEqual([1002]);
+    expect(terminados).toEqual([
+      {
+        folio: 1001,
+        folioTexto: '#1001',
+        nombreCliente: 'Cliente 1001',
+        enColaDesde: '2026-10-22T17:55:00.000Z',
+        terminadoEn: reloj.ahora.toISOString(),
+        renglones: [{ tipo: 'extra', cantidad: 1, nombre: 'Totopos' }],
+      },
+    ]);
+  });
+
+  it('sale a los 15 minutos de su último Terminado', async () => {
+    const { aplicacion, reloj } = montar();
+    await terminar1001(aplicacion);
+    const terminadoEn = reloj.ahora.getTime();
+
+    reloj.ahora = new Date(terminadoEn + minutos(MINUTOS_TERMINADOS_RECIENTES) - 1);
+    expect((await lista(aplicacion)).terminados.map((t) => t.folio)).toEqual([1001]);
+
+    reloj.ahora = new Date(terminadoEn + minutos(MINUTOS_TERMINADOS_RECIENTES));
+    expect((await lista(aplicacion)).terminados).toEqual([]);
+  });
+
+  it('sale antes si caja lo entrega (en la app, se activa con US-21)', async () => {
+    const { aplicacion, pedidos, reloj } = montar();
+    await terminar1001(aplicacion);
+    cerrar1001(pedidos[0], 'entregado', reloj.ahora);
+
+    const { pedidos: activos, terminados } = await lista(aplicacion);
+    expect(terminados).toEqual([]);
+    expect(activos.map((t) => t.folio)).toEqual([1002]);
+  });
+
+  it('el más reciente va primero', async () => {
+    const { aplicacion, reloj } = montar();
+    await terminar1001(aplicacion);
+    reloj.ahora = new Date(reloj.ahora.getTime() + minutos(2));
+    await post(aplicacion, '/cocina/pedidos/1002/empezar');
+    await post(aplicacion, '/cocina/pedidos/1002/terminar');
+
+    expect((await lista(aplicacion)).terminados.map((t) => t.folio)).toEqual([1002, 1001]);
+  });
+
+  it('si falla la lectura de los terminados responde 500', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const appQueFalla = crearApp({
+      crearRepoCocina: () => ({
+        ...crearCocinaEnMemoria().repo,
+        leerTerminados: () => Promise.reject(new Error('Supabase no responde')),
+      }),
+    });
+    const res = await pedir('cocina', appQueFalla);
+    expect(res.status).toBe(500);
+    expect(ErrorCocinaSchema.parse(await res.json()).error).toBe(
+      'No se pudieron leer los pedidos. Intenta de nuevo en un momento.',
+    );
+  });
+});
+
+describe('POST /cocina/pedidos/{folio}/regresar (US-52)', () => {
+  it('regresa un terminado a preparando, guarda quién lo hizo y conserva la fila del Terminado', async () => {
+    const { aplicacion, pedidos, reloj } = montar();
+    await terminar1001(aplicacion);
+    reloj.ahora = new Date(reloj.ahora.getTime() + minutos(5));
+
+    const res = await post(aplicacion, '/cocina/pedidos/1001/regresar', { sub: ID_ADMIN });
+    expect(res.status).toBe(200);
+    expect(RespuestaRegresarCocinaSchema.parse(await res.json())).toEqual({
+      folio: 1001,
+      folioTexto: '#1001',
+      estado: 'preparando',
+      cambiadoEn: reloj.ahora.toISOString(),
+    });
+    expect(pedidos[0]?.estado).toBe('preparando');
+    expect(pedidos[0]?.historial.map((h) => [h.estado, h.idEmpleado])).toEqual([
+      ['confirmado', null],
+      ['en_cola', null],
+      ['preparando', ID_COCINA],
+      ['listo', ID_COCINA],
+      ['preparando', ID_ADMIN],
+    ]);
+  });
+
+  it('vuelve a la lista de cocina en preparando, con la misma hora de entrada a la cola', async () => {
+    const { aplicacion } = montar();
+    await terminar1001(aplicacion);
+    await post(aplicacion, '/cocina/pedidos/1001/regresar');
+
+    const { pedidos, terminados } = await lista(aplicacion);
+    expect(terminados).toEqual([]);
+    expect(pedidos.find((t) => t.folio === 1001)).toMatchObject({
+      estado: 'preparando',
+      enColaDesde: '2026-10-22T17:55:00.000Z',
+    });
+  });
+
+  it('ignora un idEmpleado mandado en el cuerpo', async () => {
+    const { aplicacion, pedidos } = montar();
+    await terminar1001(aplicacion);
+    await post(aplicacion, '/cocina/pedidos/1001/regresar', { cuerpo: { idEmpleado: ID_ADMIN } });
+    expect(pedidos[0]?.historial.at(-1)?.idEmpleado).toBe(ID_COCINA);
+  });
+
+  it('el plazo cuenta desde el último Terminado: se puede regresar, terminar y regresar otra vez', async () => {
+    const { aplicacion, reloj } = montar();
+    await terminar1001(aplicacion);
+    expect((await post(aplicacion, '/cocina/pedidos/1001/regresar')).status).toBe(200);
+
+    reloj.ahora = new Date(reloj.ahora.getTime() + minutos(30));
+    expect((await post(aplicacion, '/cocina/pedidos/1001/terminar')).status).toBe(200);
+    expect((await post(aplicacion, '/cocina/pedidos/1001/regresar')).status).toBe(200);
+  });
+
+  it('acepta hasta 16 minutos aunque la pantalla ya no lo muestre (margen de la red)', async () => {
+    const { aplicacion, reloj } = montar();
+    await terminar1001(aplicacion);
+    reloj.ahora = new Date(reloj.ahora.getTime() + minutos(MINUTOS_REGRESAR_SERVIDOR));
+
+    expect((await lista(aplicacion)).terminados).toEqual([]);
+    expect((await post(aplicacion, '/cocina/pedidos/1001/regresar')).status).toBe(200);
+  });
+
+  it('después de 16 minutos responde 409 plazo_vencido y no cambia nada', async () => {
+    const { aplicacion, pedidos, reloj } = montar();
+    await terminar1001(aplicacion);
+    reloj.ahora = new Date(reloj.ahora.getTime() + minutos(MINUTOS_REGRESAR_SERVIDOR) + 1);
+    const historialAntes = [...(pedidos[0]?.historial ?? [])];
+
+    const res = await post(aplicacion, '/cocina/pedidos/1001/regresar');
+    expect(res.status).toBe(409);
+    expect(ConflictoCocinaSchema.parse(await res.json())).toEqual({
+      error: 'Ya pasaron 15 minutos desde que se terminó el pedido #1001; ya no se puede regresar.',
+      codigo: 'plazo_vencido',
+      estadoActual: 'listo',
+    });
+    expect(pedidos[0]?.estado).toBe('listo');
+    expect(pedidos[0]?.historial).toEqual(historialAntes);
+  });
+
+  it('si caja ya lo entregó responde 409 ya_entregado con un mensaje claro y no cambia nada', async () => {
+    const { aplicacion, pedidos, reloj } = montar();
+    await terminar1001(aplicacion);
+    cerrar1001(pedidos[0], 'entregado', reloj.ahora);
+    const historialAntes = [...(pedidos[0]?.historial ?? [])];
+
+    const res = await post(aplicacion, '/cocina/pedidos/1001/regresar');
+    expect(res.status).toBe(409);
+    expect(ConflictoCocinaSchema.parse(await res.json())).toEqual({
+      error: 'Caja ya entregó el pedido #1001; ya no se puede regresar a preparación.',
+      codigo: 'ya_entregado',
+      estadoActual: 'entregado',
+    });
+    expect(pedidos[0]?.estado).toBe('entregado');
+    expect(pedidos[0]?.historial).toEqual(historialAntes);
+  });
+
+  it('si se canceló responde 409 estado_cambio con su mensaje', async () => {
+    const { aplicacion, pedidos, reloj } = montar();
+    await terminar1001(aplicacion);
+    cerrar1001(pedidos[0], 'cancelado', reloj.ahora);
+
+    const res = await post(aplicacion, '/cocina/pedidos/1001/regresar');
+    expect(res.status).toBe(409);
+    expect(ConflictoCocinaSchema.parse(await res.json())).toEqual({
+      error: 'El pedido #1001 fue cancelado; ya no se puede regresar.',
+      codigo: 'estado_cambio',
+      estadoActual: 'cancelado',
+    });
+  });
+
+  it('regresar dos veces (otra tablet ya lo regresó) responde 409 con preparando', async () => {
+    const { aplicacion, pedidos } = montar();
+    await terminar1001(aplicacion);
+    expect((await post(aplicacion, '/cocina/pedidos/1001/regresar')).status).toBe(200);
+
+    const res = await post(aplicacion, '/cocina/pedidos/1001/regresar');
+    expect(res.status).toBe(409);
+    expect(ConflictoCocinaSchema.parse(await res.json())).toEqual({
+      error: TEXTO_ESTADO_CAMBIO,
+      codigo: 'estado_cambio',
+      estadoActual: 'preparando',
+    });
+    expect(pedidos[0]?.historial.filter((h) => h.estado === 'preparando')).toHaveLength(2);
+  });
+
+  it('un pedido que nunca se terminó responde 409 con su estado', async () => {
+    const { aplicacion } = montar();
+    const res = await post(aplicacion, '/cocina/pedidos/1002/regresar');
+    expect(res.status).toBe(409);
+    expect(ConflictoCocinaSchema.parse(await res.json())).toMatchObject({
+      codigo: 'estado_cambio',
+      estadoActual: 'en_cola',
+    });
+  });
+
+  it('un folio que no existe responde 404 y uno mal formado 400', async () => {
+    const { aplicacion } = montar();
+    const noExiste = await post(aplicacion, '/cocina/pedidos/9999/regresar');
+    expect(noExiste.status).toBe(404);
+    expect(ErrorCocinaSchema.parse(await noExiste.json()).error).toBe(
+      'No encontramos un pedido con ese folio.',
+    );
+
+    const malFormado = await post(aplicacion, '/cocina/pedidos/1e3/regresar');
+    expect(malFormado.status).toBe(400);
+    expect(ErrorCocinaSchema.parse(await malFormado.json()).error).toBe(
+      'El folio debe ser un entero positivo.',
+    );
+  });
+
+  it('sin sesión responde 401, con rol caja 403 (sin cambiar nada) y admin pasa', async () => {
+    const { aplicacion, pedidos } = montar();
+    await terminar1001(aplicacion);
+    const ruta = '/cocina/pedidos/1001/regresar';
+
+    expect((await post(aplicacion, ruta, { rol: null })).status).toBe(401);
+    expect((await post(aplicacion, ruta, { rol: 'caja' })).status).toBe(403);
+    expect(pedidos[0]?.estado).toBe('listo');
+    expect((await post(aplicacion, ruta, { rol: 'admin', sub: ID_ADMIN })).status).toBe(200);
+  });
+
+  it('si falla la base responde 500 con un mensaje en español', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const aplicacion = crearApp({
+      crearRepoCocina: () => ({
+        ...crearCocinaEnMemoria().repo,
+        regresarPedido: () => Promise.reject(new Error('Supabase no responde')),
+      }),
+    });
+    const res = await post(aplicacion, '/cocina/pedidos/1001/regresar');
+    expect(res.status).toBe(500);
+    expect(ErrorCocinaSchema.parse(await res.json()).error).toBe(
+      'No se pudo guardar el cambio. Intenta de nuevo en un momento.',
+    );
+  });
+});
+
+describe('cambio de estado en el OpenAPI (US-11-P1 y US-52)', () => {
+  it.each(['empezar', 'terminar', 'deshacer', 'regresar'])(
     'POST /cocina/pedidos/{folio}/%s aparece con Bearer y todas sus respuestas',
     async (accion) => {
       const doc = (await (await app.request('/openapi.json')).json()) as {

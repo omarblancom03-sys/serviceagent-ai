@@ -11,6 +11,8 @@ import type {
   CocinaRepo,
   DeshacerGuardado,
   PedidoActivo,
+  PedidoTerminado,
+  RegresoGuardado,
 } from '../services/cocina';
 
 /*
@@ -38,16 +40,19 @@ const FilaHistorialSchema = z.object({
   creado_en: z.string(),
 });
 
-const FilaPedidoSchema = z.object({
+const FilaPedidoBaseSchema = z.object({
   folio: z.number().int(),
   nombre_cliente: z.string(),
-  estado: EstadoCocinaSchema,
   creado_en: z.string(),
   historial_estado_pedido: z.array(FilaHistorialSchema),
   renglones_pedido: z.array(FilaRenglonSchema),
 });
 
-type FilaPedido = z.infer<typeof FilaPedidoSchema>;
+const FilaPedidoSchema = FilaPedidoBaseSchema.extend({ estado: EstadoCocinaSchema });
+/** Un terminado reciente: la consulta ya pide solo los que siguen en 'listo'. */
+const FilaPedidoListoSchema = FilaPedidoBaseSchema.extend({ estado: z.literal('listo') });
+
+type FilaPedido = z.infer<typeof FilaPedidoBaseSchema>;
 
 const COLUMNAS =
   'folio, nombre_cliente, estado, creado_en, ' +
@@ -99,6 +104,17 @@ const FilaDeshacerSchema = z.object({
   motivo: z.enum(['estado_distinto', 'plazo_vencido']).nullable(),
 });
 
+/*
+ * Filas de `leer_terminados_cocina` y `regresar_pedido_cocina`
+ * (supabase/migrations/*_cocina_terminados_recientes.sql, US-52).
+ */
+const FilaTerminadoSchema = z.object({
+  folio: z.number().int(),
+  terminado_en: z.string(),
+});
+
+const FilaRegresoSchema = FilaDeshacerSchema.extend({ cambiado_en: z.string().nullable() });
+
 /** Implementación de `CocinaRepo` sobre Supabase. */
 export function crearRepoCocina(cliente: SupabaseClient): CocinaRepo {
   return {
@@ -119,6 +135,54 @@ export function crearRepoCocina(cliente: SupabaseClient): CocinaRepo {
           enColaDesde: horaEnCola(fila),
           renglones: aRenglones(fila),
         }));
+    },
+
+    async leerTerminados({ minutos, limite }): Promise<PedidoTerminado[]> {
+      // 1. Qué folios y desde cuándo, con el reloj de Postgres (D42).
+      const corte = await cliente.rpc('leer_terminados_cocina', {
+        p_minutos: minutos,
+        p_limite: limite,
+      });
+      if (corte.error) {
+        throw new Error(`No se pudieron leer los terminados de cocina: ${corte.error.message}`);
+      }
+      const terminados = z.array(FilaTerminadoSchema).parse(corte.data);
+      if (terminados.length === 0) return [];
+
+      // 2. Sus renglones, en la misma forma que los activos. Si uno se regresó o se entregó entre
+      // las dos consultas, ya no viene (filtro por 'listo') y no se muestra.
+      const { data, error } = await cliente
+        .from('pedidos')
+        .select(COLUMNAS)
+        .in(
+          'folio',
+          terminados.map((t) => t.folio),
+        )
+        .eq('estado', 'listo');
+      if (error) {
+        throw new Error(`No se pudieron leer los terminados de cocina: ${error.message}`);
+      }
+      const filas = new Map(
+        z
+          .array(FilaPedidoListoSchema)
+          .parse(data)
+          .map((fila) => [fila.folio, fila]),
+      );
+
+      // En el orden de la función: del más reciente al más viejo.
+      return terminados.flatMap((t) => {
+        const fila = filas.get(t.folio);
+        if (!fila) return [];
+        return [
+          {
+            folio: fila.folio,
+            nombreCliente: fila.nombre_cliente,
+            enColaDesde: horaEnCola(fila),
+            terminadoEn: new Date(t.terminado_en),
+            renglones: aRenglones(fila),
+          },
+        ];
+      });
     },
 
     async cambiarEstado({ folio, desde, hacia, idEmpleado }): Promise<CambioEstadoGuardado | null> {
@@ -149,6 +213,23 @@ export function crearRepoCocina(cliente: SupabaseClient): CocinaRepo {
       const [fila] = z.array(FilaDeshacerSchema).max(1).parse(data);
       if (!fila) return null;
       return { estadoActual: fila.estado_actual, motivo: fila.motivo };
+    },
+
+    async regresarPedido({ folio, idEmpleado, minutosPlazo }): Promise<RegresoGuardado | null> {
+      const { data, error } = await cliente.rpc('regresar_pedido_cocina', {
+        p_folio: folio,
+        p_id_empleado: idEmpleado,
+        p_minutos_plazo: minutosPlazo,
+      });
+      if (error) throw new Error(`No se pudo regresar el pedido: ${error.message}`);
+
+      const [fila] = z.array(FilaRegresoSchema).max(1).parse(data);
+      if (!fila) return null;
+      return {
+        estadoActual: fila.estado_actual,
+        motivo: fila.motivo,
+        cambiadoEn: fila.cambiado_en ? new Date(fila.cambiado_en) : null,
+      };
     },
   };
 }
