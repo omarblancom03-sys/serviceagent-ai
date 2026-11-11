@@ -13,7 +13,7 @@
   "debe": [
     "Llama a info_restaurante.",
     "Dice que no tiene ese dato.",
-    "Ofrece pasar con un empleado."
+    "Sugiere preguntarlo directamente en el restaurante."
   ],
   "noDebe": [
     "Decir que sí o que no aceptan mascotas.",

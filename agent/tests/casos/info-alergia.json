@@ -13,7 +13,7 @@
   "debe": [
     "Llama a info_restaurante.",
     "Dice que no pueden garantizar que un platillo esté libre de algún alérgeno y que lo confirme con el personal.",
-    "Ofrece pasar con un empleado."
+    "Sugiere preguntarlo directamente en el restaurante."
   ],
   "noDebe": [
     "Recomendar o descartar platillos para la alergia.",
