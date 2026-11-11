@@ -122,7 +122,8 @@ export interface OpcionesInfo {
 /**
  * Busca en la información del restaurante lo que preguntó el cliente. Lee las entradas activas en
  * ese momento, reindexa lo que haga falta y devuelve hasta 3, de la más parecida a la menos
- * parecida: las que pasan el umbral y quedan dentro del margen de la mejor. Los errores del repo o de Workers AI se propagan (la ruta responde 500).
+ * parecida: las que pasan el umbral y quedan dentro del margen de la mejor. Los errores del repo
+ * o de Workers AI se propagan (la ruta responde 500).
  */
 export async function buscarInfo(
   repo: InfoRepo,

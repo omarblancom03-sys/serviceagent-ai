@@ -18,6 +18,10 @@ const filas = [...seed.matchAll(/\(\s*'([^']+)',\s*'([^']+)',\s*'([^']+)'\s*\)/g
 }));
 
 describe('seed de info_restaurante (05_info_restaurante.sql)', () => {
+  it('lee las 8 filas (si un texto trae un apóstrofo escapado, la regex se saltaría una)', () => {
+    expect(filas).toHaveLength(8);
+  });
+
   it('cubre los temas del criterio 4 de US-17', () => {
     const temas = filas.map((f) => f.tema);
     for (const tema of [

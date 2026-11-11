@@ -8,7 +8,8 @@
 --
 -- Una fila por tema. ON CONFLICT (tema) DO UPDATE: seguro de correr más de una
 -- vez y, si cambia un texto, lo actualiza (la API reindexa ese embedding en la
--- siguiente consulta). Para quitar un tema sin borrarlo se pone activo = false.
+-- siguiente consulta). Cada corrida vuelve a poner activo = true: para quitar un
+-- tema sin borrarlo, se pone activo = false y además se quita de este seed.
 
 insert into public.info_restaurante (tema, titulo, contenido) values
   ('horario', 'Horario',

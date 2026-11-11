@@ -102,13 +102,26 @@ describe('buscarInfo', () => {
   });
 
   it('devuelve como máximo 3 entradas, de la más parecida a la menos parecida', async () => {
-    const resultados = await buscar('horario dirección estacionamiento alérgenos', { umbral: 0 });
+    // Sin umbral ni margen: el corte en 3 lo hace solo el tope.
+    const similitudes: Record<number, number> = { 1: 0.4, 2: 0.9, 3: 0.6, 4: 0.8 };
+    const repo = crearRepoInfoEnMemoria();
+    repo.buscarSimilares = async () =>
+      Object.entries(similitudes).map(([id, similitud]) => ({ idInfo: Number(id), similitud }));
 
-    expect(resultados.length).toBe(3);
+    const resultados = await buscarInfo(repo, crearEmbedderDePrueba(), 'todo', {
+      umbral: 0,
+      margen: 1,
+    });
+
+    expect(resultados.resultados.map((r) => r.tema)).toEqual([
+      'direccion',
+      'alergenos',
+      'estacionamiento',
+    ]);
   });
 
   it('solo devuelve las que quedan dentro del margen de la mejor', async () => {
-    // Similitudes fijas: horario 0.72, reservaciones 0.53 y wifi 0.70.
+    // Similitudes fijas: horario 0.72, dirección 0.30, estacionamiento 0.53 y alérgenos 0.70.
     const similitudes: Record<number, number> = { 1: 0.72, 2: 0.3, 3: 0.53, 4: 0.7 };
     const repo = crearRepoInfoEnMemoria();
     repo.buscarSimilares = async () =>
