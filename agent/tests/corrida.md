@@ -5,6 +5,7 @@ Resultado de la última vez que se corrieron los casos de [casos/](./casos) en e
 - **Fecha:** 11 de noviembre de 2026
 - **Modelo:** `gpt-6-luna`
 - **Configuración:** `prompt.md` de `7b67fb3`; `cotizar_pedido`, `buscar_menu`, `crear_pedido` e `info_restaurante` como en `retell.json`. Las tres primeras apuntan a la API de producción e `info_restaurante` a una versión de prueba del Worker con US-17 (`us17`, `wrangler versions upload`, sin desplegar), porque el #59 aún no estaba fusionado. Se corrió en **"El Granero - pruebas US-16 (no publicar)"**, una copia del agente, sin tocar el borrador compartido. Modo de pago: `al_recoger`.
+- **Commits:** tras el rebase sobre `main` (12-nov), `4ad2943` es el antiguo `7b67fb3`: `prompt.md`, `functions/` y `retell.json` son idénticos (diff vacío).
 - **Resultado:** 64 pasan (3 con 2 de 3), 2 fallan (menores pendientes) y 1 pendiente (`pedido-confirmar-transferencia`). Los 12 casos de US-17 pasan a la primera. Ninguna regla dura rota: ningún precio inventado y ningún pedido creado sin el "sí".
 
 Cada resumen empieza con el commit y los intentos ([D43](../../docs/decisiones.md): un caso que falla se repite 2 veces más y pasa con 2 de 3).
