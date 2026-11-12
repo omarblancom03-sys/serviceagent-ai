@@ -7,7 +7,8 @@ import {
 
 /**
  * Botones de un ticket de cocina (US-11-P2): Empezar en cola, Terminado verde y grande al preparar
- * y Deshacer con su cuenta regresiva, solo en la tablet que tocó. Mientras se guarda, todo queda
+ * y, tras Empezar, Deshacer con su cuenta regresiva, solo en la tablet que tocó. Terminado no tiene
+ * Deshacer: el pedido baja a Terminados recientes (US-52, D63). Mientras se guarda, todo queda
  * desactivado para evitar el doble toque.
  */
 export function AccionesTicket({
@@ -21,7 +22,7 @@ export function AccionesTicket({
   ahora: number;
   guardando: boolean;
   error: string | undefined;
-  alTocar: (accion: AccionCocina) => void;
+  alTocar: (accion: Exclude<AccionCocina, 'regresar'>) => void;
 }) {
   const boton = botonDe(vista.estado);
   const segundos = vista.deshacerHasta === null ? 0 : segundosRestantes(vista.deshacerHasta, ahora);
@@ -47,9 +48,6 @@ export function AccionesTicket({
         >
           Terminado
         </button>
-      )}
-      {vista.estado === 'listo' && (
-        <p className="text-center text-3xl font-bold text-green-800">Terminado</p>
       )}
       {segundos > 0 && (
         <button

@@ -750,8 +750,12 @@ describe('crearRepoCocina: terminados recientes y Regresar (US-52)', () => {
 });
 
 describe('contrato de terminados recientes y Regresar (US-52)', () => {
-  it('la respuesta de GET exige terminados y no acepta más del máximo', () => {
-    expect(RespuestaPedidosCocinaSchema.safeParse({ pedidos: [] }).success).toBe(false);
+  it('la respuesta de GET sin terminados (API vieja) vale [] y no acepta más del máximo', () => {
+    // Durante un despliegue la web nueva puede leer una API que aún no manda el campo (US-52-P2).
+    expect(RespuestaPedidosCocinaSchema.parse({ pedidos: [] })).toEqual({
+      pedidos: [],
+      terminados: [],
+    });
     const ticket = armarTerminados([terminado(1001, hora('18:00'))])[0];
     const demasiados = Array.from({ length: MAX_TERMINADOS_COCINA + 1 }, () => ticket);
     expect(

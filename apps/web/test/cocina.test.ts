@@ -41,7 +41,7 @@ describe('foliosNuevos', () => {
     expect(foliosNuevos([ticket(1001)], [empezado])).toEqual([]);
   });
 
-  it('un pedido que regresa por Deshacer de Terminado (llega preparando) no es nuevo', () => {
+  it('un pedido que vuelve por Regresar (US-52, llega preparando) no es nuevo', () => {
     const regreso: TicketCocina = { ...ticket(1002), estado: 'preparando' };
     expect(foliosNuevos([ticket(1001)], [ticket(1001), regreso])).toEqual([]);
   });

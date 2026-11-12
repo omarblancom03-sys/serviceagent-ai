@@ -70,8 +70,11 @@ export const TicketTerminadoCocinaSchema = TicketCocinaSchema.omit({ estado: tru
 export const RespuestaPedidosCocinaSchema = z.object({
   /** Del más antiguo al más nuevo según `enColaDesde`: el primero es el que lleva más esperando. */
   pedidos: z.array(TicketCocinaSchema),
-  /** Del más reciente al más viejo según `terminadoEn`, como máximo `MAX_TERMINADOS_COCINA`. */
-  terminados: z.array(TicketTerminadoCocinaSchema).max(MAX_TERMINADOS_COCINA),
+  /**
+   * Del más reciente al más viejo según `terminadoEn`, como máximo `MAX_TERMINADOS_COCINA`. Si
+   * falta vale `[]`: durante un despliegue la web nueva puede hablar con una API que aún no lo manda.
+   */
+  terminados: z.array(TicketTerminadoCocinaSchema).max(MAX_TERMINADOS_COCINA).default([]),
 });
 
 export const ErrorCocinaSchema = z.object({ error: z.string() });
