@@ -39,7 +39,7 @@ export const ETIQUETA_ESTADO: Record<EstadoCocina, string> = {
 /**
  * Folios en cola que no estaban en la lista anterior. En la primera carga (`anteriores` es `null`)
  * no hay nuevos: todo lo que ya estaba esperando no se resalta. Solo cuentan los `en_cola`: un
- * pedido que regresa por Deshacer de Terminado llega `preparando` y no es nuevo (D56).
+ * pedido que vuelve por Regresar llega `preparando` y no es nuevo (D63).
  */
 export function foliosNuevos(
   anteriores: readonly TicketCocina[] | null,
