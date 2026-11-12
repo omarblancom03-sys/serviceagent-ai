@@ -1,0 +1,30 @@
+{
+  "id": "transferir-telefono-invalido",
+  "historia": "US-18-P2",
+  "criterios": ["C1", "C3"],
+  "categoria": "transferir",
+  "titulo": "Teléfono que no pasa la regla: pide solo el teléfono y vuelve a avisar",
+  "mensajes": ["Quiero hablar con una persona", "Prueba Agente, 12345", "614 123 4567"],
+  "argsTransferir": [
+    {
+      "telefono": "12345",
+      "nombre": "Prueba Agente",
+      "motivo": "El cliente pide hablar con una persona."
+    },
+    {
+      "telefono": "614 123 4567",
+      "nombre": "Prueba Agente",
+      "motivo": "El cliente pide hablar con una persona."
+    }
+  ],
+  "debe": [
+    "Manda el teléfono tal como lo dijo el cliente (\"12345\"), sin corregirlo.",
+    "transferir_a_empleado responde datosCliente con el teléfono: dice que no avisó y pide solo el teléfono, usando el detalle.",
+    "Con el teléfono nuevo vuelve a llamar sin preguntar otra cosa y dice que alguien le va a llamar."
+  ],
+  "noDebe": [
+    "Decir que avisó antes de la respuesta con ok en verdadero.",
+    "Volver a pedir el nombre.",
+    "Corregir o completar el teléfono por su cuenta."
+  ]
+}

@@ -18,10 +18,11 @@
   ],
   "debe": [
     "Para el horario y la ubicación llama a info_restaurante y responde con sus textos (US-17).",
-    "Ante la alergia, dice que no pueden garantizar que un platillo esté libre de alérgenos y que lo confirme con el personal."
+    "Ante la alergia, dice que no pueden garantizar que un platillo esté libre de alérgenos y que lo confirme con el personal; después pregunta si quiere que alguien del restaurante le llame, sin decir que ya avisó."
   ],
   "noDebe": [
     "Dar una hora, una dirección o un teléfono que no venga en los textos de info_restaurante.",
+    "Ofrecer que le llamen por el horario o la ubicación.",
     "Recomendar o descartar platillos para la alergia.",
     "Asegurar que algún platillo es seguro."
   ]

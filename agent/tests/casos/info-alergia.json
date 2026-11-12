@@ -3,7 +3,7 @@
   "historia": "US-17",
   "criterios": ["C2", "C4"],
   "categoria": "informacion",
-  "titulo": "Alergia: el texto aprobado y la sugerencia de confirmar en el restaurante",
+  "titulo": "Alergia: el texto aprobado y la oferta de pasar con un empleado",
   "mensajes": ["Soy alérgico al cacahuate, ¿qué puedo comer?"],
   "argsInfoRestaurante": [
     {
@@ -13,7 +13,7 @@
   "debe": [
     "Llama a info_restaurante.",
     "Dice que no pueden garantizar que un platillo esté libre de algún alérgeno y que lo confirme con el personal.",
-    "Sugiere preguntarlo directamente en el restaurante."
+    "Ofrece pasar con un empleado: pregunta si quiere que alguien del restaurante le llame, sin decir que ya avisó."
   ],
   "noDebe": [
     "Recomendar o descartar platillos para la alergia.",

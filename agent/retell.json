@@ -41,7 +41,7 @@
       {
         "type": "custom",
         "name": "buscar_menu",
-        "description": "Busca en el menú con las palabras del cliente y devuelve hasta 5 platillos parecidos, con su nombre oficial, categoría, descripción y precios. Úsala cuando el cliente describe lo que quiere sin nombrar un platillo (un ingrediente, un sabor, para quién es) o pregunta qué lleva un platillo. No la uses para pedir un platillo que ya nombró (eso es cotizar_pedido) ni para ver el menú completo (eso es el enlace). Nunca con la consulta vacía.",
+        "description": "Busca en el menú con las palabras del cliente y devuelve hasta 5 platillos parecidos, con su nombre oficial, categoría, descripción y precios. Úsala cuando el cliente describe lo que quiere sin nombrar un platillo (un ingrediente, un sabor, para quién es) o pregunta qué lleva un platillo, sin mencionar una alergia. No la uses para pedir un platillo que ya nombró (eso es cotizar_pedido) ni para ver el menú completo (eso es el enlace). Nunca con la consulta vacía.",
         "url": "/agente/buscar-menu",
         "method": "POST",
         "parameters": "agent/functions/buscar_menu.json",
@@ -54,7 +54,7 @@
       {
         "type": "custom",
         "name": "info_restaurante",
-        "description": "Busca en la información del restaurante lo que pregunta el cliente: horario, dirección y cómo llegar, teléfono, estacionamiento, formas de pago, alérgenos, reservaciones, wifi o servicio a domicilio. Devuelve hasta 3 textos aprobados, o ninguno si no hay ese dato. Úsala para cualquier pregunta sobre el restaurante que no sea del menú ni de un pedido. Nunca con la consulta vacía.",
+        "description": "Busca en la información del restaurante lo que pregunta el cliente: horario, dirección y cómo llegar, teléfono, estacionamiento, formas de pago, alérgenos, reservaciones, wifi o servicio a domicilio. Devuelve hasta 3 textos aprobados, o ninguno si no hay ese dato. Úsala para cualquier pregunta sobre el restaurante que no sea del menú ni de un pedido. Nunca con la consulta vacía. No la uses cuando el cliente pide hablar con una persona ni cuando contesta a tu oferta de que le llamen.",
         "url": "/agente/info-restaurante",
         "method": "POST",
         "parameters": "agent/functions/info_restaurante.json",
@@ -71,6 +71,19 @@
         "url": "/pedidos",
         "method": "POST",
         "parameters": "agent/functions/crear_pedido.json",
+        "args_at_root": false,
+        "timeout_ms": 10000,
+        "max_retry": 0,
+        "speak_during_execution": false,
+        "speak_after_execution": true
+      },
+      {
+        "type": "custom",
+        "name": "transferir_a_empleado",
+        "description": "Avisa a la caja del restaurante para que alguien llame al cliente; no pasa el chat a otra persona. Úsala solo cuando el cliente pidió hablar con una persona o aceptó que le llamen (una queja, un problema con un pedido o un pago, una alergia, cambiar o cancelar un pedido registrado, saber cómo va, un pedido grande o especial, un dato del restaurante que info_restaurante no trae) y ya tienes su teléfono. Nunca en el mismo turno en que le preguntas si quiere que le llamen o le pides el teléfono. No la uses para temas ajenos al restaurante ni por lo que contesta info_restaurante (salvo una alergia). Una duda del menú primero se contesta con el menú; solo si el cliente insiste en hablar con alguien, se usa.",
+        "url": "/agente/escalar",
+        "method": "POST",
+        "parameters": "agent/functions/transferir_a_empleado.json",
         "args_at_root": false,
         "timeout_ms": 10000,
         "max_retry": 0,

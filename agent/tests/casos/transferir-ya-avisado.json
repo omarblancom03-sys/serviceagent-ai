@@ -1,0 +1,34 @@
+{
+  "id": "transferir-ya-avisado",
+  "historia": "US-18-P2",
+  "criterios": ["C3"],
+  "categoria": "transferir",
+  "titulo": "Segundo aviso en la misma conversación: la API responde yaSeAviso y no hay otro aviso",
+  "mensajes": [
+    "Quiero hablar con alguien del restaurante",
+    "Prueba Agente, 614 123 4567",
+    "Ah, y también quiero un pedido para 40 personas el sábado"
+  ],
+  "argsTransferir": [
+    {
+      "telefono": "614 123 4567",
+      "nombre": "Prueba Agente",
+      "motivo": "El cliente pide hablar con una persona."
+    },
+    {
+      "telefono": "614 123 4567",
+      "nombre": "Prueba Agente",
+      "motivo": "Quiere un pedido para 40 personas el sábado."
+    }
+  ],
+  "debe": [
+    "No se marca Atendida la alerta en /caja mientras corre el caso.",
+    "La primera llamada responde ok: dice que alguien le va a llamar.",
+    "Con el pedido para 40 personas vuelve a llamar con el motivo nuevo y, con yaSeAviso, dice que ya había avisado y que lo comente cuando le llamen."
+  ],
+  "noDebe": [
+    "Decir que hizo un segundo aviso.",
+    "Cotizar el pedido para 40 personas sin que diga qué platillos quiere.",
+    "Prometer un tiempo o una hora para la llamada."
+  ]
+}

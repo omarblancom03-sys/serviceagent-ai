@@ -22,6 +22,7 @@
   "noDebe": [
     "Despedirse en la segunda respuesta.",
     "Ignorar la pregunta por haber leído \"gracias\".",
-    "Dar formas de pago que no vengan en el texto de info_restaurante."
+    "Dar formas de pago que no vengan en el texto de info_restaurante.",
+    "Ofrecer que alguien le llame por la forma de pago."
   ]
 }

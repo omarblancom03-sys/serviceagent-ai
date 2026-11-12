@@ -12,12 +12,14 @@
   ],
   "debe": [
     "Llama a buscar_menu con el nombre del platillo.",
-    "Contesta solo con lo que dice la descripción que devolvió: que no menciona tocino o que el menú no lo especifica (puede decir qué sí lleva: doble carne, lechuga, tomate y queso).",
+    "Contesta tajante, con lo que dice la descripción que devolvió, que la Algodoneros no incluye tocino (puede decir qué sí lleva: doble carne, lechuga, tomate y queso).",
     "Pregunta si la quiere o si puede ayudar con algo más."
   ],
   "noDebe": [
     "Decir que lleva tocino.",
     "Mencionar ingredientes que no estén en la descripción.",
-    "Llamar a cotizar_pedido."
+    "Llamar a cotizar_pedido.",
+    "Decir que el menú no lo especifica.",
+    "Ofrecer pasarlo con un empleado."
   ]
 }

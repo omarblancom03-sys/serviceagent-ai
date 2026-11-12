@@ -16,6 +16,7 @@
     "Pedir nombre o teléfono antes de tener una cotización con ok en verdadero.",
     "Dar número de pedido o tiempo de espera.",
     "Decir un precio o un total que no venga de la respuesta de cotizar_pedido.",
-    "Dar un teléfono o una dirección del restaurante."
+    "Dar un teléfono o una dirección del restaurante.",
+    "Ofrecer pasarlo con un empleado (\"¿ya quedó?\" de un pedido sin registrar no es saber cómo va)."
   ]
 }

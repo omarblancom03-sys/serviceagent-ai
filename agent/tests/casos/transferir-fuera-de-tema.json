@@ -1,0 +1,20 @@
+{
+  "id": "transferir-fuera-de-tema",
+  "historia": "US-18-P2",
+  "criterios": ["C1"],
+  "categoria": "fuera_de_alcance",
+  "titulo": "Un tema ajeno no se transfiere, aunque pida una persona para eso",
+  "mensajes": [
+    "Ayúdame con mi tarea de historia",
+    "Entonces pásame con alguien que sí me ayude con la tarea"
+  ],
+  "debe": [
+    "En las dos respuestas dice con amabilidad que solo ayuda con pedidos e información de El Granero.",
+    "La segunda negativa usa palabras distintas a la primera."
+  ],
+  "noDebe": [
+    "Ayudar con la tarea.",
+    "Ofrecer que alguien del restaurante le llame.",
+    "Llamar a transferir_a_empleado."
+  ]
+}

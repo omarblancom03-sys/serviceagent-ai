@@ -23,6 +23,7 @@
   "noDebe": [
     "Cambiar la cantidad por su cuenta.",
     "Decir un límite distinto al del detalle.",
-    "Decir un precio o un total: con aclaraciones no hay ninguno."
+    "Decir un precio o un total: con aclaraciones no hay ninguno.",
+    "Ofrecer pasarlo con un empleado en esta respuesta (primero va la regla de la cantidad)."
   ]
 }

@@ -1,0 +1,17 @@
+{
+  "id": "transferir-ofrece-y-no-acepta",
+  "historia": "US-18-P2",
+  "criterios": ["C1"],
+  "categoria": "transferir",
+  "titulo": "Problema con un pago: ofrece la llamada y con el no, no avisa",
+  "mensajes": ["Me cobraron de más en mi pedido", "No, gracias"],
+  "debe": [
+    "La primera respuesta dice que eso no lo puede resolver desde el chat y pregunta si quiere que alguien del restaurante le llame.",
+    "Con el \"No, gracias\" no insiste y pregunta si le ayuda con algo más."
+  ],
+  "noDebe": [
+    "Llamar a transferir_a_empleado con un teléfono.",
+    "Decir que avisó al restaurante o que le van a llamar.",
+    "Decir cuánto le debieron cobrar."
+  ]
+}

@@ -10,7 +10,9 @@ import {
   ExtraPedidoSchema,
   ExtraSueltoPedidoSchema,
   InfoRestauranteArgsSchema,
+  MAX_CARACTERES_MOTIVO,
   ProductoPedidoSchema,
+  TransferirAEmpleadoArgsSchema,
 } from '@serviceagent/shared';
 
 // Este test no habla con Retell. Compara el JSON Schema que se pega en el
@@ -32,6 +34,7 @@ type Nodo = {
   required?: string[] | undefined;
   additionalProperties?: boolean | undefined;
   items?: Nodo | undefined;
+  maxLength?: number | undefined;
 };
 
 const esquemaNodo: z.ZodType<Nodo> = z.lazy(() =>
@@ -42,6 +45,8 @@ const esquemaNodo: z.ZodType<Nodo> = z.lazy(() =>
     required: z.array(z.string()).optional(),
     additionalProperties: z.boolean().optional(),
     items: esquemaNodo.optional(),
+    // Tope de un texto. Hoy solo el motivo de transferir_a_empleado (se revisa abajo).
+    maxLength: z.number().int().positive().optional(),
   }),
 );
 
@@ -117,6 +122,11 @@ const funciones: { nombre: string; url: string; niveles: (raiz: Nodo) => Nivel[]
     url: '/agente/info-restaurante',
     niveles: (raiz) => [{ nombre: 'args', nodo: raiz, contrato: InfoRestauranteArgsSchema }],
   },
+  {
+    nombre: 'transferir_a_empleado',
+    url: '/agente/escalar',
+    niveles: (raiz) => [{ nombre: 'args', nodo: raiz, contrato: TransferirAEmpleadoArgsSchema }],
+  },
 ];
 
 describe.each(funciones)('$nombre: el JSON Schema coincide con el contrato', (funcion) => {
@@ -152,6 +162,16 @@ describe.each(funciones)('$nombre: el JSON Schema coincide con el contrato', (fu
     it.each(llaves)('"%s" trae descripcion para el modelo', (llave) => {
       expect(propiedad(nodo, llave).description).toBeDefined();
     });
+  });
+});
+
+// La peticion acepta hasta 1000 caracteres de motivo, pero la base guarda 200 (D59): el JSON
+// le pide al modelo el tope que se guarda, no el de la peticion.
+describe('transferir_a_empleado: motivo', () => {
+  const raiz = esquemaNodo.parse(leerJson('functions/transferir_a_empleado.json'));
+
+  it('tiene el mismo maxLength que guarda la base (MAX_CARACTERES_MOTIVO)', () => {
+    expect(propiedad(raiz, 'motivo').maxLength).toBe(MAX_CARACTERES_MOTIVO);
   });
 });
 

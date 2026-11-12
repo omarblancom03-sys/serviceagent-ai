@@ -8,6 +8,8 @@ import {
   CotizarPedidoArgsSchema,
   CrearPedidoArgsSchema,
   InfoRestauranteArgsSchema,
+  MAX_CARACTERES_MOTIVO,
+  TransferirAEmpleadoArgsSchema,
 } from '@serviceagent/shared';
 
 // Este test no habla con Retell: lee los archivos de agent/ como texto y
@@ -34,6 +36,7 @@ const esquemaCaso = z.strictObject({
     'pedido',
     'busqueda',
     'informacion',
+    'transferir',
   ]),
   titulo: textoNoVacio,
   mensajes: z.array(textoNoVacio).min(1),
@@ -48,6 +51,8 @@ const esquemaCaso = z.strictObject({
   argsCrearPedido: z.array(z.record(z.string(), z.unknown())).min(1).optional(),
   // Args de cada llamada esperada a info_restaurante; se validan contra su contrato.
   argsInfoRestaurante: z.array(z.record(z.string(), z.unknown())).min(1).optional(),
+  // Args de cada llamada esperada a transferir_a_empleado; se validan contra su contrato.
+  argsTransferir: z.array(z.record(z.string(), z.unknown())).min(1).optional(),
   debe: z.array(textoNoVacio).min(1),
   noDebe: z.array(textoNoVacio),
 });
@@ -242,6 +247,42 @@ describe('cobertura de US-19', () => {
   });
 });
 
+describe('cobertura de US-18-P2', () => {
+  const casos = archivosCasos.map(leerCaso);
+  const casosUs18 = casos.filter((caso) => caso.historia === 'US-18-P2');
+
+  // C2 y C4 (alerta en caja y botón Atendida) son de la API y la web (US-18 P1).
+  it.each(['C1', 'C3'])('el criterio %s tiene al menos un caso', (criterio) => {
+    expect(casosUs18.filter((caso) => caso.criterios.includes(criterio)).length).toBeGreaterThan(0);
+  });
+
+  it('algun caso avisa a un empleado (trae argsTransferir)', () => {
+    expect(casosUs18.some((caso) => caso.argsTransferir)).toBe(true);
+  });
+
+  // Lo que NO se transfiere (temas ajenos, manipulacion) tambien tiene su caso.
+  it('algun caso ajeno o de manipulacion no avisa a nadie', () => {
+    expect(
+      casosUs18.some(
+        (caso) =>
+          ['fuera_de_alcance', 'manipulacion'].includes(caso.categoria) && !caso.argsTransferir,
+      ),
+    ).toBe(true);
+  });
+
+  it.each(casos.filter((caso) => caso.argsTransferir))(
+    '$id cumple el contrato de transferir_a_empleado',
+    (caso) => {
+      for (const args of caso.argsTransferir ?? []) {
+        const resultado = TransferirAEmpleadoArgsSchema.safeParse(args);
+        expect(resultado.error?.issues ?? []).toEqual([]);
+        // La peticion acepta mas, pero la base guarda 200: el caso espera un motivo que cabe.
+        expect(String(args['motivo']).length).toBeLessThanOrEqual(MAX_CARACTERES_MOTIVO);
+      }
+    },
+  );
+});
+
 describe('prompt (agent/prompt.md)', () => {
   const prompt = readFileSync(path.join(raizAgente, 'prompt.md'), 'utf-8');
 
@@ -319,6 +360,7 @@ describe('configuracion (agent/retell.json)', () => {
     ['el saludo fijo (begin_message)', llm.begin_message ?? ''],
     ['la descripcion de cotizar_pedido', descripcion('cotizar_pedido')],
     ['la descripcion de crear_pedido', descripcion('crear_pedido')],
+    ['la descripcion de transferir_a_empleado', descripcion('transferir_a_empleado')],
   ])('%s no contiene montos', (_nombre, texto) => {
     expect(texto).toBeDefined();
     expect(texto).not.toMatch(/\$\s*\d/);
