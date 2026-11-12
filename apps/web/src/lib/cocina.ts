@@ -76,8 +76,11 @@ export function lineaDe(renglon: RenglonCocina): LineaTicket {
   };
 }
 
-/** Platillos y extras sueltos por separado: los sueltos van al final, bajo "Aparte". */
-export function separarRenglones(ticket: TicketCocina): {
+/**
+ * Platillos y extras sueltos por separado: los sueltos van al final, bajo "Aparte". Sirve igual
+ * para un ticket de la cuadrícula y para un terminado reciente.
+ */
+export function separarRenglones(ticket: Pick<TicketCocina, 'renglones'>): {
   platillos: LineaTicket[];
   aparte: LineaTicket[];
 } {

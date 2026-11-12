@@ -1,9 +1,13 @@
-import { RespuestaPedidosCocinaSchema, type TicketCocina } from '@serviceagent/shared';
+import {
+  RespuestaPedidosCocinaSchema,
+  type RespuestaPedidosCocina,
+  type TicketCocina,
+} from '@serviceagent/shared';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useSesion } from '../auth/SesionContext';
 import { AccionesTicket } from '../components/AccionesTicket';
 import { IndicadorConexion } from '../components/IndicadorConexion';
-import type { EstadoVista } from '../lib/accionesCocina';
+import { TerminadosRecientes } from '../components/TerminadosRecientes';
 import {
   AVISO_SONIDO,
   contarPedidos,
@@ -31,8 +35,8 @@ import { escucharSenalPedidos, hayRealtime } from '../lib/senalPedidos';
 import { crearSonadorWebAudio, hayWebAudio } from '../lib/sonidoCocina';
 import {
   INTERVALO_RELOJ_MS,
-  atrasadoVisible,
   clasesTicket,
+  estaAtrasado,
   minutosDesde,
   textoTiempo,
 } from '../lib/tiempoCocina';
@@ -44,11 +48,11 @@ import { useAhora } from '../lib/useAhora';
  * cambió y la lista se vuelve a pedir a la API con la sesión (D12, D47). Si la señal se pierde, la
  * lista se refresca cada 30 s. Empezar, Terminado y Deshacer (US-11): lib/accionesCocina.ts. US-12:
  * suena un aviso con cada tanda de pedidos nuevos y un contador dice cuántos hay en cola y
- * preparándose.
+ * preparándose. US-52: lo terminado baja a la sección gris "Terminados recientes", con Regresar.
  */
 export function Cocina() {
   const { pedirConSesion } = useSesion();
-  const [tickets, setTickets] = useState<TicketCocina[] | null>(null);
+  const [lista, setLista] = useState<RespuestaPedidosCocina | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [conexion, setConexion] = useState<EstadoConexion>(() =>
     hayRealtime() ? 'conectando' : 'sin_tiempo_real',
@@ -80,10 +84,12 @@ export function Cocina() {
   const cargarUnaVez = useCallback(async () => {
     const numero = nuevaLista();
     try {
-      const { pedidos } = await pedirConSesion('/cocina/pedidos', RespuestaPedidosCocinaSchema);
+      const respuesta = await pedirConSesion('/cocina/pedidos', RespuestaPedidosCocinaSchema);
+      const { pedidos } = respuesta;
+      // Solo la cuadrícula cuenta para "Nuevo" y el aviso: lo regresado vuelve en preparando (D63).
       const nuevos = foliosNuevos(anteriores.current, pedidos);
       anteriores.current = pedidos;
-      setTickets(pedidos);
+      setLista(respuesta);
       listaRecibida(numero);
       setError(null);
       if (nuevos.length > 0) {
@@ -140,15 +146,16 @@ export function Cocina() {
     };
   }, [cargarUnaVez]);
 
-  const vistas = tickets && acciones.vistas(tickets);
+  const pantalla = lista && acciones.vista(lista);
+  const vistas = pantalla?.activos;
 
   return (
     <section>
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-3xl font-bold text-orange-800">Cocina</h1>
-        {tickets && (
+        {vistas && (
           <span className="text-xl font-semibold text-stone-800">
-            {textoContador(contarPedidos(tickets))}
+            {textoContador(contarPedidos(vistas))}
           </span>
         )}
         <IndicadorConexion estado={conexion} />
@@ -173,7 +180,7 @@ export function Cocina() {
         </div>
       )}
 
-      {tickets === null && !error && <p className="mt-8 text-stone-500">Cargando pedidos…</p>}
+      {lista === null && !error && <p className="mt-8 text-stone-500">Cargando pedidos…</p>}
 
       {vistas?.length === 0 && (
         <p className="mt-12 text-center text-xl text-stone-500">No hay pedidos por preparar.</p>
@@ -193,12 +200,24 @@ export function Cocina() {
                 vista={vista}
                 ahora={acciones.ahora}
                 guardando={acciones.guardando.has(vista.ticket.folio)}
-                error={acciones.errores.get(vista.ticket.folio)}
+                error={acciones.errores.get(vista.ticket.folio)?.texto}
                 alTocar={(accion) => void acciones.tocar(vista, accion)}
               />
             </Ticket>
           ))}
         </ol>
+      )}
+
+      {pantalla && (
+        <TerminadosRecientes
+          terminados={pantalla.terminados}
+          ahora={ahora}
+          enCuadricula={new Set(pantalla.activos.map((v) => v.ticket.folio))}
+          guardando={acciones.guardando}
+          errores={acciones.errores}
+          alRegresar={(terminado) => void acciones.regresar(terminado)}
+          alCerrarError={acciones.descartarError}
+        />
       )}
     </section>
   );
@@ -239,29 +258,24 @@ function Ticket({
   children,
 }: {
   ticket: TicketCocina;
-  estado: EstadoVista;
+  estado: TicketCocina['estado'];
   nuevo: boolean;
   ahora: number;
   children: ReactNode;
 }) {
   const { platillos, aparte } = separarRenglones(ticket);
   const minutos = minutosDesde(ticket.enColaDesde, ahora);
-  const terminado = estado === 'listo';
-  const atrasado = atrasadoVisible(minutos, terminado);
+  const atrasado = estaAtrasado(minutos);
   return (
-    <li className={clasesTicket({ nuevo, atrasado, terminado })}>
+    <li className={clasesTicket({ nuevo, atrasado })}>
       <div className="flex items-baseline justify-between gap-2">
         <span className="text-3xl font-bold text-stone-900">{ticket.folioTexto}</span>
         <span
           className={`rounded-full px-3 py-1 text-sm font-semibold ${
-            terminado
-              ? 'bg-green-100 text-green-800'
-              : estado === 'preparando'
-                ? 'bg-blue-100 text-blue-800'
-                : 'bg-orange-100 text-orange-800'
+            estado === 'preparando' ? 'bg-blue-100 text-blue-800' : 'bg-orange-100 text-orange-800'
           }`}
         >
-          {nuevo ? 'Nuevo' : terminado ? 'Terminado' : ETIQUETA_ESTADO[estado]}
+          {nuevo ? 'Nuevo' : ETIQUETA_ESTADO[estado]}
         </span>
       </div>
       <p className="mt-1 text-stone-600">

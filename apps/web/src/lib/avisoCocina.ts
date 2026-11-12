@@ -10,7 +10,11 @@ export interface ConteoCocina {
   preparando: number;
 }
 
-export function contarPedidos(tickets: readonly TicketCocina[]): ConteoCocina {
+/**
+ * Cuenta los tickets de la cuadrícula (los de la API con los cambios de esta tablet encima). Los
+ * terminados recientes (US-52, D63) no entran: van en su propia sección.
+ */
+export function contarPedidos(tickets: readonly Pick<TicketCocina, 'estado'>[]): ConteoCocina {
   return {
     enCola: tickets.filter((t) => t.estado === 'en_cola').length,
     preparando: tickets.filter((t) => t.estado === 'preparando').length,
@@ -53,7 +57,7 @@ export interface Sonador {
 
 /**
  * Si una tanda de pedidos nuevos merece aviso (D58). Solo cuentan los que llegan `en_cola`: un
- * pedido que vuelve a la lista por Deshacer de Terminado (D56) llega en `preparando` y no suena.
+ * pedido que vuelve a la lista por Regresar (D63) llega en `preparando` y no suena.
  */
 export function debeSonar(nuevos: readonly TicketCocina[]): boolean {
   return nuevos.some((t) => t.estado === 'en_cola');

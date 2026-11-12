@@ -3,30 +3,36 @@ import {
   SEGUNDOS_DESHACER_PANTALLA,
   type EstadoCocina,
   type RespuestaCambioEstadoCocina,
+  type RespuestaPedidosCocina,
   type TicketCocina,
+  type TicketTerminadoCocina,
 } from '@serviceagent/shared';
 import { ErrorApi } from './api';
+import { comoTerminado, comoTicket } from './terminadosCocina';
 
 /*
- * Lógica pura de los botones de cocina (US-11-P2, D56): Empezar, Terminado y Deshacer. Lo que esta
- * tablet cambió se guarda como "cambio local" (solo en memoria: al recargar se pierde) y se mezcla
- * con la lista de la API para decidir qué se ve. La página y el hook solo pintan lo que sale de aquí.
+ * Lógica pura de los botones de cocina (US-11-P2, D56; US-52-P2, D63): Empezar con Deshacer 10 s,
+ * Terminado (sin Deshacer: el pedido baja a "Terminados recientes") y Regresar. Lo que esta tablet
+ * cambió se guarda como "cambio local" (solo en memoria: al recargar se pierde) y se mezcla con la
+ * lista de la API para decidir qué se ve. La página y el hook solo pintan lo que sale de aquí.
  */
 
-export type AccionCocina = 'empezar' | 'terminar' | 'deshacer';
+export type AccionCocina = 'empezar' | 'terminar' | 'deshacer' | 'regresar';
 
-/** Estado que se pinta: los de la lista más `listo` (terminado en esta tablet, aún con Deshacer). */
-export type EstadoVista = EstadoCocina | 'listo';
+/** Estado de un cambio local: los de la cuadrícula más `listo` (terminado en esta tablet). */
+export type EstadoCambio = EstadoCocina | 'listo';
 
 /** Un cambio que hizo esta tablet. */
 export interface CambioLocal {
   folio: number;
-  /** Copia del ticket al tocar: un pedido terminado ya no viene en la lista y se sigue mostrando. */
+  /** Copia del ticket al tocar: se sigue mostrando aunque la lista todavía no lo traiga así. */
   ticket: TicketCocina;
-  estado: EstadoVista;
+  estado: EstadoCambio;
+  /** Con `listo`: hora del Terminado (`cambiadoEn` de la API), de donde cuentan los 15 min. */
+  terminadoEn: string | null;
   /** Hasta cuándo (reloj de la tablet, ms) se muestra el cambio aunque la lista diga otra cosa. */
   venceEn: number;
-  /** Si todavía ofrece Deshacer (falso cuando ya se deshizo o falló el Deshacer). */
+  /** Si todavía ofrece Deshacer (solo tras Empezar; falso cuando ya se deshizo o falló). */
   deshacer: boolean;
   /**
    * Número de la última lista pedida cuando se aplicó el cambio. Una lista con número menor o igual
@@ -38,11 +44,21 @@ export interface CambioLocal {
 
 export type CambiosLocales = ReadonlyMap<number, CambioLocal>;
 
-/** Lo que se pinta de cada ticket. `deshacerHasta` es `null` si no hay botón Deshacer. */
+/** Lo que se pinta de cada ticket de la cuadrícula. `deshacerHasta` es `null` si no hay Deshacer. */
 export interface TicketVista {
   ticket: TicketCocina;
-  estado: EstadoVista;
+  estado: EstadoCocina;
   deshacerHasta: number | null;
+}
+
+/**
+ * La pantalla completa: la cuadrícula y los terminados recientes con los cambios de esta tablet
+ * encima. Los terminados van sin el corte de 15 min ni el máximo: los aplica la sección con su
+ * reloj (`terminadosVigentes`).
+ */
+export interface VistaCocina {
+  activos: TicketVista[];
+  terminados: TicketTerminadoCocina[];
 }
 
 const PLAZO_PANTALLA_MS = SEGUNDOS_DESHACER_PANTALLA * 1000;
@@ -51,11 +67,9 @@ export function rutaAccion(folio: number, accion: AccionCocina): string {
   return `/cocina/pedidos/${folio}/${accion}`;
 }
 
-/** Botón principal del ticket: Empezar en cola, Terminado al preparar y ninguno ya terminado. */
-export function botonDe(estado: EstadoVista): 'empezar' | 'terminar' | null {
-  if (estado === 'en_cola') return 'empezar';
-  if (estado === 'preparando') return 'terminar';
-  return null;
+/** Botón principal del ticket: Empezar en cola y Terminado al preparar. */
+export function botonDe(estado: EstadoCocina): 'empezar' | 'terminar' {
+  return estado === 'en_cola' ? 'empezar' : 'terminar';
 }
 
 /**
@@ -106,36 +120,82 @@ export function proximoVencimiento(cambios: CambiosLocales, ahora: number): numb
 }
 
 /**
- * Lista de la API con los cambios de esta tablet encima. Un pedido terminado aquí sigue en su lugar
- * (orden por `enColaDesde`, igual que la API) hasta que vence su Deshacer; en las otras tablets ya
- * no viene en la lista.
+ * Lista de la API con los cambios de esta tablet encima. Lo terminado aquí sale de la cuadrícula y
+ * entra a los terminados al instante; lo regresado aquí hace lo contrario y vuelve a su lugar en la
+ * cuadrícula (orden por `enColaDesde`, igual que la API). Las otras tablets lo ven en su siguiente
+ * recarga.
  */
-export function ticketsParaMostrar(
-  tickets: readonly TicketCocina[],
+export function vistaCocina(
+  lista: RespuestaPedidosCocina,
   cambios: CambiosLocales,
   ahora: number,
   ultimaLista: number,
-): TicketVista[] {
-  const vistas = tickets.map((ticket) => vistaDe(ticket, cambios.get(ticket.folio)));
-  const enLista = new Set(tickets.map((t) => t.folio));
-  for (const cambio of cambios.values()) {
-    if (!enLista.has(cambio.folio) && sigueVigente(cambio, ahora, ultimaLista)) {
-      vistas.push(vistaDe(cambio.ticket, cambio));
-    }
-  }
-  // sort es estable: con la misma hora se respeta el orden de la API.
-  return vistas.sort((a, b) => Date.parse(a.ticket.enColaDesde) - Date.parse(b.ticket.enColaDesde));
+): VistaCocina {
+  const vigentes = new Map(
+    [...cambios.values()]
+      .filter((c) => sigueVigente(c, ahora, ultimaLista))
+      .map((c) => [c.folio, c]),
+  );
 
-  function vistaDe(ticket: TicketCocina, cambio: CambioLocal | undefined): TicketVista {
-    if (!cambio || !sigueVigente(cambio, ahora, ultimaLista)) {
-      return { ticket, estado: ticket.estado, deshacerHasta: null };
+  const activos: TicketVista[] = [];
+  const enLista = new Set<number>();
+  for (const ticket of lista.pedidos) {
+    enLista.add(ticket.folio);
+    const cambio = vigentes.get(ticket.folio);
+    if (!cambio) {
+      activos.push({ ticket, estado: ticket.estado, deshacerHasta: null });
+      continue;
     }
+    const vista = vistaDe(cambio, ticket);
+    if (vista) activos.push(vista);
+  }
+  // Un terminado con un cambio local que no es `listo` lo regresó esta tablet: va en la cuadrícula.
+  const terminados = lista.terminados.filter(
+    (t) => (vigentes.get(t.folio)?.estado ?? 'listo') === 'listo',
+  );
+
+  for (const cambio of vigentes.values()) {
+    if (cambio.estado === 'listo') {
+      if (cambio.terminadoEn !== null) {
+        terminados.push(comoTerminado(cambio.ticket, cambio.terminadoEn));
+      }
+      continue;
+    }
+    const vista = enLista.has(cambio.folio) ? null : vistaDe(cambio);
+    if (vista) activos.push(vista);
+  }
+
+  // sort es estable: con la misma hora se respeta el orden de la API.
+  activos.sort((a, b) => Date.parse(a.ticket.enColaDesde) - Date.parse(b.ticket.enColaDesde));
+  return { activos, terminados };
+
+  /** La vista del cambio en la cuadrícula; `null` si es un Terminado (va en la sección gris). */
+  function vistaDe(cambio: CambioLocal, ticket = cambio.ticket): TicketVista | null {
+    const { estado } = cambio;
+    if (estado === 'listo') return null;
     return {
-      ticket,
-      estado: cambio.estado,
+      ticket: { ...ticket, estado },
+      estado,
       deshacerHasta: cambio.deshacer && ahora < cambio.venceEn ? cambio.venceEn : null,
     };
   }
+}
+
+/** Cambio local tras Regresar: el terminado vuelve a la cuadrícula en `preparando`. */
+export function cambioRegresado(
+  terminado: TicketTerminadoCocina,
+  ahora: number,
+  lista: number,
+): CambioLocal {
+  return {
+    folio: terminado.folio,
+    ticket: comoTicket(terminado, 'preparando'),
+    estado: 'preparando',
+    terminadoEn: null,
+    venceEn: ahora,
+    deshacer: false,
+    lista,
+  };
 }
 
 /** Segundos completos que le quedan al Deshacer (redondeo hacia arriba: "1 s" hasta el final). */
@@ -143,17 +203,46 @@ export function segundosRestantes(hasta: number, ahora: number): number {
   return Math.max(0, Math.ceil((hasta - ahora) / 1000));
 }
 
-/** Mensaje para cocina, sin códigos técnicos. Un 401 ya cierra la sesión antes de llegar aquí. */
-export function mensajeErrorAccion(error: unknown): string {
+/** Rechazo de Regresar cuando otra tablet ya lo regresó (D63). */
+export const TEXTO_YA_REGRESADO = 'Otra tablet ya lo regresó';
+
+/**
+ * Mensaje para cocina, sin códigos técnicos. Un 401 ya cierra la sesión antes de llegar aquí. En un
+ * 409 se muestra el texto de la API tal cual, salvo Regresar de un pedido que ya está en
+ * `preparando`: lo regresó otra tablet.
+ */
+export function mensajeErrorAccion(error: unknown, accion?: AccionCocina): string {
   if (error instanceof ErrorApi) {
     if (error.status === 409) {
       const conflicto = ConflictoCocinaSchema.safeParse(error.cuerpo);
-      return conflicto.success
-        ? conflicto.data.error
-        : 'El pedido ya no está en ese estado. Actualiza la lista.';
+      if (!conflicto.success) return 'El pedido ya no está en ese estado. Actualiza la lista.';
+      const { codigo, estadoActual } = conflicto.data;
+      if (accion === 'regresar' && codigo === 'estado_cambio' && estadoActual === 'preparando') {
+        return TEXTO_YA_REGRESADO;
+      }
+      return conflicto.data.error;
     }
     if (error.status === 404) return 'No encontramos ese pedido. Actualiza la lista.';
     if (error.status === 403) return 'Tu usuario no puede cambiar pedidos de cocina.';
   }
   return 'No se pudo guardar el cambio. Revisa la conexión e intenta de nuevo.';
+}
+
+/** Error de un botón, con el folio para mostrarlo fuera del ticket si este ya no está. */
+export interface ErrorTicket {
+  folioTexto: string;
+  texto: string;
+}
+
+/**
+ * Errores cuyo ticket ya no está en pantalla (por ejemplo, Regresar de uno que caja entregó): van
+ * en un aviso arriba de los terminados, "#1234: <texto>", hasta que se toque Cerrar.
+ */
+export function erroresSinTicket(
+  errores: ReadonlyMap<number, ErrorTicket>,
+  enPantalla: ReadonlySet<number>,
+): { folio: number; texto: string }[] {
+  return [...errores]
+    .filter(([folio]) => !enPantalla.has(folio))
+    .map(([folio, error]) => ({ folio, texto: `${error.folioTexto}: ${error.texto}` }));
 }
