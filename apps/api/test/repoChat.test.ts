@@ -82,6 +82,19 @@ describe('repoChat sobre Supabase', () => {
     expect(await clienteRpc({ data: false, error: null }).repo.terminar(id, ahora)).toBe(false);
   });
 
+  it('descartarApertura llama a descartar_apertura_chat con la hora', async () => {
+    const descartar = clienteRpc({ data: true, error: null });
+    expect(await descartar.repo.descartarApertura(id, ahora)).toBe(true);
+    expect(descartar.llamadas).toEqual([
+      {
+        funcion: 'descartar_apertura_chat',
+        params: { p_conversacion_id: id, p_ahora: '2026-10-12T20:00:00.000Z' },
+      },
+    ]);
+    const yaDescartada = clienteRpc({ data: false, error: null });
+    expect(await yaDescartada.repo.descartarApertura(id, ahora)).toBe(false);
+  });
+
   it('un error de Supabase lanza solo con el código, sin el mensaje ni los parámetros', async () => {
     const { repo } = clienteRpc({
       data: null,
