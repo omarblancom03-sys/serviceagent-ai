@@ -65,7 +65,11 @@ Conversaciones nuevas del chat al día en todo el sistema, contadas por día de 
 
 La búsqueda semántica del menú calcula embeddings con Workers AI ([D50](decisiones.md)). No es un secreto ni una variable: es el binding `ai` de `apps/api/wrangler.jsonc` y se despliega con el Worker.
 
-- **Local:** `wrangler dev` siempre llama a Workers AI remoto (puede cobrar uso) con la sesión de `wrangler login`. Sin sesión, `buscar_menu` responde 500.
+- **Local:** `wrangler dev` siempre llama a Workers AI remoto (puede cobrar uso), así que la API **no arranca** sin una sesión de Cloudflare: falla con "Failed to start the remote proxy session" y no levanta ninguna ruta, ni las que no usan Workers AI. Antes del primer `pnpm dev`:
+  1. `cd apps/api && pnpm exec wrangler login` (abre el navegador; sirve tu cuenta personal de Cloudflare).
+  2. Esa cuenta debe tener un subdominio `workers.dev`: se crea en el dashboard de Cloudflare, en Workers & Pages, la primera vez que se entra.
+  3. `pnpm exec wrangler whoami` confirma con qué cuenta quedó la sesión.
+- Con la API arriba pero sin el binding (por ejemplo, en los tests), `buscar_menu` e `info_restaurante` responden 500.
 - **Costo:** $0.0118 por millón de tokens. Indexar el menú completo son unos 10,000 tokens; cada búsqueda, unas decenas.
 - Los tests no usan Workers AI: reemplazan el embedder por uno en memoria.
 

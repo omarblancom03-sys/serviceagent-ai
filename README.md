@@ -20,13 +20,14 @@ Es un proyecto académico de Metodologías Ágiles (Scrum).
 
 - **Node.js 24** (mínimo 22.12). Hay un `.nvmrc`: `nvm use`.
 - **pnpm 11.1.3**. La versión está fijada en `packageManager`. La forma más fácil de obtenerla es `corepack enable`.
-- Git y, para desplegar a mano, una cuenta de Cloudflare.
+- Git y una cuenta de Cloudflare con sesión de Wrangler: la API no arranca en local sin ella ([por qué y cómo](./docs/despliegue.md#workers-ai-binding-ai)). También sirve para desplegar a mano.
 
 ## Cómo arrancar
 
 ```bash
 pnpm install                              # instala todo el monorepo
 cp .env.example apps/api/.dev.vars        # y deja solo las variables de la API
+pnpm --filter @serviceagent/api exec wrangler login   # una vez: sin sesión la API no arranca
 pnpm dev                                  # levanta api + web + simuladores
 ```
 
