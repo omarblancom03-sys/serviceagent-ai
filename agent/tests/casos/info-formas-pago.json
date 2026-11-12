@@ -3,7 +3,7 @@
   "historia": "US-17",
   "criterios": ["C2", "C4"],
   "categoria": "informacion",
-  "titulo": "Formas de pago: no niega la transferencia",
+  "titulo": "Formas de pago: ni niega la transferencia ni promete datos",
   "mensajes": ["¿Aceptan tarjeta o transferencia?"],
   "argsInfoRestaurante": [
     {
@@ -12,11 +12,12 @@
   ],
   "debe": [
     "Llama a info_restaurante.",
-    "Dice que en caja aceptan efectivo y tarjeta de débito o crédito.",
-    "Sobre la transferencia, no la niega: dice que los datos de pago se dan al registrar el pedido."
+    "Dice que en caja aceptan efectivo y tarjeta de débito o crédito, como dice el texto.",
+    "Sobre la transferencia, no dice que no la aceptan ni promete datos para transferir."
   ],
   "noDebe": [
     "Decir que no aceptan transferencia.",
+    "Decir que los datos de pago se dan al registrar el pedido.",
     "Dar una cuenta, una CLABE o datos bancarios.",
     "Agregar datos que no vengan en el texto de info_restaurante."
   ]
