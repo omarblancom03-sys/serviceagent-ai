@@ -12,7 +12,7 @@
   ],
   "debe": [
     "Llama a info_restaurante con la pregunta del cliente.",
-    "Dice que los domingos abren de 8:00 a. m. a 7:00 p. m., como dice el texto.",
+    "Dice a qué hora abren los domingos (8:00 a. m.), como dice el texto; puede agregar la hora de cierre.",
     "Pregunta si le ayuda con algo más."
   ],
   "noDebe": [
