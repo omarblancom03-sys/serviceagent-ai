@@ -11,7 +11,8 @@
     "typecheck": "tsc -p tsconfig.json && tsc -p test/tsconfig.json",
     "test": "vitest run",
     "hash-pin": "node --env-file-if-exists=.dev.vars --experimental-strip-types --no-warnings scripts/hashPin.ts",
-    "evaluar-busqueda": "node --experimental-strip-types --no-warnings scripts/evaluarBusqueda.ts"
+    "evaluar-busqueda": "node --experimental-strip-types --no-warnings scripts/evaluarBusqueda.ts",
+    "probar-candado": "node --env-file-if-exists=.dev.vars --experimental-strip-types --no-warnings scripts/probarCandado.ts"
   },
   "dependencies": {
     "@hono/swagger-ui": "^0.6.1",
