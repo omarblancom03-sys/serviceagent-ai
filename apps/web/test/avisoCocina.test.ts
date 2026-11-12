@@ -71,9 +71,18 @@ describe('debeSonar', () => {
     expect(debeSonar([ticket(1001, 'preparando'), ticket(1002)])).toBe(true);
   });
 
-  it('no suena por un pedido que regresa en preparando (Deshacer de Terminado) ni sin nuevos', () => {
+  it('no suena por un pedido que regresa en preparando (Regresar, US-52) ni sin nuevos', () => {
     expect(debeSonar([ticket(1001, 'preparando')])).toBe(false);
     expect(debeSonar([])).toBe(false);
+  });
+
+  it('un regresado que reaparece en la lista no es nuevo ni suena, aunque haya otros en cola', () => {
+    // Antes estaba en terminados (fuera de pedidos); vuelve a pedidos en preparando.
+    const antes = [ticket(1001)];
+    const despues = [ticket(1001), ticket(1002, 'preparando')];
+    const nuevos = foliosNuevos(antes, despues);
+    expect(nuevos).toEqual([]);
+    expect(debeSonar(despues.filter((t) => nuevos.includes(t.folio)))).toBe(false);
   });
 });
 

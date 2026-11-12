@@ -39,7 +39,7 @@ export const ETIQUETA_ESTADO: Record<EstadoCocina, string> = {
 /**
  * Folios en cola que no estaban en la lista anterior. En la primera carga (`anteriores` es `null`)
  * no hay nuevos: todo lo que ya estaba esperando no se resalta. Solo cuentan los `en_cola`: un
- * pedido que regresa por Deshacer de Terminado llega `preparando` y no es nuevo (D56).
+ * pedido que vuelve por Regresar llega `preparando` y no es nuevo (D63).
  */
 export function foliosNuevos(
   anteriores: readonly TicketCocina[] | null,
@@ -76,8 +76,11 @@ export function lineaDe(renglon: RenglonCocina): LineaTicket {
   };
 }
 
-/** Platillos y extras sueltos por separado: los sueltos van al final, bajo "Aparte". */
-export function separarRenglones(ticket: TicketCocina): {
+/**
+ * Platillos y extras sueltos por separado: los sueltos van al final, bajo "Aparte". Sirve igual
+ * para un ticket de la cuadrícula y para un terminado reciente.
+ */
+export function separarRenglones(ticket: Pick<TicketCocina, 'renglones'>): {
   platillos: LineaTicket[];
   aparte: LineaTicket[];
 } {
