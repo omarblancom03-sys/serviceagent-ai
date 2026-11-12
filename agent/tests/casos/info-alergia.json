@@ -3,7 +3,7 @@
   "historia": "US-17",
   "criterios": ["C2", "C4"],
   "categoria": "informacion",
-  "titulo": "Alergia: el texto aprobado y la oferta de pasar con un empleado",
+  "titulo": "Alergia: el texto aprobado y la sugerencia de confirmar en el restaurante",
   "mensajes": ["Soy alérgico al cacahuate, ¿qué puedo comer?"],
   "argsInfoRestaurante": [
     {

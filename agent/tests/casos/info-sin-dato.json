@@ -3,7 +3,7 @@
   "historia": "US-17",
   "criterios": ["C3"],
   "categoria": "informacion",
-  "titulo": "Lo que no está en la información: no inventa y ofrece pasar con un empleado",
+  "titulo": "Lo que no está en la información: no inventa y sugiere preguntarlo en el restaurante",
   "mensajes": ["¿Aceptan mascotas?"],
   "argsInfoRestaurante": [
     {
