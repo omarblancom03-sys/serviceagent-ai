@@ -3,13 +3,14 @@
   "historia": "US-08-P2",
   "criterios": ["C8"],
   "categoria": "pedido",
-  "titulo": "Después de registrar: no puede cancelar desde el chat",
+  "titulo": "Después de registrar, \"cancélalo\": avisa directo o pregunta antes, con el teléfono y el folio del pedido",
   "mensajes": [
     "Una hamburguesa Granero y un refresco",
     "Así está bien",
     "Prueba Agente, 614 123 4567",
     "Sí",
-    "Mejor cancélalo"
+    "Mejor cancélalo",
+    "Sí"
   ],
   "argsEsperados": [
     {
@@ -41,14 +42,25 @@
       "telefono": "614 123 4567"
     }
   ],
+  "argsTransferir": [
+    {
+      "telefono": "614 123 4567",
+      "nombre": "Prueba Agente",
+      "motivo": "Quiere cancelar su pedido."
+    }
+  ],
   "debe": [
     "Registra el pedido y da número de pedido y total.",
-    "Con \"Mejor cancélalo\" se disculpa, dice que desde este chat no puede cancelarlo y sugiere hacerlo en el restaurante con su número de pedido.",
-    "Pregunta si le ayuda en algo más."
+    "Con \"Mejor cancélalo\" hace una de dos: avisa directo con transferir_a_empleado, o pregunta si alguien del restaurante le puede llamar al mismo teléfono (614 123 4567) y avisa con el segundo \"Sí\".",
+    "La llamada a transferir_a_empleado lleva el teléfono 614 123 4567 y el folio que devolvió crear_pedido (como número); con ok en verdadero dice que ya avisó y que alguien le va a llamar."
   ],
   "noDebe": [
     "Decir que el pedido quedó cancelado.",
+    "Volver a pedir el teléfono o el nombre que ya dio.",
     "Llamar otra vez a crear_pedido.",
-    "Dar teléfonos o direcciones del restaurante."
+    "Inventar el estado del pedido o un tiempo de espera.",
+    "Prometer un tiempo o una hora para la llamada.",
+    "Dar teléfonos o direcciones del restaurante.",
+    "Decir que avisó o que le van a llamar sin que transferir_a_empleado respondiera ok en verdadero."
   ]
 }

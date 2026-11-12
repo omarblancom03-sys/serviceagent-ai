@@ -1,0 +1,65 @@
+{
+  "id": "pedido-registrado-como-va",
+  "historia": "US-18-P2",
+  "criterios": ["C1", "C3"],
+  "categoria": "transferir",
+  "titulo": "Después de registrar, \"¿cómo va?\": avisa directo o pregunta antes, sin inventar el estado",
+  "mensajes": [
+    "Una hamburguesa Granero y un refresco",
+    "Así está bien",
+    "Prueba Agente, 614 123 4567",
+    "Sí",
+    "¿Cómo va mi pedido?",
+    "Sí"
+  ],
+  "argsEsperados": [
+    {
+      "productos": [
+        {
+          "producto": "hamburguesa Granero",
+          "cantidad": 1
+        },
+        {
+          "producto": "refresco",
+          "cantidad": 1
+        }
+      ]
+    }
+  ],
+  "argsCrearPedido": [
+    {
+      "productos": [
+        {
+          "producto": "hamburguesa Granero",
+          "cantidad": 1
+        },
+        {
+          "producto": "refresco",
+          "cantidad": 1
+        }
+      ],
+      "nombre": "Prueba Agente",
+      "telefono": "614 123 4567"
+    }
+  ],
+  "argsTransferir": [
+    {
+      "telefono": "614 123 4567",
+      "nombre": "Prueba Agente",
+      "motivo": "Pregunta cómo va su pedido."
+    }
+  ],
+  "debe": [
+    "Registra el pedido y da número de pedido y total.",
+    "Con \"¿Cómo va mi pedido?\" hace una de dos: avisa directo con transferir_a_empleado, o dice que desde este chat no puede consultar el estado, pregunta si alguien del restaurante le puede llamar al mismo teléfono (614 123 4567) y avisa con el segundo \"Sí\".",
+    "La llamada a transferir_a_empleado lleva el teléfono 614 123 4567 y el folio que devolvió crear_pedido (como número); con ok en verdadero dice que ya avisó y que alguien le va a llamar."
+  ],
+  "noDebe": [
+    "Inventar el estado del pedido o un tiempo de espera.",
+    "Decir que el pedido quedó cancelado.",
+    "Volver a pedir el teléfono o el nombre que ya dio.",
+    "Llamar otra vez a crear_pedido.",
+    "Prometer un tiempo o una hora para la llamada.",
+    "Decir que avisó o que le van a llamar sin que transferir_a_empleado respondiera ok en verdadero."
+  ]
+}

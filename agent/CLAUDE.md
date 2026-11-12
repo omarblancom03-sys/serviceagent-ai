@@ -11,8 +11,8 @@ Todo lo del agente de Retell, **versionado en Git** y no solo en el dashboard de
 | `prompt.md`               | Prompt del agente. El archivo **completo** se copia al dashboard; por eso no lleva notas para el equipo.                                                                                                       |
 | `retell.json`             | Configuración del agente que no es el prompt (idioma, saludo, cierre por inactividad, modelo), con los nombres de campo de la API de Retell.                                                                   |
 | `retell.md`               | Qué significa cada valor de `retell.json` y los pasos para copiarlo al dashboard y publicar.                                                                                                                   |
-| `functions/`              | Un archivo JSON por custom function: solo el JSON Schema de sus parámetros, que se pega completo en el dashboard. Hoy: `cotizar_pedido.json`, `buscar_menu.json`, `crear_pedido.json` e `info_restaurante.json`. Las demás se definen en su historia.                             |
-| `tests/casos/`            | Un caso de conversación por archivo JSON: personalidad, peticiones ajenas, despedida, "no inventar", pedidos y búsquedas en el menú. La batería completa de manipulación se define en US-48.                                  |
+| `functions/`              | Un archivo JSON por custom function: solo el JSON Schema de sus parámetros, que se pega completo en el dashboard. Hoy: `cotizar_pedido.json`, `buscar_menu.json`, `crear_pedido.json`, `info_restaurante.json` y `transferir_a_empleado.json`. Las demás se definen en su historia.                             |
+| `tests/casos/`            | Un caso de conversación por archivo JSON: personalidad, peticiones ajenas, despedida, "no inventar", pedidos, búsquedas en el menú y pasar con un empleado. La batería completa de manipulación se define en US-48.                                  |
 | `tests/corrida.md`        | Resultado de la última corrida manual de todos los casos: fecha, modelo y, por caso, si pasó o falló con un resumen de una línea.                                                                              |
 | `tests/casos.test.ts`     | Vitest: valida el formato de los casos, la cobertura por historia, que `corrida.md` tenga una fila por caso, que el prompt no tenga montos y que ningún archivo de `agent/` guarde ids de la cuenta ni llaves. |
 | `tests/funciones.test.ts` | Vitest: compara cada JSON de `functions/` con su contrato zod de `packages/shared` (mismas llaves, mismas obligatorias, sin llaves de más) y revisa su entrada en `retell.json`.                               |
@@ -37,7 +37,7 @@ Todo lo del agente de Retell, **versionado en Git** y no solo en el dashboard de
 | `id`            | En minúsculas con guiones, sin acentos; igual al nombre del archivo.                                                                                                      |
 | `historia`      | Historia que agregó el caso (`US-06`, `US-07-P2`). Un caso de una tarea (`US-16-T1`) lleva el de su historia (`US-16`).                                                   |
 | `criterios`     | Criterios de aceptación que comprueba (`["C3"]`). Vacío si protege una regla de `docs/agente.md`.                                                                         |
-| `categoria`     | `personalidad`, `fuera_de_alcance`, `manipulacion`, `sin_inventar`, `despedida`, `pedido`, `busqueda` o `informacion`.                                                                               |
+| `categoria`     | `personalidad`, `fuera_de_alcance`, `manipulacion`, `sin_inventar`, `despedida`, `pedido`, `busqueda`, `informacion` o `transferir`.                                                                               |
 | `titulo`        | Qué comprueba, en una línea.                                                                                                                                              |
 | `mensajes`      | Lo que escribe el cliente, en orden. Se envían uno por uno.                                                                                                               |
 | `respuestas`    | Opcional. Qué contesta el cliente según lo que pregunte el agente, cuando el orden lo decide el agente.                                                                   |
@@ -45,6 +45,7 @@ Todo lo del agente de Retell, **versionado en Git** y no solo en el dashboard de
 | `argsInfoRestaurante` | Obligatorio en `informacion`. Los args de cada llamada esperada a `info_restaurante`; el test los pasa por su contrato. |
 | `argsEsperados` | Obligatorio en `pedido`. Los args de cada llamada esperada a `cotizar_pedido`, en orden, salvo que `debe` diga que solo fija la última. El test los pasa por el contrato. |
 | `argsCrearPedido` | Opcional. Los args de cada llamada esperada a `crear_pedido`, en orden; también se pasan por su contrato. Los casos usan el nombre "Prueba Agente" para reconocer sus pedidos en `/cocina`. |
+| `argsTransferir` | Opcional. Los args de cada llamada esperada a `transferir_a_empleado`, en orden; se pasan por su contrato y el motivo cabe en 200 caracteres. Los casos usan "Prueba Agente" y 614 123 4567 para reconocer sus alertas en `/caja`. |
 | `debe`          | Lo que tienen que cumplir las respuestas del agente.                                                                                                                      |
 | `noDebe`        | Lo que ninguna respuesta puede hacer.                                                                                                                                     |
 
@@ -68,4 +69,4 @@ Todo cambio al prompt pasa la corrida final antes de fusionarse (Definition of D
 - [docs/agente.md](../docs/agente.md): custom functions, comportamiento y seguridad del agente.
 - [docs/negocio.md](../docs/negocio.md): dinero, estados del pedido y cancelación.
 - [docs/proceso.md → Definition of Done](../docs/proceso.md#definition-of-done) (punto 6).
-- [docs/decisiones.md](../docs/decisiones.md): D3, D4, D21, D22, D25, D34, D43, D44, D45, D46, D49, D50, D51, D62, D65, D67, D68.
+- [docs/decisiones.md](../docs/decisiones.md): D3, D4, D21, D22, D25, D34, D43, D44, D45, D46, D49, D50, D51, D59, D62, D65, D67, D68, D75.

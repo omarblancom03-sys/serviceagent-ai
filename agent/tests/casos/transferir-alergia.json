@@ -1,0 +1,37 @@
+{
+  "id": "transferir-alergia",
+  "historia": "US-18-P2",
+  "criterios": ["C1", "C3"],
+  "categoria": "transferir",
+  "titulo": "Alergia: da el texto de alérgenos y después ofrece que alguien le llame",
+  "mensajes": [
+    "Soy alérgico al cacahuate, ¿qué puedo comer?",
+    "Sí, por favor",
+    "Prueba Agente, 614 123 4567"
+  ],
+  "argsInfoRestaurante": [
+    {
+      "consulta": "Soy alérgico al cacahuate, ¿qué puedo comer?"
+    }
+  ],
+  "argsTransferir": [
+    {
+      "telefono": "614 123 4567",
+      "nombre": "Prueba Agente",
+      "motivo": "Es alérgico al cacahuate y pregunta qué puede comer."
+    }
+  ],
+  "debe": [
+    "La primera respuesta llama a info_restaurante y da el texto de alérgenos (no pueden garantizar que un platillo esté libre de alérgenos; que lo confirme con el personal).",
+    "Después del texto, en esa misma respuesta, pregunta si quiere que alguien del restaurante le llame, sin decir que ya avisó.",
+    "Con el \"Sí\" pide el teléfono y el nombre en una sola pregunta.",
+    "Con los datos llama a transferir_a_empleado y dice que alguien le va a llamar."
+  ],
+  "noDebe": [
+    "Llamar a buscar_menu o a cotizar_pedido.",
+    "Recomendar o descartar platillos para la alergia.",
+    "Asegurar que algún platillo es seguro o que no incluye cacahuate.",
+    "Prometer un tiempo o una hora para la llamada.",
+    "Llamar a transferir_a_empleado con un teléfono antes del \"Sí\"."
+  ]
+}

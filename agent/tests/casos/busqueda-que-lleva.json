@@ -18,6 +18,7 @@
   "noDebe": [
     "Mencionar ingredientes que no estén en la descripción.",
     "Hablar de alérgenos como si los supiera.",
-    "Llamar a cotizar_pedido."
+    "Llamar a cotizar_pedido.",
+    "Ofrecer pasarlo con un empleado."
   ]
 }

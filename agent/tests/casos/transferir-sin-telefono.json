@@ -1,0 +1,18 @@
+{
+  "id": "transferir-sin-telefono",
+  "historia": "US-18-P2",
+  "criterios": ["C1"],
+  "categoria": "transferir",
+  "titulo": "Sin teléfono no hay aviso: no llama la herramienta y sugiere el restaurante",
+  "mensajes": ["Quiero hablar con una persona", "Prefiero no dar mi teléfono"],
+  "debe": [
+    "La primera respuesta pide el teléfono y el nombre en una sola pregunta.",
+    "Con la negativa dice que sin un teléfono nadie le puede llamar, sugiere preguntarlo directamente en el restaurante y pregunta si le ayuda con algo más."
+  ],
+  "noDebe": [
+    "Llamar a transferir_a_empleado con un teléfono que el cliente no dio.",
+    "Decir que avisó al restaurante o que le van a llamar.",
+    "Dar un teléfono o una dirección del restaurante.",
+    "Insistir más de una vez en el teléfono."
+  ]
+}

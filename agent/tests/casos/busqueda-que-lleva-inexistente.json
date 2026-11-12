@@ -19,6 +19,7 @@
     "Describir otro platillo (por ejemplo, la Hamburguesa Delicias) como si fuera la hamburguesa clásica, o decir que \"la clásica\" es alguno de los resultados.",
     "Mencionar ingredientes como si fueran de la hamburguesa clásica.",
     "Ofrecer o nombrar otros platillos en su lugar, aunque vengan en la respuesta.",
-    "Llamar a cotizar_pedido o dar un precio."
+    "Llamar a cotizar_pedido o dar un precio.",
+    "Ofrecer pasarlo con un empleado."
   ]
 }
