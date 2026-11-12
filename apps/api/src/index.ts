@@ -11,6 +11,7 @@ import { crearRepoCaja } from './lib/repoCaja';
 import { crearRepoChat } from './lib/repoChat';
 import { crearRepoCocina } from './lib/repoCocina';
 import { crearRepoEmbeddings } from './lib/repoEmbeddings';
+import { crearRepoInfoRestaurante } from './lib/repoInfoRestaurante';
 import { crearRepoConfiguracion } from './lib/repoConfiguracion';
 import { crearRepoEmpleados } from './lib/repoEmpleados';
 import { crearRepoMenu } from './lib/repoMenu';
@@ -50,6 +51,7 @@ const dependenciasReales: Dependencias = {
   crearRepoEmbeddings: (env) => crearRepoEmbeddings(crearClienteSupabase(env)),
   crearEmbedder: (env) => (env.AI ? crearEmbedderWorkersAi(env.AI) : null),
   crearRepoAlertas: (env) => crearRepoAlertas(crearClienteSupabase(env)),
+  crearRepoInfo: (env) => crearRepoInfoRestaurante(crearClienteSupabase(env)),
 };
 
 /** Cada test pasa solo las dependencias que usa; las demás son las reales. */

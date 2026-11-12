@@ -2,7 +2,7 @@
 # El orden importa: el menú (01) debe cargar antes que platillo_extra (02,
 # depende de sus ids), que tiempos (03, actualiza platillo por nombre) y que
 # ingredientes removibles (04, busca el platillo por nombre);
-# empleados es independiente de los cuatro.
+# info del restaurante (05) y empleados son independientes del menú.
 
 [db.seed]
 enabled = true
@@ -11,5 +11,6 @@ sql_paths = [
   "./seed/02_platillo_extra.sql",
   "./seed/03_tiempos_preparacion_menu.sql",
   "./seed/04_ingrediente_removible.sql",
+  "./seed/05_info_restaurante.sql",
   "./seed/empleados.sql",
 ]

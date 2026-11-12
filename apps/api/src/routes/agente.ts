@@ -3,7 +3,10 @@ import {
   BuscarMenuPeticionSchema,
   ErrorAlertaSchema,
   ErrorBusquedaSchema,
+  ErrorInfoSchema,
+  InfoRestaurantePeticionSchema,
   RespuestaBuscarMenuSchema,
+  RespuestaInfoRestauranteSchema,
   RespuestaTransferirAEmpleadoSchema,
   TransferirAEmpleadoPeticionSchema,
 } from '@serviceagent/shared';
@@ -12,6 +15,7 @@ import type { AppEnv, Bindings } from '../lib/env';
 import { requiereFirmaRetell } from '../lib/firmaRetell';
 import { transferirAEmpleado, type AlertasRepo } from '../services/alerta';
 import { buscarEnMenu, type Embedder, type EmbeddingsRepo } from '../services/busquedaMenu';
+import { buscarInfo, type InfoRepo } from '../services/infoRestaurante';
 import { errorDeFormato, FIRMA_RETELL, json } from './funcionesRetell';
 import type { DependenciasMenu } from './menu';
 
@@ -21,6 +25,7 @@ export type DependenciasAgente = DependenciasMenu & {
   /** `null` si el Worker no tiene el binding `AI` (Workers AI). */
   crearEmbedder: (env: Bindings) => Embedder | null;
   crearRepoAlertas: (env: Bindings) => AlertasRepo;
+  crearRepoInfo: (env: Bindings) => InfoRepo;
 };
 
 const ERROR_BUSQUEDA = { error: 'No se pudo buscar en el menú. Intenta de nuevo en un momento.' };
@@ -48,6 +53,40 @@ export const buscarMenuRoute = createRoute({
     401: { content: json(ErrorBusquedaSchema), description: 'Firma de Retell ausente o inválida' },
     500: {
       content: json(ErrorBusquedaSchema),
+      description:
+        'Falta `RETELL_API_KEY` o el binding `AI`, o falló Workers AI o la lectura de la base',
+    },
+  },
+});
+
+const ERROR_INFO = {
+  error: 'No se pudo consultar la información del restaurante. Intenta de nuevo en un momento.',
+};
+
+export const infoRestauranteRoute = createRoute({
+  method: 'post',
+  path: '/agente/info-restaurante',
+  tags: ['Agente'],
+  summary: 'Responde preguntas sobre el restaurante (custom function `info_restaurante`)',
+  description:
+    FIRMA_RETELL +
+    'Búsqueda semántica (RAG, D62) sobre la información del restaurante aprobada por el PO: ' +
+    'horario, dirección, teléfono, estacionamiento, formas de pago, alérgenos y otras preguntas ' +
+    'frecuentes. Convierte la pregunta en embedding con Workers AI y devuelve hasta 3 entradas ' +
+    'activas, de la más parecida a la menos parecida. Si ninguna se parece lo suficiente, ' +
+    '`resultados` viene vacía. Antes de buscar reindexa las entradas que cambiaron.',
+  security: [{ FirmaRetell: [] }],
+  middleware: [requiereFirmaRetell()] as const,
+  request: { body: { content: json(InfoRestaurantePeticionSchema), required: true } },
+  responses: {
+    200: {
+      content: json(RespuestaInfoRestauranteSchema),
+      description: 'Entradas encontradas (puede venir vacía)',
+    },
+    400: { content: json(ErrorInfoSchema), description: 'Cuerpo mal formado' },
+    401: { content: json(ErrorInfoSchema), description: 'Firma de Retell ausente o inválida' },
+    500: {
+      content: json(ErrorInfoSchema),
       description:
         'Falta `RETELL_API_KEY` o el binding `AI`, o falló Workers AI o la lectura de la base',
     },
@@ -115,6 +154,30 @@ export function registrarAgente(app: OpenAPIHono<AppEnv>, deps: DependenciasAgen
     (resultado, c) => {
       if (!resultado.success) {
         return c.json(errorDeFormato('buscar_menu', resultado.error.issues), 400);
+      }
+    },
+  );
+
+  app.openapi(
+    infoRestauranteRoute,
+    async (c) => {
+      const { args } = c.req.valid('json');
+      const embedder = deps.crearEmbedder(c.env);
+      if (!embedder) {
+        console.error('POST /agente/info-restaurante: falta el binding AI (Workers AI)');
+        return c.json(ERROR_INFO, 500);
+      }
+      try {
+        const respuesta = await buscarInfo(deps.crearRepoInfo(c.env), embedder, args.consulta);
+        return c.json(respuesta, 200);
+      } catch (error) {
+        console.error('POST /agente/info-restaurante', error);
+        return c.json(ERROR_INFO, 500);
+      }
+    },
+    (resultado, c) => {
+      if (!resultado.success) {
+        return c.json(errorDeFormato('info_restaurante', resultado.error.issues), 400);
       }
     },
   );
