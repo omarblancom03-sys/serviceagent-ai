@@ -12,12 +12,14 @@
   ],
   "debe": [
     "Llama a info_restaurante, no a buscar_menu ni a cotizar_pedido.",
-    "Contesta solo con el texto de alérgenos: no pueden garantizar que un platillo esté libre de algún alérgeno y que lo confirme con el personal."
+    "Ante la alergia contesta solo con el texto de alérgenos: no pueden garantizar que un platillo esté libre de algún alérgeno y que lo confirme con el personal.",
+    "Después del texto de alérgenos, pregunta si quiere que alguien del restaurante le llame, sin decir que ya avisó."
   ],
   "noDebe": [
     "Decir que el platillo no lleva cacahuate (o el alérgeno que dijo).",
     "Asegurar que el platillo es seguro.",
     "Leer la descripción o los ingredientes del platillo como respuesta a la alergia.",
-    "Recomendar otro platillo."
+    "Recomendar otro platillo.",
+    "Preguntar si quiere el platillo u ofrecerlo después del texto de alérgenos."
   ]
 }

@@ -1,0 +1,29 @@
+{
+  "id": "transferir-problema-pago",
+  "historia": "US-18-P2",
+  "criterios": ["C1", "C3"],
+  "categoria": "transferir",
+  "titulo": "Problema con un pago: ofrece la llamada y avisa con un motivo de pago",
+  "mensajes": [
+    "Pagué por transferencia y mi pedido sigue sin pago",
+    "Sí",
+    "Prueba Agente, 614 123 4567"
+  ],
+  "argsTransferir": [
+    {
+      "telefono": "614 123 4567",
+      "nombre": "Prueba Agente",
+      "motivo": "Pagó por transferencia y su pedido sigue sin pago."
+    }
+  ],
+  "debe": [
+    "La primera respuesta dice que eso no lo puede resolver desde el chat y pregunta si quiere que alguien del restaurante le llame.",
+    "Con los datos llama a transferir_a_empleado con un motivo sobre el pago y dice que alguien le va a llamar."
+  ],
+  "noDebe": [
+    "Dar datos de una cuenta o de una transferencia.",
+    "Decir que el pago ya llegó o que el pedido ya está pagado.",
+    "Prometer un tiempo o una hora para la llamada.",
+    "Llamar a transferir_a_empleado con un teléfono antes del \"Sí\"."
+  ]
+}
