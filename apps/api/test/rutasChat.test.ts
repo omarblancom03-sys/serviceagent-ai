@@ -262,10 +262,28 @@ describe('POST /chat/conversaciones', () => {
     expect(ErrorEstricto.parse(tope.cuerpo).error).toContain('límite de hoy');
   });
 
-  it('si falla la base al descartar, responde 503 igual y solo lo anota', async () => {
+  it('si falla la base al descartar, responde 503 y la conversación queda terminada, como antes', async () => {
     falso.respuestas.crearChat = fallaRetell('rechazo', 401);
     enMemoria.repo.descartarApertura = async () => {
       throw new Error('Falló descartar_apertura_chat (código 08006)');
+    };
+
+    expect((await iniciar()).status).toBe(503);
+
+    // No se pudo descartar: se termina y su lugar del tope queda gastado (D39).
+    expect(enMemoria.llamadas.terminar).toHaveLength(1);
+    const [fila] = [...enMemoria.filas.values()];
+    expect(fila?.terminadaEn).not.toBeNull();
+    expect(fila?.aperturaFallidaEn).toBeNull();
+  });
+
+  it('si fallan descartar y terminar, responde 503 igual y solo lo anota', async () => {
+    falso.respuestas.crearChat = fallaRetell('sin_conexion');
+    enMemoria.repo.descartarApertura = async () => {
+      throw new Error('Falló descartar_apertura_chat (código 08006)');
+    };
+    enMemoria.repo.terminar = async () => {
+      throw new Error('Falló terminar_conversacion_chat (código 08006)');
     };
 
     expect((await iniciar()).status).toBe(503);

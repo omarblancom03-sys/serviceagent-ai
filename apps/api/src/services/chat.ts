@@ -266,12 +266,17 @@ async function terminarSinFallar(repo: ChatRepo, id: string, ahora: Date) {
   }
 }
 
-/** Si no se puede descartar, la conversación queda sin chat (nadie puede usarla) y sigue contando. */
+/**
+ * Si no se puede descartar (falla la base, o la función todavía no existe en ella), la
+ * conversación al menos se termina, igual que antes de D64: queda cerrada y sigue contando en el
+ * tope. Nunca se queda abierta sin chat.
+ */
 async function descartarSinFallar(repo: ChatRepo, id: string, ahora: Date) {
   try {
     await repo.descartarApertura(id, ahora);
   } catch (error) {
     avisarError('descartar la apertura', error);
+    await terminarSinFallar(repo, id, ahora);
   }
 }
 

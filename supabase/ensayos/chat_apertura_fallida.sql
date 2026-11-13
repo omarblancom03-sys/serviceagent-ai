@@ -79,6 +79,47 @@ select '10 service_role sigue ejecutando abrir_conversacion_chat', 'true',
     'service_role', 'public.abrir_conversacion_chat(integer, timestamptz)', 'execute'
   )::text;
 
+-- El SQL Editor corre como postgres: sin estos casos, un permiso que le falte a service_role
+-- solo se notaría en la API (error 42501).
+insert into ensayo_resultado
+select '11 service_role actualiza apertura_fallida_en', 'true',
+  has_column_privilege(
+    'service_role', 'public.conversaciones_chat', 'apertura_fallida_en', 'UPDATE'
+  )::text;
+
+insert into ensayo_resultado
+select '12 service_role actualiza terminada_en', 'true',
+  has_column_privilege(
+    'service_role', 'public.conversaciones_chat', 'terminada_en', 'UPDATE'
+  )::text;
+
+insert into ensayo_resultado
+select '13 authenticated no ejecuta descartar_apertura_chat', 'false',
+  has_function_privilege(
+    'authenticated', 'public.descartar_apertura_chat(uuid, timestamptz)', 'execute'
+  )::text;
+
+insert into ensayo_resultado
+select '14 public no ejecuta descartar_apertura_chat', 'false',
+  has_function_privilege(
+    'public', 'public.descartar_apertura_chat(uuid, timestamptz)', 'execute'
+  )::text;
+
+-- 15. Como service_role, igual que la API: descartar de verdad, no solo tener el permiso.
+do $$
+declare
+  v_id uuid;
+  v_descartada boolean;
+begin
+  set local role service_role;
+  select conversacion_id into v_id
+  from public.abrir_conversacion_chat(100, '2031-01-02 18:00:00+00');
+  v_descartada := public.descartar_apertura_chat(v_id, '2031-01-02 18:01:00+00');
+  reset role;
+  insert into ensayo_resultado
+  values ('15 service_role abre y descarta', 'true', v_descartada::text);
+end $$;
+
 select caso, esperado, obtenido, esperado = obtenido as ok from ensayo_resultado order by caso;
 
 do $$
