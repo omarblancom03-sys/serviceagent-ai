@@ -128,20 +128,24 @@ const traeAlgo = (args: { productos: unknown[]; extrasSueltos: unknown[] }) =>
   args.productos.length + args.extrasSueltos.length > 0;
 const MENSAJE_PEDIDO_VACIO = 'El pedido debe traer al menos un producto o un extra suelto.';
 
-/** Argumentos de la función `cotizar_pedido`, tal como los arma el agente. */
-export const CotizarPedidoArgsSchema = z
-  .strictObject(camposDelPedido)
-  .refine(traeAlgo, { message: MENSAJE_PEDIDO_VACIO });
+/**
+ * Argumentos de la función `cotizar_pedido`, tal como los arma el agente. Un pedido vacío (`{}`,
+ * o las dos listas vacías) NO es un cuerpo mal formado: el modelo a veces llama así cuando el
+ * cliente todavía no dice qué quiere, y un 400 solo le diría que la herramienta falló. El servicio
+ * responde 200 con `pedidoVacio` (D67). `crear_pedido` sí exige al menos un renglón.
+ */
+export const CotizarPedidoArgsSchema = z.strictObject(camposDelPedido);
 
 /**
  * Sobre que manda Retell a una custom function con "Payload: args only" apagado (valor por
  * defecto): `{ name, chat, args }` en un agente de chat (voz: pendiente, Sprint 10). Solo se usan
  * `name` y `args`; las llaves no declaradas (como `chat`) zod las descarta. A propósito NO es
- * estricto: Retell puede agregar campos al sobre sin romper la API.
+ * estricto: Retell puede agregar campos al sobre sin romper la API. Si `args` no viene o viene
+ * `null`, cuenta como un pedido vacío.
  */
 export const CotizarPedidoPeticionSchema = z.object({
   name: z.literal('cotizar_pedido'),
-  args: CotizarPedidoArgsSchema,
+  args: z.preprocess((valor) => valor ?? {}, CotizarPedidoArgsSchema),
 });
 
 // ─── Respuesta exitosa ──────────────────────────────────────────────────────
@@ -243,11 +247,21 @@ export const AclaracionSchema = z.object({
   opciones: z.array(z.string()).optional(),
 });
 
-/** Si hay varias cosas por aclarar, se mandan todas en la misma respuesta. */
-export const CotizacionConAclaracionesSchema = z.object({
-  ok: z.literal(false),
-  aclaraciones: z.array(AclaracionSchema).min(1),
-});
+/**
+ * No se cotizó. Si hay varias cosas por aclarar, se mandan todas en la misma respuesta. Con
+ * `pedidoVacio` en verdadero la llamada no traía ningún platillo ni extra (D67): no hay nada que
+ * aclarar y la lista va vacía; el agente le pregunta al cliente qué quiere. Si no, al menos una
+ * aclaración.
+ */
+export const CotizacionConAclaracionesSchema = z
+  .object({
+    ok: z.literal(false),
+    pedidoVacio: z.boolean(),
+    aclaraciones: z.array(AclaracionSchema),
+  })
+  .refine((r) => r.pedidoVacio !== r.aclaraciones.length > 0, {
+    message: 'Debe traer al menos una aclaración, o ninguna si el pedido vino vacío.',
+  });
 
 /** Ambas respuestas usan HTTP 200: son resultados de negocio, no errores. */
 export const RespuestaCotizarPedidoSchema = z.discriminatedUnion('ok', [

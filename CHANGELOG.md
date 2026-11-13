@@ -61,3 +61,4 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). *
 - US-07-P2: el agente de chat ya no lee la memoria de contacto de Retell (evita mezclar datos entre clientes).
 - US-08-P2-T2: el chat web abre los chats con la versión publicada del agente (`agent_version: "latest_published"`); antes usaba la más reciente, aunque fuera el borrador (D52).
 - US-10-T2: los tickets de `/cocina` ya no muestran "(Único)" junto al platillo; usan la misma regla que el menú.
+- US-07-P2-T2: `cotizar_pedido` resuelve la variante que el agente no manda en su campo: pegada en `producto` con "con" ("tiras de pollo con salsa BBQ") o mandada como extra suelto; en los dos casos sale Tiras de pollo con Salsa BBQ y no se cobra un extra. Una llamada sin platillos ni extras ya no responde 400: responde `pedidoVacio` para que el agente le pregunte al cliente qué quiere (D67).
