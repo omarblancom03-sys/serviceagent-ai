@@ -91,6 +91,7 @@ Lógica en `apps/api/src/services/chat.ts`; Retell se llama con `fetch` directo 
 - Registra el pedido con `crear_pedido` solo tras confirmación explícita: pide nombre y teléfono, confirma una vez con los platillos, el total de la cotización, el nombre y el teléfono, y da folio y total ([D49](decisiones.md)).
 - Nunca inventa productos, precios ni ingredientes. Si no sabe, lo dice. Los montos siempre vienen del backend ([negocio.md → Dinero](negocio.md#dinero)).
 - Si no puede resolver algo, usa `transferir_a_empleado`.
+- Lo que se pregunta del restaurante (horario, ubicación, pagos, alergias…) lo responde con `info_restaurante` y solo con su texto; sin el dato, lo dice ([D65](decisiones.md)).
 - El menú completo **no** va en el prompt: se consulta con `buscar_menu` (ahorro de tokens). Cuándo busca, cómo presenta los resultados y qué no hace: [D51](decisiones.md); cómo busca la API: [D50](decisiones.md).
 
 ## Modelo y costo en Retell

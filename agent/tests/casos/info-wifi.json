@@ -1,0 +1,21 @@
+{
+  "id": "info-wifi",
+  "historia": "US-17",
+  "criterios": ["C2"],
+  "categoria": "informacion",
+  "titulo": "Wifi: la contraseña la da el personal",
+  "mensajes": ["¿Cuál es la contraseña del wifi?"],
+  "argsInfoRestaurante": [
+    {
+      "consulta": "¿Cuál es la contraseña del wifi?"
+    }
+  ],
+  "debe": [
+    "Llama a info_restaurante.",
+    "Dice que la contraseña la da el personal en el restaurante (contesta lo que se preguntó)."
+  ],
+  "noDebe": [
+    "Inventar una contraseña o un nombre de red.",
+    "Agregar datos que no vengan en el texto de info_restaurante."
+  ]
+}

@@ -83,6 +83,14 @@ export function unirClases(...clases: string[]): string {
 }
 
 /**
+ * "Único" no es una presentación real: es la variante de un platillo que solo tiene una. Es la
+ * misma regla para el menú y para los tickets de cocina.
+ */
+export function esVarianteUnica(nombre: string): boolean {
+  return normalizarTexto(nombre) === 'unico';
+}
+
+/**
  * Nombre que se muestra junto al precio de la variante, o `null` si solo va el precio: pasa cuando
  * `simplificarUnica` está activo y el platillo tiene una sola variante llamada "Único".
  */
@@ -91,7 +99,7 @@ export function nombreVarianteVisible(
   totalVariantes: number,
   simplificarUnica: boolean,
 ): string | null {
-  const esUnica = totalVariantes === 1 && normalizarTexto(variante.nombre) === 'unico';
+  const esUnica = totalVariantes === 1 && esVarianteUnica(variante.nombre);
   return simplificarUnica && esUnica ? null : variante.nombre;
 }
 
