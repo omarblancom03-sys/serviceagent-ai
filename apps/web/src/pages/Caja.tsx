@@ -2,8 +2,10 @@ import { RespuestaPedidosCajaSchema, type PedidoCaja } from '@serviceagent/share
 import { Check } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSesion } from '../auth/SesionContext';
+import { AccionesCaja } from '../components/AccionesCaja';
 import { AlertasCaja } from '../components/AlertasCaja';
 import { IndicadorConexion } from '../components/IndicadorConexion';
+import { crearEsperaDeLista, pasoVigente } from '../lib/accionesCaja';
 import {
   ETIQUETA_ESTADO_CAJA,
   agruparPedidosCaja,
@@ -22,12 +24,13 @@ import {
   type Recargador,
 } from '../lib/cocina';
 import { escucharSenalPedidos, hayRealtime } from '../lib/senalPedidos';
+import { useAccionesCaja, type AccionesCajaUso } from '../lib/useAccionesCaja';
 
 /**
  * Pantalla de caja (US-20): los pedidos del día con su estado y si ya están pagados. Se actualiza
  * sola igual que cocina: la señal de Realtime avisa que algo cambió (un pedido o un pago) y la
- * lista se vuelve a pedir a la API; si la señal se pierde, cada 30 s. Cobrar y entregar llegan
- * con US-21.
+ * lista se vuelve a pedir a la API; si la señal se pierde, cada 30 s. Cada pedido trae sus botones
+ * Cobrar y Entregado (US-21, D66).
  */
 export function Caja() {
   const { pedirConSesion } = useSesion();
@@ -38,16 +41,29 @@ export function Caja() {
     hayRealtime() ? 'conectando' : 'sin_tiempo_real',
   );
   const recargador = useRef<Recargador | null>(null);
+  const [espera] = useState(crearEsperaDeLista);
+  // Tras cobrar o entregar, la lista se pide de nuevo sin esperar la señal de Realtime, y el botón
+  // sigue en "Guardando…" hasta que llega una lista pedida DESPUÉS del cambio: una que ya venía en
+  // camino todavía traería el pedido sin cobrar.
+  const recargarLista = useCallback(async () => {
+    const siguiente = espera.siguiente();
+    void recargador.current?.recargar();
+    await siguiente;
+  }, [espera]);
+  const acciones = useAccionesCaja(pedirConSesion, recargarLista);
 
   const cargarUnaVez = useCallback(async () => {
+    const numero = espera.alEmpezar();
     try {
       const respuesta = await pedirConSesion('/caja/pedidos', RespuestaPedidosCajaSchema);
       setPedidos(respuesta.pedidos);
       setError(null);
     } catch (causa) {
       setError(mensajeErrorCaja(causa));
+    } finally {
+      espera.alTerminar(numero);
     }
-  }, [pedirConSesion]);
+  }, [pedirConSesion, espera]);
 
   useEffect(() => {
     // Cuándo pedir la lista (agrupar señales, una petición a la vez, ponerse al día): lib/cocina.ts.
@@ -128,13 +144,21 @@ export function Caja() {
         pedidos.length > 0 &&
         (!buscando || encontrados.length > 0) &&
         agruparPedidosCaja(encontrados).map((grupo) => (
-          <Grupo key={grupo.id} grupo={grupo} buscando={buscando} />
+          <Grupo key={grupo.id} grupo={grupo} buscando={buscando} acciones={acciones} />
         ))}
     </section>
   );
 }
 
-function Grupo({ grupo, buscando }: { grupo: GrupoCaja; buscando: boolean }) {
+function Grupo({
+  grupo,
+  buscando,
+  acciones,
+}: {
+  grupo: GrupoCaja;
+  buscando: boolean;
+  acciones: AccionesCajaUso;
+}) {
   // Al buscar, los grupos sin resultados no se muestran.
   if (buscando && grupo.pedidos.length === 0) return null;
   return (
@@ -147,7 +171,7 @@ function Grupo({ grupo, buscando }: { grupo: GrupoCaja; buscando: boolean }) {
       ) : (
         <ol className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {grupo.pedidos.map((pedido) => (
-            <TarjetaPedido key={pedido.folio} pedido={pedido} />
+            <TarjetaPedido key={pedido.folio} pedido={pedido} acciones={acciones} />
           ))}
         </ol>
       )}
@@ -161,8 +185,9 @@ const CLASE_PAGO: Record<TipoPago, string> = {
   sin_cobro: 'bg-stone-100 text-stone-600',
 };
 
-function TarjetaPedido({ pedido }: { pedido: PedidoCaja }) {
+function TarjetaPedido({ pedido, acciones }: { pedido: PedidoCaja; acciones: AccionesCajaUso }) {
   const pago = textoPago(pedido);
+  const { folio } = pedido;
   return (
     <li
       className={`rounded-2xl border bg-white p-4 shadow-sm ${
@@ -190,6 +215,16 @@ function TarjetaPedido({ pedido }: { pedido: PedidoCaja }) {
           {pago.texto}
         </span>
       </div>
+      <AccionesCaja
+        pedido={pedido}
+        paso={pasoVigente(pedido, acciones.estado)}
+        error={acciones.estado.errores.get(folio)}
+        alAbrirCobro={() => acciones.abrirCobro(folio)}
+        alCobrar={(metodo) => void acciones.cobrar(folio, metodo)}
+        alPedirEntrega={() => acciones.pedirEntrega(folio)}
+        alEntregar={() => void acciones.entregar(folio)}
+        alCancelar={() => acciones.cancelar(folio)}
+      />
     </li>
   );
 }
