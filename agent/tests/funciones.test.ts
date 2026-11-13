@@ -9,6 +9,7 @@ import {
   CrearPedidoArgsSchema,
   ExtraPedidoSchema,
   ExtraSueltoPedidoSchema,
+  InfoRestauranteArgsSchema,
   ProductoPedidoSchema,
 } from '@serviceagent/shared';
 
@@ -110,6 +111,11 @@ const funciones: { nombre: string; url: string; niveles: (raiz: Nodo) => Nivel[]
     nombre: 'buscar_menu',
     url: '/agente/buscar-menu',
     niveles: (raiz) => [{ nombre: 'args', nodo: raiz, contrato: BuscarMenuArgsSchema }],
+  },
+  {
+    nombre: 'info_restaurante',
+    url: '/agente/info-restaurante',
+    niveles: (raiz) => [{ nombre: 'args', nodo: raiz, contrato: InfoRestauranteArgsSchema }],
   },
 ];
 

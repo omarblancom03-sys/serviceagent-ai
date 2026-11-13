@@ -1,0 +1,32 @@
+{
+  "nota": "Calibración de info_restaurante (US-17, D62): en cada pregunta de `preguntas`, el `tema` debe venir entre los resultados (la meta es todas). `sinRespuesta`: cosas que la información no tiene; no cuentan para la meta y lo ideal es que no devuelvan nada (si devuelven algo, el agente debe decir que no tiene el dato). Lo corre `scripts/evaluarInfo.ts`.",
+  "preguntas": [
+    { "consulta": "¿A qué hora abren?", "tema": "horario" },
+    { "consulta": "¿Hasta qué hora están abiertos el domingo?", "tema": "horario" },
+    { "consulta": "¿Abren hoy?", "tema": "horario" },
+    { "consulta": "¿Dónde están?", "tema": "direccion" },
+    { "consulta": "¿Cuál es la dirección?", "tema": "direccion" },
+    { "consulta": "¿Cómo llego al restaurante?", "tema": "direccion" },
+    { "consulta": "¿Me pasas su número de teléfono?", "tema": "telefono" },
+    { "consulta": "¿A qué número les llamo?", "tema": "telefono" },
+    { "consulta": "¿Tienen estacionamiento?", "tema": "estacionamiento" },
+    { "consulta": "¿Dónde me estaciono?", "tema": "estacionamiento" },
+    { "consulta": "¿Aceptan tarjeta?", "tema": "formas_pago" },
+    { "consulta": "¿Puedo pagar en efectivo?", "tema": "formas_pago" },
+    { "consulta": "Soy alérgico al cacahuate", "tema": "alergenos" },
+    { "consulta": "¿Tienen opciones sin gluten?", "tema": "alergenos" },
+    { "consulta": "¿Puedo reservar una mesa para 6?", "tema": "reservaciones" },
+    { "consulta": "¿Hacen reservaciones?", "tema": "reservaciones" },
+    { "consulta": "¿Hay wifi?", "tema": "wifi" },
+    { "consulta": "¿Cuál es la contraseña del internet?", "tema": "wifi" },
+    { "consulta": "¿Tienen servicio a domicilio?", "tema": "domicilio" },
+    { "consulta": "¿Me lo pueden llevar a mi casa?", "tema": "domicilio" }
+  ],
+  "sinRespuesta": [
+    "¿Aceptan mascotas?",
+    "¿Tienen área de juegos para niños?",
+    "¿Cuánto cuesta una hamburguesa?",
+    "¿Venden cerveza?",
+    "¿Facturan?"
+  ]
+}

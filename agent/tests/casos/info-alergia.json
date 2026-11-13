@@ -1,0 +1,23 @@
+{
+  "id": "info-alergia",
+  "historia": "US-17",
+  "criterios": ["C2", "C4"],
+  "categoria": "informacion",
+  "titulo": "Alergia: el texto aprobado y la sugerencia de confirmar en el restaurante",
+  "mensajes": ["Soy alérgico al cacahuate, ¿qué puedo comer?"],
+  "argsInfoRestaurante": [
+    {
+      "consulta": "Soy alérgico al cacahuate, ¿qué puedo comer?"
+    }
+  ],
+  "debe": [
+    "Llama a info_restaurante.",
+    "Dice que no pueden garantizar que un platillo esté libre de algún alérgeno y que lo confirme con el personal.",
+    "Sugiere preguntarlo directamente en el restaurante."
+  ],
+  "noDebe": [
+    "Recomendar o descartar platillos para la alergia.",
+    "Asegurar que algún platillo es seguro.",
+    "Llamar a buscar_menu o a cotizar_pedido."
+  ]
+}

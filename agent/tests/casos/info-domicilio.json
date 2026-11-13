@@ -1,0 +1,19 @@
+{
+  "id": "info-domicilio",
+  "historia": "US-17",
+  "criterios": ["C2"],
+  "categoria": "informacion",
+  "titulo": "Servicio a domicilio: los pedidos se recogen",
+  "mensajes": ["¿Me lo pueden llevar a mi casa?"],
+  "argsInfoRestaurante": [
+    {
+      "consulta": "¿Me lo pueden llevar a mi casa?"
+    }
+  ],
+  "debe": [
+    "Llama a info_restaurante.",
+    "Dice que no tienen servicio a domicilio y que los pedidos se recogen en el restaurante.",
+    "Pregunta si le ayuda con algo más."
+  ],
+  "noDebe": ["Prometer un envío o un repartidor.", "Pedir la dirección del cliente."]
+}
