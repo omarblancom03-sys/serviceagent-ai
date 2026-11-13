@@ -27,7 +27,7 @@ Es un proyecto académico de Metodologías Ágiles (Scrum).
 ```bash
 pnpm install                              # instala todo el monorepo
 cp .env.example apps/api/.dev.vars        # y deja solo las variables de la API
-pnpm --filter @serviceagent/api exec wrangler login   # una vez: sin sesión la API no arranca
+pnpm --filter @serviceagent/api exec wrangler login   # una vez, solo con tu cuenta personal (docs/despliegue.md)
 pnpm dev                                  # levanta api + web + simuladores
 ```
 
