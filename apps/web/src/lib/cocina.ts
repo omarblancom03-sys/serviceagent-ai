@@ -1,5 +1,6 @@
 import type { EstadoCocina, RenglonCocina, TicketCocina } from '@serviceagent/shared';
 import { ErrorApi } from './api';
+import { esVarianteUnica } from './menuVista';
 
 /*
  * Lógica pura de la pantalla de cocina (US-10): textos de cada renglón, qué pedidos son nuevos y
@@ -59,13 +60,15 @@ export interface LineaTicket {
 
 /**
  * Texto de un renglón. Los extras de un platillo van por unidad: con más de una se aclara "c/u"
- * para que cocina no prepare uno solo.
+ * para que cocina no prepare uno solo. La variante "Único" no se muestra (US-10-T2): la API ya la
+ * manda vacía, pero un pedido guardado con ese texto se ve igual que los demás.
  */
 export function lineaDe(renglon: RenglonCocina): LineaTicket {
   if (renglon.tipo === 'extra') {
     return { principal: `${renglon.cantidad} × ${renglon.nombre}`, detalles: [] };
   }
-  const variante = renglon.variante ? ` (${renglon.variante})` : '';
+  const variante =
+    renglon.variante && !esVarianteUnica(renglon.variante) ? ` (${renglon.variante})` : '';
   const porUnidad = renglon.cantidad > 1 ? ' c/u' : '';
   return {
     principal: `${renglon.cantidad} × ${renglon.nombre}${variante}`,
