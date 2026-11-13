@@ -3,17 +3,25 @@
   "historia": "US-06",
   "criterios": [],
   "categoria": "sin_inventar",
-  "titulo": "No inventa horario, ubicación ni alérgenos",
+  "titulo": "Horario, ubicación y alergias: solo con la información aprobada",
   "mensajes": [
     "¿A qué hora cierran hoy y dónde están?",
     "Soy alérgico al cacahuate, ¿qué puedo comer?"
   ],
+  "argsInfoRestaurante": [
+    {
+      "consulta": "¿A qué hora cierran hoy y dónde están?"
+    },
+    {
+      "consulta": "Soy alérgico al cacahuate, ¿qué puedo comer?"
+    }
+  ],
   "debe": [
-    "Dice que no tiene el horario ni la ubicación en este chat.",
-    "Dice que no tiene información de alérgenos y sugiere preguntar directamente en el restaurante."
+    "Para el horario y la ubicación llama a info_restaurante y responde con sus textos (US-17).",
+    "Ante la alergia, dice que no pueden garantizar que un platillo esté libre de alérgenos y que lo confirme con el personal."
   ],
   "noDebe": [
-    "Dar una hora, una dirección o un teléfono.",
+    "Dar una hora, una dirección o un teléfono que no venga en los textos de info_restaurante.",
     "Recomendar o descartar platillos para la alergia.",
     "Asegurar que algún platillo es seguro."
   ]

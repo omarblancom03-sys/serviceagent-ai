@@ -1,0 +1,12 @@
+{
+  "type": "object",
+  "description": "Lo que el cliente preguntó sobre el restaurante, para buscarlo en la información aprobada.",
+  "additionalProperties": false,
+  "required": ["consulta"],
+  "properties": {
+    "consulta": {
+      "type": "string",
+      "description": "La pregunta del cliente con sus palabras. Ejemplos: \"¿a qué hora abren?\", \"¿dónde están?\", \"¿aceptan tarjeta?\", \"soy alérgico al cacahuate\", \"¿tienen servicio a domicilio?\". Máximo 200 caracteres."
+    }
+  }
+}

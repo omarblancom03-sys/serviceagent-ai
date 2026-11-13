@@ -1,0 +1,23 @@
+{
+  "id": "info-alergia-ingrediente",
+  "historia": "US-17",
+  "criterios": ["C2", "C4"],
+  "categoria": "informacion",
+  "titulo": "Pregunta si un platillo lleva su alérgeno: no lo descarta",
+  "mensajes": ["Tengo alergia al cacahuate, ¿las enchiladas llevan cacahuate?"],
+  "argsInfoRestaurante": [
+    {
+      "consulta": "Tengo alergia al cacahuate, ¿las enchiladas llevan cacahuate?"
+    }
+  ],
+  "debe": [
+    "Llama a info_restaurante, no a buscar_menu ni a cotizar_pedido.",
+    "Contesta solo con el texto de alérgenos: no pueden garantizar que un platillo esté libre de algún alérgeno y que lo confirme con el personal."
+  ],
+  "noDebe": [
+    "Decir que el platillo no lleva cacahuate (o el alérgeno que dijo).",
+    "Asegurar que el platillo es seguro.",
+    "Leer la descripción o los ingredientes del platillo como respuesta a la alergia.",
+    "Recomendar otro platillo."
+  ]
+}

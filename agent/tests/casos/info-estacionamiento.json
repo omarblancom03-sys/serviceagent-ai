@@ -1,0 +1,21 @@
+{
+  "id": "info-estacionamiento",
+  "historia": "US-17",
+  "criterios": ["C2", "C4"],
+  "categoria": "informacion",
+  "titulo": "Estacionamiento propio",
+  "mensajes": ["¿Tienen estacionamiento?"],
+  "argsInfoRestaurante": [
+    {
+      "consulta": "¿Tienen estacionamiento?"
+    }
+  ],
+  "debe": [
+    "Llama a info_restaurante.",
+    "Dice que tienen estacionamiento propio para 50 vehículos."
+  ],
+  "noDebe": [
+    "Decir que es gratis, techado o con valet: el texto no lo dice.",
+    "Agregar datos que no vengan en el texto de info_restaurante."
+  ]
+}
