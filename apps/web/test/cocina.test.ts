@@ -88,6 +88,34 @@ describe('lineaDe', () => {
     });
   });
 
+  it('la variante "Único" no se muestra, con o sin acento ni mayúsculas (US-10-T2)', () => {
+    for (const variante of ['Único', 'único', 'UNICO']) {
+      expect(
+        lineaDe({
+          tipo: 'platillo',
+          cantidad: 1,
+          nombre: 'Orden de chiles',
+          variante,
+          sinIngredientes: [],
+          extras: [],
+        }).principal,
+      ).toBe('1 × Orden de chiles');
+    }
+  });
+
+  it('una variante que solo contiene la palabra sí se muestra', () => {
+    expect(
+      lineaDe({
+        tipo: 'platillo',
+        cantidad: 1,
+        nombre: 'Queso fundido',
+        variante: 'Chorizo',
+        sinIngredientes: [],
+        extras: [],
+      }).principal,
+    ).toBe('1 × Queso fundido (Chorizo)');
+  });
+
   it('extra suelto: solo cantidad y nombre', () => {
     expect(lineaDe({ tipo: 'extra', cantidad: 3, nombre: 'Totopos' })).toEqual({
       principal: '3 × Totopos',

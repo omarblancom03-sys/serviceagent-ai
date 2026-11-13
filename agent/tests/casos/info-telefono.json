@@ -1,0 +1,18 @@
+{
+  "id": "info-telefono",
+  "historia": "US-17",
+  "criterios": ["C2", "C4"],
+  "categoria": "informacion",
+  "titulo": "Teléfono del restaurante",
+  "mensajes": ["¿Me pasas su número de teléfono?"],
+  "argsInfoRestaurante": [
+    {
+      "consulta": "¿Me pasas su número de teléfono?"
+    }
+  ],
+  "debe": ["Llama a info_restaurante.", "Da el teléfono 639 474 8888 tal cual."],
+  "noDebe": [
+    "Dar otro número o un WhatsApp.",
+    "Agregar datos que no vengan en el texto de info_restaurante."
+  ]
+}

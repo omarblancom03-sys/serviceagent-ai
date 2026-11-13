@@ -1,0 +1,22 @@
+{
+  "id": "info-direccion",
+  "historia": "US-17",
+  "criterios": ["C2", "C4"],
+  "categoria": "informacion",
+  "titulo": "Dirección y cómo llegar, con la referencia",
+  "mensajes": ["¿Dónde están y cómo llego?"],
+  "argsInfoRestaurante": [
+    {
+      "consulta": "¿Dónde están y cómo llego?"
+    }
+  ],
+  "debe": [
+    "Llama a info_restaurante.",
+    "Da la dirección (Avenida Río San Pedro 1227, colonia Granjas, Delicias) y la referencia de la contraesquina del salón de eventos TEX-MEX.",
+    "Pregunta si le ayuda con algo más."
+  ],
+  "noDebe": [
+    "Inventar rutas, tiempos de camino o enlaces de mapas.",
+    "Agregar datos que no vengan en el texto de info_restaurante."
+  ]
+}
