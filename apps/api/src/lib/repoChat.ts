@@ -3,7 +3,8 @@ import { z } from 'zod';
 import type { ChatRepo } from '../services/chat';
 
 /*
- * Lo que devuelve cada función SQL de supabase/migrations/*_crear_conversaciones_chat.sql.
+ * Lo que devuelve cada función SQL de supabase/migrations/*_crear_conversaciones_chat.sql y
+ * *_chat_apertura_fallida.sql.
  * Los errores llevan solo el código de Postgres: nunca parámetros (chat_id) ni detalles.
  */
 
@@ -81,6 +82,14 @@ export function crearRepoChat(cliente: SupabaseClient): ChatRepo {
 
     devolverMensaje(id) {
       return llamar('devolver_mensaje_chat', { p_conversacion_id: id }, ConteoSchema);
+    },
+
+    descartarApertura(id, ahora) {
+      return llamar(
+        'descartar_apertura_chat',
+        { p_conversacion_id: id, p_ahora: ahora.toISOString() },
+        BooleanoSchema,
+      );
     },
 
     terminar(id, ahora) {

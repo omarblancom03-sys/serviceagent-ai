@@ -51,7 +51,7 @@ Lógica en `apps/api/src/services/chat.ts`; Retell se llama con `fetch` directo 
 
 1. Si falta `RETELL_API_KEY` o `RETELL_AGENT_ID`: 503 **antes** de abrir la conversación, así que no gasta tope.
 2. `abrir_conversacion_chat` con el tope diario ([D38](decisiones.md)). Si ya se llegó: 503 con "El chat llegó a su límite de hoy…", sin llamar a Retell.
-3. `create-chat` con `agent_version: "latest_published"`, la versión publicada más reciente ([D52](decisiones.md)); timeout 10 s. Si falla por cualquier causa, o el chat no queda `ongoing`, o no se puede guardar su `chat_id`: se termina la conversación y 503.
+3. `create-chat` con `agent_version: "latest_published"`, la versión publicada más reciente ([D52](decisiones.md)); timeout 10 s. Si falla por cualquier causa, o el chat no queda `ongoing`, o no se puede guardar su `chat_id`: 503. Si Retell claramente no creó el chat (400, 401, 402, 422, 429 o error de conexión antes de recibir respuesta), la conversación se descarta con `descartar_apertura_chat` y **no gasta tope** ([D64](decisiones.md)); en los demás casos (timeout, 5xx, respuesta ilegible) se termina y su lugar queda gastado.
 4. 201 con los mensajes `agent` que traiga `message_with_tool_calls` (o vacío), 0 usados y límite 30.
 
 **Enviar** (`POST /chat/conversaciones/{id}/mensajes`):
@@ -71,8 +71,6 @@ Lógica en `apps/api/src/services/chat.ts`; Retell se llama con `fetch` directo 
 - Un error de conexión también puede ocurrir después de que Retell recibió el mensaje; no se distingue y se devuelve igual (riesgo aceptado en D39).
 - Si falla la base de datos, 503. Si falla al terminar o devolver mientras se atiende otra falla, solo se anota en el log.
 - Los logs llevan solo la operación, la clase de falla y el código HTTP: nunca la llave, el texto del cliente ni el `chat_id`.
-
-**Limitación conocida:** si Retell falla al abrir, el lugar del tope diario queda gastado aunque Retell claramente no haya creado el chat (un 4xx): una caída de Retell consume los lugares del día. Devolverlo requiere una función SQL nueva (el tope cuenta las filas creadas ese día y la API no puede borrarlas). Es una mejora pendiente ([D39](decisiones.md)).
 
 **Confirmado en la prueba real** (la documentación de Retell no lo dice):
 

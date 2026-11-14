@@ -211,8 +211,6 @@ describe('POST /chat/conversaciones', () => {
   });
 
   it.each([
-    ['rechazo', 'rechazo', 402],
-    ['sin conexión', 'sin_conexion', undefined],
     ['timeout', 'timeout', undefined],
     ['5xx', 'incierta', 500],
   ] as const)(
@@ -225,10 +223,71 @@ describe('POST /chat/conversaciones', () => {
       expect(http).toBe(503);
       expect(ErrorEstricto.parse(cuerpo).codigo).toBe('servicio_no_disponible');
       expect(enMemoria.llamadas.terminar).toHaveLength(1);
+      expect(enMemoria.llamadas.descartar).toEqual([]);
       const [fila] = [...enMemoria.filas.values()];
+      expect(fila?.terminadaEn).not.toBeNull();
+      expect(fila?.aperturaFallidaEn).toBeNull();
+    },
+  );
+
+  it.each([
+    ['rechazo', 'rechazo', 402],
+    ['sin conexión', 'sin_conexion', undefined],
+  ] as const)(
+    'si Retell no creó el chat (%s) descarta la conversación y responde 503; no gasta tope (D64)',
+    async (_, falla, status) => {
+      falso.respuestas.crearChat = fallaRetell(falla, status);
+
+      const { status: http, cuerpo } = await iniciar();
+
+      expect(http).toBe(503);
+      expect(ErrorEstricto.parse(cuerpo).codigo).toBe('servicio_no_disponible');
+      expect(enMemoria.llamadas.descartar).toHaveLength(1);
+      expect(enMemoria.llamadas.terminar).toEqual([]);
+      const [fila] = [...enMemoria.filas.values()];
+      expect(fila?.aperturaFallidaEn).not.toBeNull();
       expect(fila?.terminadaEn).not.toBeNull();
     },
   );
+
+  it('una caída de Retell que rechaza todo no consume el tope: al volver, se puede abrir', async () => {
+    const creaBien = falso.respuestas.crearChat;
+    falso.respuestas.crearChat = fallaRetell('rechazo', 429);
+    for (let i = 0; i < 5; i++) expect((await iniciar()).status).toBe(503);
+    falso.respuestas.crearChat = creaBien;
+
+    // Los tres lugares del tope siguen libres y el cuarto ya no entra.
+    for (let i = 0; i < 3; i++) expect((await iniciar()).status).toBe(201);
+    const tope = await iniciar();
+    expect(ErrorEstricto.parse(tope.cuerpo).error).toContain('límite de hoy');
+  });
+
+  it('si falla la base al descartar, responde 503 y la conversación queda terminada, como antes', async () => {
+    falso.respuestas.crearChat = fallaRetell('rechazo', 401);
+    enMemoria.repo.descartarApertura = async () => {
+      throw new Error('Falló descartar_apertura_chat (código 08006)');
+    };
+
+    expect((await iniciar()).status).toBe(503);
+
+    // No se pudo descartar: se termina y su lugar del tope queda gastado (D39).
+    expect(enMemoria.llamadas.terminar).toHaveLength(1);
+    const [fila] = [...enMemoria.filas.values()];
+    expect(fila?.terminadaEn).not.toBeNull();
+    expect(fila?.aperturaFallidaEn).toBeNull();
+  });
+
+  it('si fallan descartar y terminar, responde 503 igual y solo lo anota', async () => {
+    falso.respuestas.crearChat = fallaRetell('sin_conexion');
+    enMemoria.repo.descartarApertura = async () => {
+      throw new Error('Falló descartar_apertura_chat (código 08006)');
+    };
+    enMemoria.repo.terminar = async () => {
+      throw new Error('Falló terminar_conversacion_chat (código 08006)');
+    };
+
+    expect((await iniciar()).status).toBe(503);
+  });
 
   it('si Retell crea un chat que no está activo, lo trata como falla', async () => {
     falso.respuestas.crearChat = () => ({
