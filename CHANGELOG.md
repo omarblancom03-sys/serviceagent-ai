@@ -63,3 +63,4 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). *
 - US-08-P2-T2: el chat web abre los chats con la versión publicada del agente (`agent_version: "latest_published"`); antes usaba la más reciente, aunque fuera el borrador (D52).
 - US-10-T2: los tickets de `/cocina` ya no muestran "(Único)" junto al platillo; usan la misma regla que el menú.
 - US-16-T2: `docs/despliegue.md` y el README dicen que la API no arranca en local sin `wrangler login` (binding `AI` siempre remoto, con costo), cómo iniciar sesión solo con la cuenta personal, el subdominio `workers.dev` y a qué base apunta `.dev.vars`.
+- US-08-P2-T4: el cliente ya no ve dos veces seguidas "¿Confirmo tu pedido?" en `/pedir`. Cuando el modelo pregunta y en el mismo turno llama a `crear_pedido` (que no crea nada sin el "sí", D48) y vuelve a preguntar, el proxy del chat deja pasar solo la primera pregunta; si entre las dos se volvió a cotizar, pasan las dos (D69).
