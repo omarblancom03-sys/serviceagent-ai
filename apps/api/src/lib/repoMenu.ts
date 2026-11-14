@@ -55,6 +55,9 @@ const FilaSinonimoSchema = z.object({
   activo: z.boolean(),
 });
 
+/** `sugerencia_ambiguo` (*_sugerencias_ambiguo.sql, D72) tiene las mismas columnas que se leen de los sinónimos. */
+const FilaSugerenciaSchema = FilaSinonimoSchema;
+
 /**
  * Implementación de `MenuRepo` sobre Supabase. Lee las tablas completas en paralelo (el menú es
  * chico) y deja los filtros a `services/menu.ts`. Valida con zod lo que devuelve la base.
@@ -145,6 +148,19 @@ export function crearRepoMenu(cliente: SupabaseClient): MenuRepo {
         FilaSinonimoSchema,
       );
       return sinonimos.map((s) => ({
+        idPlatillo: s.id_platillo,
+        frase: s.frase,
+        activo: s.activo,
+      }));
+    },
+
+    async leerSugerencias() {
+      const sugerencias = await leer(
+        'sugerencia_ambiguo',
+        'id_platillo, frase, activo',
+        FilaSugerenciaSchema,
+      );
+      return sugerencias.map((s) => ({
         idPlatillo: s.id_platillo,
         frase: s.frase,
         activo: s.activo,

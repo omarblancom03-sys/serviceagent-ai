@@ -241,6 +241,18 @@ export const AclaracionSchema = z.object({
    * pedida). Sin precios: si el cliente pregunta, el agente vuelve a cotizar.
    */
   opciones: z.array(z.string()).optional(),
+  /**
+   * Solo en `ambiguo`: la opción que el PO marcó para lo que dijo el cliente ("hamburguesa" →
+   * "Hamburguesa Granero", D72). Siempre es una de `opciones`. No viene si esa frase no tiene
+   * sugerencia.
+   */
+  sugerida: z.string().optional(),
+  /**
+   * Solo en `no_existe` de un producto, en `cotizar_pedido`: el platillo del menú que más se
+   * parece a lo que dijo el cliente, según la búsqueda semántica de `buscar_menu` (D50, D72), o
+   * `null` si nada se parece lo suficiente. No viene si no se pudo buscar.
+   */
+  parecido: z.string().nullable().optional(),
 });
 
 /** Si hay varias cosas por aclarar, se mandan todas en la misma respuesta. */
