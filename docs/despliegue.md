@@ -9,6 +9,8 @@
 - **Nunca** pongas secretos en `vars` de `apps/api/wrangler.jsonc`: ese archivo se sube al repo y `vars` es solo para valores públicos.
 - **Local:** crea `apps/api/.dev.vars` con las variables de la sección API de `.env.example` (`cp .env.example apps/api/.dev.vars` y borra lo que no es de la API). `wrangler dev` las carga solo.
   - Según la [documentación de Wrangler](https://developers.cloudflare.com/workers/configuration/secrets/), también puede leer un archivo `.env`, **pero no los dos**: si existe `.dev.vars`, ignora los `.env`. En este proyecto usamos **`.dev.vars`**.
+  - **A qué base apunta:** para probar en local un PR cuyas migraciones todavía no están aplicadas en `serviceagent-dev`, apunta el `.dev.vars` de ese worktree a un proyecto personal de Supabase; para todo lo demás, `serviceagent-dev` ([D16](decisiones.md)).
+  - La API no arranca en local sin una sesión de Wrangler: [Workers AI](#workers-ai-binding-ai).
 - **Producción:** cada secreto se carga una vez con Wrangler y queda cifrado en Cloudflare:
 
   ```bash
@@ -65,8 +67,12 @@ Conversaciones nuevas del chat al día en todo el sistema, contadas por día de 
 
 La búsqueda semántica del menú calcula embeddings con Workers AI ([D50](decisiones.md)). No es un secreto ni una variable: es el binding `ai` de `apps/api/wrangler.jsonc` y se despliega con el Worker.
 
-- **Local:** `wrangler dev` siempre llama a Workers AI remoto (puede cobrar uso) con la sesión de `wrangler login`. Sin sesión, `buscar_menu` responde 500.
-- **Costo:** $0.0118 por millón de tokens. Indexar el menú completo son unos 10,000 tokens; cada búsqueda, unas decenas.
+- **Local:** Workers AI no tiene simulación local: el binding `AI` siempre usa la nube, también con `wrangler dev` ([documentación de Cloudflare](https://developers.cloudflare.com/workers/local-development/)), y cada `buscar_menu` o `info_restaurante` cuenta como uso real de la cuenta con la que iniciaste sesión. Por eso la API **no arranca** sin una sesión de Cloudflare: en nuestras pruebas (27-oct) falló con "Failed to start the remote proxy session" y no levantó ninguna ruta, ni las que no usan Workers AI. Antes del primer `pnpm dev`:
+  1. `cd apps/api && pnpm exec wrangler login` con **tu cuenta personal** de Cloudflare. En la pantalla de autorización marca **solo esa cuenta**: nunca "Grant access to all accounts" ni la cuenta que despliega `serviceagent-api`. Si no, el token queda con permisos sobre producción y el uso de Workers AI se le cobra al equipo.
+  2. La cuenta necesita un subdominio `workers.dev`. En nuestras pruebas bastó con entrar a **Compute → Workers & Pages** en el dashboard: se creó solo (se ve y se cambia en "Your subdomain"). La documentación de Cloudflare no lo pide para `wrangler dev`; es lo que observamos.
+  3. `pnpm exec wrangler whoami` confirma que la sesión quedó solo con tu cuenta.
+- Si el Worker no tiene el binding `AI`, `buscar_menu` e `info_restaurante` responden 500.
+- **Costo:** $0.0118 por millón de tokens, después de las 10,000 Neurons diarias sin costo de cada cuenta ([precios](https://developers.cloudflare.com/workers-ai/platform/pricing/)). Indexar el menú completo son unos 10,000 tokens (unas 11 Neurons); cada búsqueda, unas decenas de tokens.
 - Los tests no usan Workers AI: reemplazan el embedder por uno en memoria.
 
 ### Frontends (web y simuladores)
