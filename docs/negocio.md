@@ -73,7 +73,7 @@ confirmado → (esperando_pago) → en_cola → preparando → listo → entrega
 
 - Métodos: transferencia (vía agente), efectivo y tarjeta (en caja).
 - Cada pago es una fila de `pagos` (método, monto en centavos, quién lo cobró y hora). Un pedido está pagado cuando la suma de sus pagos cubre su total ([D54](decisiones.md)).
-- Transferencia: referencia única por pedido + CLABE ficticia. El Banco Simulado llama a `POST /webhooks/banco` con **firma HMAC**. El backend concilia por referencia + monto.
+- Transferencia: referencia única por pedido + CLABE ficticia. El Banco Simulado llama a `POST /webhooks/banco` con **firma HMAC** ([D70](decisiones.md)). El backend concilia por referencia + monto (US-25; hoy el webhook solo recibe y valida el aviso).
 - Casos borde obligatorios: monto distinto, referencia inexistente, webhook duplicado (idempotencia), pago tardío de pedido expirado.
 
 ## Atención por un empleado
