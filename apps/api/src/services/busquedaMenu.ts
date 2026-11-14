@@ -231,13 +231,55 @@ export async function buscarEnMenu(
 
   const visibles = platillosVisibles(menu);
   const similares = await repoEmbeddings.buscarSimilares(vector, modelo, CANDIDATOS);
-  const resultados = [...similares]
-    .sort((a, b) => b.similitud - a.similitud)
-    .filter((s) => s.similitud >= umbral)
-    .map((s) => visibles.get(s.idPlatillo))
-    .filter((v) => v !== undefined)
+  const resultados = encimaDelUmbral(similares, visibles, umbral)
     .slice(0, MAX_RESULTADOS_BUSQUEDA)
     .map(aResultado);
 
   return { resultados };
+}
+
+/** Del más parecido al menos parecido: solo los visibles que pasan el umbral. */
+function encimaDelUmbral(
+  similares: PlatilloSimilar[],
+  visibles: Map<number, PlatilloVisible>,
+  umbral: number,
+): PlatilloVisible[] {
+  return [...similares]
+    .sort((a, b) => b.similitud - a.similitud)
+    .filter((s) => s.similitud >= umbral)
+    .map((s) => visibles.get(s.idPlatillo))
+    .filter((v) => v !== undefined);
+}
+
+/**
+ * Para `cotizar_pedido` (D72): el nombre del platillo más parecido a cada consulta, o `null` si
+ * ninguno pasa el umbral. Usa el mismo índice, modelo y umbral que `buscarEnMenu`, sobre el menú que
+ * cotizar ya leyó. Embebe todas las consultas en una sola llamada a Workers AI. Los errores se
+ * propagan: quien la llama decide qué hacer sin el resultado.
+ */
+export async function buscarParecidos(
+  menu: RespuestaMenu,
+  sinonimos: readonly Sinonimo[],
+  repoEmbeddings: EmbeddingsRepo,
+  embedder: Embedder,
+  consultas: readonly string[],
+  { umbral = UMBRAL_SIMILITUD, modelo = MODELO_EMBEDDINGS }: OpcionesBusqueda = {},
+): Promise<(string | null)[]> {
+  if (consultas.length === 0) return [];
+  const [, vectores] = await Promise.all([
+    sincronizarIndice(menu, sinonimos, repoEmbeddings, embedder, modelo),
+    embedder.embeber([...consultas]),
+  ]);
+  if (vectores.length !== consultas.length) {
+    throw new Error(`Se esperaban ${consultas.length} embeddings y llegaron ${vectores.length}`);
+  }
+
+  const visibles = platillosVisibles(menu);
+  return Promise.all(
+    vectores.map(async (vector) => {
+      const similares = await repoEmbeddings.buscarSimilares(vector, modelo, CANDIDATOS);
+      const [mejor] = encimaDelUmbral(similares, visibles, umbral);
+      return mejor ? mejor.platillo.nombre : null;
+    }),
+  );
 }

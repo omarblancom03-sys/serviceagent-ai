@@ -37,11 +37,23 @@ export interface Sinonimo {
   activo: boolean;
 }
 
+/**
+ * Platillo que se sugiere cuando el cliente dice solo esa frase y queda ambiguo (tabla
+ * `sugerencia_ambiguo`, D72): "hamburguesa" → Hamburguesa Granero. La lista la aprueba el PO.
+ */
+export interface Sugerencia {
+  frase: string;
+  idPlatillo: number;
+  activo: boolean;
+}
+
 /** Acceso a datos del menú. En producción es Supabase; en los tests, memoria. */
 export interface MenuRepo {
   leerTodo(): Promise<FilasMenu>;
   /** Aparte de `leerTodo` porque solo los usa cotizar: `GET /menu` no hace esa consulta. */
   leerSinonimos(): Promise<Sinonimo[]>;
+  /** Igual que los sinónimos: solo los usa cotizar (D72). */
+  leerSugerencias(): Promise<Sugerencia[]>;
 }
 
 /** D20: el contrato ya separa `disponible` de `activo`; en v8 aquí se consultará el inventario. */
