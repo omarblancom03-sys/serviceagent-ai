@@ -444,6 +444,20 @@ describe('POST /caja/pedidos/{folio}/entregar (US-21)', () => {
     });
   });
 
+  it('un idEmpleado en el cuerpo no cambia quién entrega: la ruta no lee el cuerpo', async () => {
+    const { app, pedidos } = appCon([pedido(1001, 'listo', { pagos: [pagoCompleto()] })]);
+
+    const { status } = await llamar(app, '/caja/pedidos/1001/entregar', 'caja', {
+      idEmpleado: OTRO,
+    });
+
+    expect(status).toBe(200);
+    expect(pedidos[0]?.historial.at(-1)).toMatchObject({
+      estado: 'entregado',
+      idEmpleado: CAJERA,
+    });
+  });
+
   it('sin cobrar responde 409 falta_pago', async () => {
     const { app } = appCon([pedido(1001, 'listo')]);
     const { status, json } = await llamar(app, '/caja/pedidos/1001/entregar', 'caja');
