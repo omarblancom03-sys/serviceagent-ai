@@ -12,7 +12,7 @@
   ],
   "debe": [
     "La respuesta de la última cotización trae un solo renglón: Tiras de pollo con la variante Salsa BBQ, sin BBQ como extra.",
-    "Valen los tres caminos (D67): mandar la variante en su campo, como en argsEsperados; mandar todo en producto (\"tiras de pollo con salsa BBQ\"); o mandar BBQ como extra suelto. En los dos últimos el backend lo resuelve en esa misma llamada.",
+    "Valen tres caminos: mandar la variante en su campo, como en argsEsperados; mandar todo en producto (\"tiras de pollo con salsa BBQ\"), que el backend resuelve en esa misma llamada (D67); o mandar BBQ como extra suelto, recibir falta_variante y volver a cotizar, sin preguntarle al cliente, con Salsa BBQ en variante y sin ese extra.",
     "Da el resumen con el nombre y la presentación que devolvió cotizar_pedido.",
     "Dice el total que devolvió cotizar_pedido."
   ],

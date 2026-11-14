@@ -32,12 +32,12 @@ import { armarMenu, type MenuRepo, type Sinonimo } from './menu';
  *   (una coincidencia parcial siempre se pregunta). Ninguno → no_existe.
  *
  * Variante que el modelo no mandó en su campo (D67, US-07-P2-T2). El cliente dice "tiras de pollo
- * con salsa BBQ" y la salsa es una presentación del platillo, no un extra. Dos respaldos, solo
- * cuando no vino `variante` y la coincidencia es única; si no, se aclara como siempre:
+ * con salsa BBQ" y la salsa es una presentación del platillo, no un extra. Un respaldo, solo cuando
+ * no vino `variante` y la coincidencia es única; si no, se aclara como siempre:
  * - Pegada en `producto` (`separarVariantePegada`): si el texto completo no existe, se parte en
  *   "con"; vale si la izquierda es exacto un platillo y la derecha, una sola de sus variantes.
- * - Mandada como extra suelto (`variantesEnExtras`): si al platillo le falta la variante y un extra
- *   suelto del mismo pedido es una sola de sus variantes, ese extra era la variante.
+ * Si el modelo manda la variante como extra suelto ("BBQ" en `extrasSueltos`), NO se adivina: el
+ * platillo responde `falta_variante` y el extra se cotiza como extra (decisión del PO, D67).
  */
 
 /** Máximo de opciones en una aclaración `ambiguo`, en el orden del menú. */
@@ -270,43 +270,6 @@ function resolverProducto(
 }
 
 /**
- * Respaldo para una variante mandada como extra suelto (D67): el cliente pidió "tiras de pollo con
- * salsa BBQ" y el modelo mandó las tiras sin variante y "BBQ" en `extrasSueltos`. Si a un platillo
- * le falta la variante y UN solo extra suelto del pedido (con cantidad 1) coincide con UNA sola de
- * sus variantes, ese extra era la variante: se usa y el extra ya no se cobra. No aplica, y se
- * aclara como siempre, si el platillo coincide con dos extras o si el mismo extra le sirve a dos
- * platillos. Devuelve, por índice de producto, la variante y el índice del extra que la traía.
- */
-export function variantesEnExtras(
-  catalogo: Catalogo,
-  args: CotizarPedidoArgs,
-): Map<number, { variante: Variante; indiceExtra: number }> {
-  const candidatas: { indiceProducto: number; indiceExtra: number; variante: Variante }[] = [];
-  args.productos.forEach((pedido, indiceProducto) => {
-    if (limpiarVariante(pedido.variante) !== undefined) return;
-    const { encontrado, variantePegada } = resolverProducto(catalogo, pedido);
-    if (encontrado.tipo !== 'encontrado' || variantePegada) return;
-    const { platillo } = encontrado;
-    if (resolverVariante(platillo).tipo === 'encontrada') return;
-
-    const delPlatillo = args.extrasSueltos.flatMap(({ extra, cantidad }, indiceExtra) => {
-      const variante = cantidad === 1 ? resolverVariante(platillo, extra) : null;
-      return variante?.tipo === 'encontrada'
-        ? [{ indiceProducto, indiceExtra, variante: variante.variante }]
-        : [];
-    });
-    if (delPlatillo.length === 1) candidatas.push(...delPlatillo);
-  });
-
-  const resueltas = new Map<number, { variante: Variante; indiceExtra: number }>();
-  for (const { indiceProducto, indiceExtra, variante } of candidatas) {
-    const compartido = candidatas.filter((c) => c.indiceExtra === indiceExtra).length > 1;
-    if (!compartido) resueltas.set(indiceProducto, { variante, indiceExtra });
-  }
-  return resueltas;
-}
-
-/**
  * Formas de nombrar un extra: las palabras de su nombre sin paréntesis y las de adentro.
  * "Espuelas (camarones)" → {espuela} y {camaron}; "BBQ" → {bbq}.
  */
@@ -422,16 +385,12 @@ const montos = (precioUnitarioCentavos: number, subtotalCentavos: number) => ({
   subtotalTexto: formatearPesos(subtotalCentavos),
 });
 
-/**
- * Revisa un producto pedido. Devuelve su renglón solo si no le hizo falta ninguna aclaración.
- * `varianteDeExtra` es la variante que venía como extra suelto (`variantesEnExtras`), si la hubo.
- */
+/** Revisa un producto pedido. Devuelve su renglón solo si no le hizo falta ninguna aclaración. */
 function cotizarProducto(
   catalogo: Catalogo,
   pedido: ProductoPedido,
   indice: number,
   aclarar: Aclarar,
-  varianteDeExtra?: Variante,
 ): RenglonPlatillo | null {
   let completo = true;
   const aclararYMarcar: Aclarar = (aclaracion) => {
@@ -453,8 +412,8 @@ function cotizarProducto(
   const { platillo } = encontrado;
 
   const varianteDicha = limpiarVariante(pedido.variante);
-  // Sin `variante`, vale la que venía pegada en `producto` o como extra suelto (D67).
-  const respaldo = varianteDicha === undefined ? (variantePegada ?? varianteDeExtra) : undefined;
+  // Sin `variante`, vale la que venía pegada en `producto` (D67).
+  const respaldo = varianteDicha === undefined ? variantePegada : undefined;
   const variante: ResultadoVariante = respaldo
     ? { tipo: 'encontrada', variante: respaldo }
     : resolverVariante(platillo, varianteDicha);
@@ -529,24 +488,15 @@ export function cotizarPedido(catalogo: Catalogo, args: CotizarPedidoArgs): Resp
 
   const aclaraciones: Aclaracion[] = [];
   const renglones: RenglonCotizacion[] = [];
-  const enExtras = variantesEnExtras(catalogo, args);
-  const extrasUsados = new Set([...enExtras.values()].map((v) => v.indiceExtra));
 
   args.productos.forEach((pedido, indice) => {
-    const renglon = cotizarProducto(
-      catalogo,
-      pedido,
-      indice,
-      (aclaracion) =>
-        aclaraciones.push({ ...aclaracion, origen: 'producto', indice, producto: pedido.producto }),
-      enExtras.get(indice)?.variante,
+    const renglon = cotizarProducto(catalogo, pedido, indice, (aclaracion) =>
+      aclaraciones.push({ ...aclaracion, origen: 'producto', indice, producto: pedido.producto }),
     );
     if (renglon) renglones.push(renglon);
   });
 
   args.extrasSueltos.forEach(({ extra: texto, cantidad }, indice) => {
-    // Este "extra" era la variante de un platillo: ya va en su renglón y no se cobra aparte.
-    if (extrasUsados.has(indice)) return;
     const aclarar: Aclarar = (aclaracion) =>
       aclaraciones.push({ ...aclaracion, origen: 'extraSuelto', indice, producto: texto });
     const id = identificarExtra(catalogo, texto);

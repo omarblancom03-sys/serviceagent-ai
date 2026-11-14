@@ -5,18 +5,14 @@ import {
   RespuestaCotizarPedidoSchema,
 } from '@serviceagent/shared';
 import { describe, expect, it } from 'vitest';
-import {
-  armarCatalogo,
-  cotizarPedido,
-  separarVariantePegada,
-  variantesEnExtras,
-} from '../src/services/cotizacion';
+import { armarCatalogo, cotizarPedido, separarVariantePegada } from '../src/services/cotizacion';
 import { armarMenu } from '../src/services/menu';
 import { leerSeedMenu } from './seedEnMemoria';
 
 /*
  * US-07-P2-T2 (D67), con el menú real del seed: la variante que el modelo no manda en su campo
- * (pegada en `producto` con "con", o como extra suelto) y la llamada sin ningún platillo.
+ * (pegada en `producto` con "con") y la llamada sin ningún platillo. Mandada como extra suelto no
+ * se adivina: decisión del PO en la revisión del #69.
  */
 
 const seed = leerSeedMenu();
@@ -108,6 +104,27 @@ describe('variante pegada en producto con "con" (D67)', () => {
     expect(resumen(uno('papa con chorizo')).renglones).toEqual(['Papa con Chorizo']);
   });
 
+  it("la variante cuyo nombre ya empieza con 'con': 'taquiza sirloin con frijoles charros'", () => {
+    expect(resumen(uno('taquiza sirloin con frijoles charros'))).toEqual({
+      renglones: ['Taquiza Sirloin (Con frijoles charros)'],
+      total: 60900,
+    });
+  });
+
+  it("'fajitas de pollo con arroz' no se parte: el arroz no es una presentación de las fajitas", () => {
+    expect(separarVariantePegada(catalogo, 'fajitas de pollo con arroz')).toBeNull();
+    expect(aclaraciones(uno('fajitas de pollo con arroz')).map((a) => a.tipo)).toEqual([
+      'no_existe',
+    ]);
+  });
+
+  it("'hamburguesa con tocino' no se parte: se pregunta como siempre", () => {
+    expect(separarVariantePegada(catalogo, 'hamburguesa con tocino')).toBeNull();
+    expect(aclaraciones(uno('hamburguesa con tocino'))).toMatchObject([
+      { tipo: 'ambiguo', opciones: ['Hamburguesa Delicias Tocino'] },
+    ]);
+  });
+
   it('si además viene `variante`, no se parte: manda el campo', () => {
     expect(
       aclaraciones(uno('tiras de pollo con salsa BBQ', { variante: 'búfalo' })).map((a) => a.tipo),
@@ -121,30 +138,41 @@ describe('variante pegada en producto con "con" (D67)', () => {
   });
 });
 
-describe('variante mandada como extra suelto (D67)', () => {
+describe('la variante mandada como extra suelto no se adivina (D67)', () => {
   const tirasCon = (...extras: { extra: string; cantidad: number }[]) => ({
     productos: [{ producto: 'tiras de pollo', cantidad: 1 }],
     extrasSueltos: extras,
   });
+  const FALTA_SALSA = {
+    tipo: 'falta_variante',
+    origen: 'producto',
+    indice: 0,
+    producto: 'tiras de pollo',
+    opciones: SALSAS,
+  };
 
+  // La BBQ también se vende suelta y se cobra aparte (D19): el backend no elige por el cliente.
   it.each(['BBQ', 'salsa BBQ', 'Salsa BBQ'])(
-    'tiras de pollo sin variante + extra suelto "%s" → la variante es Salsa BBQ y el extra no se cobra',
+    "tiras de pollo sin variante + extra suelto '%s' → falta_variante, sin elegir la salsa",
     (extra) => {
-      expect(resumen(tirasCon({ extra, cantidad: 1 }))).toEqual(TIRAS_BBQ);
+      expect(aclaraciones(tirasCon({ extra, cantidad: 1 }))).toEqual([FALTA_SALSA]);
     },
   );
 
-  it('también si lo mandado como extra no existe como extra: "búfalo"', () => {
-    expect(resumen(tirasCon({ extra: 'búfalo', cantidad: 1 }))).toEqual({
-      renglones: ['Tiras de pollo (Salsa Búfalo)'],
-      total: 18600,
-    });
+  it('ya con la variante, la BBQ suelta se cobra como extra', () => {
+    expect(
+      resumen({
+        productos: [{ producto: 'tiras de pollo', variante: 'Salsa BBQ', cantidad: 1 }],
+        extrasSueltos: [{ extra: 'BBQ', cantidad: 1 }],
+      }),
+    ).toEqual({ renglones: ['Tiras de pollo (Salsa BBQ)', 'BBQ'], total: 18600 + 1500 });
   });
 
-  it('los demás extras sueltos se siguen cobrando', () => {
-    expect(
-      resumen(tirasCon({ extra: 'BBQ', cantidad: 1 }, { extra: 'totopos', cantidad: 1 })),
-    ).toEqual({ renglones: ['Tiras de pollo (Salsa BBQ)', 'Totopos'], total: 18600 + 2000 });
+  it("una variante que no es extra ('búfalo') mandada como extra suelto: falta la variante y el extra no existe", () => {
+    const tipos = aclaraciones(tirasCon({ extra: 'búfalo', cantidad: 1 })).map(
+      (a) => `${a.origen}:${a.tipo}`,
+    );
+    expect(tipos).toEqual(['producto:falta_variante', 'extraSuelto:no_existe']);
   });
 
   it('si el cliente sí dijo la variante, el extra es un extra: se cobra aparte', () => {
@@ -156,72 +184,13 @@ describe('variante mandada como extra suelto (D67)', () => {
     ).toEqual({ renglones: ['Tiras de pollo (Salsa Búfalo)', 'BBQ'], total: 18600 + 1500 });
   });
 
-  it('un platillo con una sola presentación no toma el extra: se cobra aparte', () => {
+  it('un platillo con una sola presentación y un extra suelto: los dos se cobran', () => {
     expect(
       resumen({
         productos: [{ producto: 'guacamole', cantidad: 1 }],
         extrasSueltos: [{ extra: 'BBQ', cantidad: 1 }],
       }),
     ).toEqual({ renglones: ['Guacamole', 'BBQ'], total: 12300 + 1500 });
-  });
-
-  it('con cantidad distinta de 1 no adivina: pregunta la variante', () => {
-    expect(aclaraciones(tirasCon({ extra: 'BBQ', cantidad: 2 }))).toEqual([
-      {
-        tipo: 'falta_variante',
-        origen: 'producto',
-        indice: 0,
-        producto: 'tiras de pollo',
-        opciones: SALSAS,
-      },
-    ]);
-  });
-
-  it('si dos extras son variantes del platillo, no adivina', () => {
-    const tipos = aclaraciones(
-      tirasCon({ extra: 'BBQ', cantidad: 1 }, { extra: 'búfalo', cantidad: 1 }),
-    ).map((a) => `${a.origen}:${a.tipo}`);
-    expect(tipos).toEqual(['producto:falta_variante', 'extraSuelto:no_existe']);
-  });
-
-  it('si el mismo extra le sirve a dos platillos, no adivina', () => {
-    const args = CotizarPedidoArgsSchema.parse({
-      productos: [
-        { producto: 'tiras de pollo', cantidad: 1 },
-        { producto: 'tiras de pollo', cantidad: 1 },
-      ],
-      extrasSueltos: [{ extra: 'BBQ', cantidad: 1 }],
-    });
-    expect(variantesEnExtras(catalogo, args).size).toBe(0);
-    expect(aclaraciones(args).map((a) => `${a.indice}:${a.tipo}`)).toEqual([
-      '0:falta_variante',
-      '1:falta_variante',
-    ]);
-  });
-
-  it('un extra que no es variante de ese platillo no cambia nada: sigue faltando la variante', () => {
-    expect(
-      aclaraciones({
-        productos: [{ producto: 'limonada mineral', cantidad: 1 }],
-        extrasSueltos: [{ extra: 'totopos', cantidad: 1 }],
-      }).map((a) => a.tipo),
-    ).toEqual(['falta_variante']);
-  });
-
-  it('dice qué extra era la variante de qué producto', () => {
-    const args = CotizarPedidoArgsSchema.parse({
-      productos: [
-        { producto: 'guacamole', cantidad: 1 },
-        { producto: 'tiras de pollo', cantidad: 1 },
-      ],
-      extrasSueltos: [
-        { extra: 'totopos', cantidad: 1 },
-        { extra: 'BBQ', cantidad: 1 },
-      ],
-    });
-    const resueltas = variantesEnExtras(catalogo, args);
-    expect([...resueltas.keys()]).toEqual([1]);
-    expect(resueltas.get(1)).toMatchObject({ indiceExtra: 1, variante: { nombre: 'Salsa BBQ' } });
   });
 });
 

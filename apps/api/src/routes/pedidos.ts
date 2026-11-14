@@ -42,7 +42,7 @@ export const cotizarPedidoRoute = createRoute({
     'con `ok: false` y todas las aclaraciones juntas; nunca cotiza una parte del pedido. Una ' +
     'llamada sin platillos ni extras (`{}`) no es un error: responde 200 con `ok: false`, ' +
     '`pedidoVacio: true` y sin aclaraciones. Si no viene `variante`, resuelve la que el modelo ' +
-    'mandó pegada en `producto` con "con" o como extra suelto, solo si la coincidencia es única (D67).',
+    'mandó pegada en `producto` con "con", solo si la coincidencia es única (D67).',
   security: [{ FirmaRetell: [] }],
   middleware: [requiereFirmaRetell()] as const,
   request: { body: { content: json(CotizarPedidoPeticionSchema), required: true } },
