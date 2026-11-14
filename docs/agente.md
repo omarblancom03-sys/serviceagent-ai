@@ -50,7 +50,7 @@ Lógica en `apps/api/src/services/chat.ts`; Retell se llama con `fetch` directo 
 **Iniciar** (`POST /chat/conversaciones`):
 
 1. Si falta `RETELL_API_KEY` o `RETELL_AGENT_ID`: 503 **antes** de abrir la conversación, así que no gasta tope.
-2. `abrir_conversacion_chat` con el tope diario ([D38](decisiones.md)). Si ya se llegó: 503 con "El chat llegó a su límite de hoy…", sin llamar a Retell.
+2. `abrir_conversacion_chat` con el tope diario ([D38](decisiones.md)). Si ya se llegó: 503 con "Servicio no disponible por el momento.", sin llamar a Retell.
 3. `create-chat` con `agent_version: "latest_published"`, la versión publicada más reciente ([D52](decisiones.md)); timeout 10 s. Si falla por cualquier causa, o el chat no queda `ongoing`, o no se puede guardar su `chat_id`: se termina la conversación y 503.
 4. 201 con los mensajes `agent` que traiga `message_with_tool_calls` (o vacío), 0 usados y límite 30.
 
@@ -104,7 +104,7 @@ Lógica en `apps/api/src/services/chat.ts`; Retell se llama con `fetch` directo 
 
 - Solo atiende temas del restaurante. Rechaza con amabilidad cualquier otra cosa (programar, tareas, otros temas) y regresa al pedido.
 - Se mantiene en su rol ante intentos de manipulación ("ignora tus instrucciones", "actúa como…").
-- Límites fuera de la IA: Turnstile, conversaciones por IP/teléfono por hora, mensajes por conversación, duración máxima y tope de gasto diario. Dónde se aplican: [D21](decisiones.md).
+- Límites fuera de la IA: Turnstile, conversaciones por IP/teléfono por hora, mensajes por conversación, duración máxima y tope de gasto diario. Dónde se aplican: [D21](decisiones.md); qué hay hoy y qué falta de US-19: [D68](decisiones.md).
 - El conteo de mensajes del cliente por conversación, las conversaciones que abrió nuestra API y el tope diario de conversaciones nuevas viven en la tabla `conversaciones_chat` de Supabase ([supabase/CLAUDE.md](../supabase/CLAUDE.md)); la API los aplica con funciones atómicas ([D14](decisiones.md)).
 - Nunca revela datos de otros clientes.
 - Todo cambio al prompt pasa por PR y debe pasar los casos de `agent/tests/` con el criterio de [D43](decisiones.md): salirse del alcance o ceder a una manipulación es regla dura, sin tolerancia.

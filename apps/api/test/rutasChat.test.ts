@@ -205,7 +205,7 @@ describe('POST /chat/conversaciones', () => {
     expect(tope.status).toBe(503);
     const error = ErrorEstricto.parse(tope.cuerpo);
     expect(error.codigo).toBe('servicio_no_disponible');
-    expect(error.error).toBe('El chat llegó a su límite de hoy. Intenta de nuevo mañana.');
+    expect(error.error).toBe('Servicio no disponible por el momento.');
     expect(error.error).not.toBe(ErrorChatSchema.parse(noDisponible.cuerpo).error);
     expect(falso.llamadas.crearChat).toHaveLength(llamadasAntes);
   });
