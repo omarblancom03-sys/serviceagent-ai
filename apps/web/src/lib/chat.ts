@@ -23,7 +23,8 @@ export const BOTONES_RAPIDOS = ['Ver menú', 'Quiero pedir'] as const;
 
 export const MENSAJE_NO_DISPONIBLE =
   'El asistente no está disponible en este momento. Intenta de nuevo en unos minutos.';
-export const MENSAJE_TOPE_DIARIO = 'El chat llegó a su límite de hoy. Intenta de nuevo mañana.';
+/** Texto del tope diario: el mismo que manda la API (US-19); con él se reconoce el tope. */
+export const MENSAJE_TOPE_DIARIO = 'Servicio no disponible por el momento.';
 export const MENSAJE_TERMINADA = 'Esta conversación terminó.';
 export const MENSAJE_PETICION_INVALIDA = `No pudimos enviar tu mensaje. Revisa que tenga de 1 a ${MAX_CARACTERES_MENSAJE} caracteres.`;
 
@@ -185,7 +186,9 @@ export type PasoChat = 'crear' | 'enviar';
  */
 function esTopeDiario(paso: PasoChat, error: ErrorApi, texto: string): boolean {
   return (
-    paso === 'crear' && error.status === 503 && normalizarTexto(texto).includes('limite de hoy')
+    paso === 'crear' &&
+    error.status === 503 &&
+    normalizarTexto(texto).includes(normalizarTexto(MENSAJE_TOPE_DIARIO))
   );
 }
 
