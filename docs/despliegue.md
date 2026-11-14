@@ -50,6 +50,13 @@ El chat web usa la misma llave para llamar a la API de Retell (`Authorization: B
 - **Local:** en `apps/api/.dev.vars` (`RETELL_API_KEY=<valor>`), copiada del dashboard de Retell → API Keys.
 - **Ambiente desplegado:** la carga el PO con `cd apps/api && pnpm exec wrangler secret put RETELL_API_KEY`.
 
+### `BANCO_WEBHOOK_SECRET` (firma del banco simulado)
+
+Secreto compartido entre el banco simulado y el restaurante ([D70](decisiones.md)): con él `POST /banco-simulado/transferencias` firma el aviso y `POST /webhooks/banco` verifica `X-Banco-Firma`. Si falta o está en blanco, el banco responde 503 y el webhook, 500. Cualquier texto largo y al azar (`openssl rand -base64 32`); no tiene que ser el mismo en local y en el ambiente desplegado.
+
+- **Local:** en `apps/api/.dev.vars` (`BANCO_WEBHOOK_SECRET=<valor>`). `CORS_ORIGINS` debe incluir `http://localhost:5174` para que `/banco` pueda llamar a la API.
+- **Ambiente desplegado:** lo carga un PO con `cd apps/api && pnpm exec wrangler secret put BANCO_WEBHOOK_SECRET`, y agrega `https://serviceagent-simuladores.pages.dev` a `CORS_ORIGINS` (mismo comando; el valor es la lista completa, separada por comas).
+
 ### `RETELL_AGENT_ID` (agente del chat web)
 
 Id del agente de chat de Retell con el que `POST /chat/conversaciones` abre cada chat. Obligatoria para el chat: si falta o está en blanco, responde 503 sin abrir la conversación ni gastar el tope diario. No es secreta, pero se carga igual que los secretos para no publicar identificadores de la cuenta ([agent/retell.md](../agent/retell.md#cómo-leer-retelljson)).
