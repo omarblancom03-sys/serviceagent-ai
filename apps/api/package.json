@@ -12,7 +12,8 @@
     "test": "vitest run",
     "hash-pin": "node --env-file-if-exists=.dev.vars --experimental-strip-types --no-warnings scripts/hashPin.ts",
     "evaluar-busqueda": "node --experimental-strip-types --no-warnings scripts/evaluarBusqueda.ts",
-    "evaluar-info": "node --experimental-strip-types --no-warnings scripts/evaluarInfo.ts"
+    "evaluar-info": "node --experimental-strip-types --no-warnings scripts/evaluarInfo.ts",
+    "probar-candado": "node --env-file-if-exists=.dev.vars --experimental-strip-types --no-warnings scripts/probarCandado.ts"
   },
   "dependencies": {
     "@hono/swagger-ui": "^0.6.1",

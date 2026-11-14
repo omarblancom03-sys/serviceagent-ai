@@ -103,7 +103,7 @@ describe('lineaDe', () => {
     }
   });
 
-  it('una variante que solo contiene la palabra sí se muestra', () => {
+  it('las demás variantes se siguen mostrando', () => {
     expect(
       lineaDe({
         tipo: 'platillo',
@@ -114,6 +114,32 @@ describe('lineaDe', () => {
         extras: [],
       }).principal,
     ).toBe('1 × Queso fundido (Chorizo)');
+  });
+
+  it('una variante que solo contiene la palabra "Único" sí se muestra: se compara el texto completo', () => {
+    expect(
+      lineaDe({
+        tipo: 'platillo',
+        cantidad: 1,
+        nombre: 'Orden de chiles',
+        variante: 'Único grande',
+        sinIngredientes: [],
+        extras: [],
+      }).principal,
+    ).toBe('1 × Orden de chiles (Único grande)');
+  });
+
+  it('ocultar "Único" no cambia el resto del renglón', () => {
+    expect(
+      lineaDe({
+        tipo: 'platillo',
+        cantidad: 2,
+        nombre: 'Orden de chiles',
+        variante: 'Único',
+        sinIngredientes: ['Cebolla'],
+        extras: [{ nombre: 'Queso', cantidad: 1 }],
+      }),
+    ).toEqual({ principal: '2 × Orden de chiles', detalles: ['Sin cebolla', '+ 1 Queso c/u'] });
   });
 
   it('extra suelto: solo cantidad y nombre', () => {
