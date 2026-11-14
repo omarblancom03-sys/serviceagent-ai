@@ -30,6 +30,14 @@ import { armarMenu, type MenuRepo, type Sinonimo } from './menu';
  *   (lib/normalizar.ts). Si la llave lleva a dos platillos → ambiguo.
  * - Paso 2: los platillos que contienen TODAS las palabras del texto → ambiguo, aunque sea uno
  *   (una coincidencia parcial siempre se pregunta). Ninguno → no_existe.
+ *
+ * Variante que el modelo no mandó en su campo (D67, US-07-P2-T2). El cliente dice "tiras de pollo
+ * con salsa BBQ" y la salsa es una presentación del platillo, no un extra. Un respaldo, solo cuando
+ * no vino `variante` y la coincidencia es única; si no, se aclara como siempre:
+ * - Pegada en `producto` (`separarVariantePegada`): si el texto completo no existe, se parte en
+ *   "con"; vale si la izquierda es exacto un platillo y la derecha, una sola de sus variantes.
+ * Si el modelo manda la variante como extra suelto ("BBQ" en `extrasSueltos`), NO se adivina: el
+ * platillo responde `falta_variante` y el extra se cotiza como extra (decisión del PO, D67).
  */
 
 /** Máximo de opciones en una aclaración `ambiguo`, en el orden del menú. */
@@ -107,6 +115,15 @@ export function armarCatalogo(menu: RespuestaMenu, sinonimos: Sinonimo[]): Catal
   return catalogo;
 }
 
+/** Paso 1: los platillos cuya llave coincide exacto con el texto, o `null` si ninguno. */
+function buscarExactos(catalogo: Catalogo, texto: string): Platillo[] | null {
+  const ids =
+    catalogo.indiceSuave.get(normalizarSuave(texto)) ??
+    catalogo.indiceSuave.get(normalizarSuave(sinPrefijoDePedido(texto))) ??
+    catalogo.indiceSinRelleno.get(palabras(texto).join(' '));
+  return ids ? catalogo.platillos.filter((p) => ids.includes(p.id)) : null;
+}
+
 /** Busca lo que dijo el cliente con las reglas de arriba. */
 export function resolverPlatillo(catalogo: Catalogo, dicho: string): ResultadoPlatillo {
   const texto = sinModoDeEntrega(dicho);
@@ -114,15 +131,11 @@ export function resolverPlatillo(catalogo: Catalogo, dicho: string): ResultadoPl
   // "???" o "la de": sin palabras, el paso 2 coincidiría con todos los platillos.
   if (buscadas.length === 0) return { tipo: 'no_existe' };
 
-  const exactos =
-    catalogo.indiceSuave.get(normalizarSuave(texto)) ??
-    catalogo.indiceSuave.get(normalizarSuave(sinPrefijoDePedido(texto))) ??
-    catalogo.indiceSinRelleno.get(buscadas.join(' '));
+  const exactos = buscarExactos(catalogo, texto);
   if (exactos) {
-    const platillos = catalogo.platillos.filter((p) => exactos.includes(p.id));
-    const [unico] = platillos;
-    if (platillos.length === 1 && unico) return { tipo: 'encontrado', platillo: unico };
-    return { tipo: 'ambiguo', opciones: nombresDe(platillos) };
+    const [unico] = exactos;
+    if (exactos.length === 1 && unico) return { tipo: 'encontrado', platillo: unico };
+    return { tipo: 'ambiguo', opciones: nombresDe(exactos) };
   }
 
   const candidatos = buscarPorPalabras(catalogo, buscadas);
@@ -210,6 +223,50 @@ export function limpiarVariante(pedida: string | undefined): string | undefined 
   if (pedida === undefined) return undefined;
   const limpia = sinModoDeEntrega(pedida);
   return normalizarSuave(limpia) === '' ? undefined : limpia;
+}
+
+export interface VariantePegada {
+  platillo: Platillo;
+  variante: Variante;
+}
+
+/**
+ * Respaldo para una variante pegada al platillo en `producto` (D67): "tiras de pollo con salsa BBQ"
+ * → Tiras de pollo, variante Salsa BBQ. Parte el texto en cada "con" y acepta un corte solo si la
+ * izquierda coincide exacto con UN platillo (paso 1, nunca por palabras sueltas) y la derecha con
+ * UNA sola de sus variantes. Si ningún corte sirve, o sirve más de uno, devuelve `null`: nunca
+ * adivina. "Guacamole con totopos" no se parte: totopos no es una presentación del guacamole.
+ */
+export function separarVariantePegada(catalogo: Catalogo, dicho: string): VariantePegada | null {
+  const texto = sinModoDeEntrega(dicho);
+  const hallados: VariantePegada[] = [];
+  for (const corte of texto.matchAll(/\s+con\s+/g)) {
+    const exactos = buscarExactos(catalogo, texto.slice(0, corte.index));
+    const [platillo] = exactos ?? [];
+    if (!platillo || exactos?.length !== 1) continue;
+    const variante = resolverVariante(platillo, texto.slice(corte.index + corte[0].length));
+    if (variante.tipo === 'encontrada') hallados.push({ platillo, variante: variante.variante });
+  }
+  const [unico] = hallados;
+  return hallados.length === 1 && unico ? unico : null;
+}
+
+/** A qué platillo llega un producto pedido, con el respaldo de la variante pegada (D67). */
+function resolverProducto(
+  catalogo: Catalogo,
+  pedido: ProductoPedido,
+): { encontrado: ResultadoPlatillo; variantePegada?: Variante } {
+  const encontrado = resolverPlatillo(catalogo, pedido.producto);
+  if (encontrado.tipo !== 'no_existe' || limpiarVariante(pedido.variante) !== undefined) {
+    return { encontrado };
+  }
+  const pegada = separarVariantePegada(catalogo, pedido.producto);
+  return pegada
+    ? {
+        encontrado: { tipo: 'encontrado', platillo: pegada.platillo },
+        variantePegada: pegada.variante,
+      }
+    : { encontrado };
 }
 
 /**
@@ -341,7 +398,7 @@ function cotizarProducto(
     aclarar(aclaracion);
   };
 
-  const encontrado = resolverPlatillo(catalogo, pedido.producto);
+  const { encontrado, variantePegada } = resolverProducto(catalogo, pedido);
   if (encontrado.tipo === 'no_existe') aclararYMarcar({ tipo: 'no_existe' });
   if (encontrado.tipo === 'ambiguo') {
     aclararYMarcar({ tipo: 'ambiguo', opciones: encontrado.opciones });
@@ -355,7 +412,11 @@ function cotizarProducto(
   const { platillo } = encontrado;
 
   const varianteDicha = limpiarVariante(pedido.variante);
-  const variante = resolverVariante(platillo, varianteDicha);
+  // Sin `variante`, vale la que venía pegada en `producto` (D67).
+  const respaldo = varianteDicha === undefined ? variantePegada : undefined;
+  const variante: ResultadoVariante = respaldo
+    ? { tipo: 'encontrada', variante: respaldo }
+    : resolverVariante(platillo, varianteDicha);
   if (variante.tipo === 'falta_variante') {
     aclararYMarcar({
       tipo: 'falta_variante',
@@ -420,6 +481,11 @@ function cotizarProducto(
 
 /** Cotiza el pedido completo, o devuelve todas las aclaraciones que hacen falta. */
 export function cotizarPedido(catalogo: Catalogo, args: CotizarPedidoArgs): RespuestaCotizarPedido {
+  // Llamada sin platillos ni extras: no hay nada que cotizar ni que aclarar (D67).
+  if (args.productos.length + args.extrasSueltos.length === 0) {
+    return { ok: false, pedidoVacio: true, aclaraciones: [] };
+  }
+
   const aclaraciones: Aclaracion[] = [];
   const renglones: RenglonCotizacion[] = [];
 
@@ -452,7 +518,7 @@ export function cotizarPedido(catalogo: Catalogo, args: CotizarPedidoArgs): Resp
     }
   });
 
-  if (aclaraciones.length > 0) return { ok: false, aclaraciones };
+  if (aclaraciones.length > 0) return { ok: false, pedidoVacio: false, aclaraciones };
   const totalCentavos = renglones.reduce((suma, r) => suma + r.subtotalCentavos, 0);
   return { ok: true, renglones, totalCentavos, totalTexto: formatearPesos(totalCentavos) };
 }

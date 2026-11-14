@@ -11,13 +11,13 @@
     }
   ],
   "debe": [
-    "La cotización final lleva las tiras de pollo con la variante Salsa BBQ y nada más: es la única llamada que fija argsEsperados.",
-    "Valen los dos caminos: mandar la variante desde la primera llamada, o mandar BBQ como extra suelto, recibir falta_variante y corregirlo sin preguntar.",
+    "La respuesta de la última cotización trae un solo renglón: Tiras de pollo con la variante Salsa BBQ, sin BBQ como extra.",
+    "Valen tres caminos: mandar la variante en su campo, como en argsEsperados; mandar todo en producto (\"tiras de pollo con salsa BBQ\"), que el backend resuelve en esa misma llamada (D67); o mandar BBQ como extra suelto, recibir falta_variante y volver a cotizar, sin preguntarle al cliente, con Salsa BBQ en variante y sin ese extra.",
     "Da el resumen con el nombre y la presentación que devolvió cotizar_pedido.",
     "Dice el total que devolvió cotizar_pedido."
   ],
   "noDebe": [
-    "Que la cotización final lleve BBQ como extra suelto.",
+    "Que el resumen o el total incluyan BBQ como extra.",
     "Preguntar cuál salsa quiere: el cliente ya la dijo.",
     "Decir un total que incluya un extra que el cliente no pidió."
   ]
