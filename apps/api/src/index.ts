@@ -8,6 +8,7 @@ import { crearEmbedderWorkersAi } from './lib/embedderWorkersAi';
 import type { AppEnv } from './lib/env';
 import { crearRepoAlertas } from './lib/repoAlertas';
 import { crearRepoCaja } from './lib/repoCaja';
+import { crearRepoCancelaciones } from './lib/repoCancelaciones';
 import { crearRepoChat } from './lib/repoChat';
 import { crearRepoCocina } from './lib/repoCocina';
 import { crearRepoEmbeddings } from './lib/repoEmbeddings';
@@ -43,6 +44,7 @@ const dependenciasReales: Dependencias = {
   crearRepoEmpleados: (env) => crearRepoEmpleados(crearClienteSupabase(env)),
   crearRepoMenu: (env) => crearRepoMenu(crearClienteSupabase(env)),
   crearRepoPedidos: (env) => crearRepoPedidos(crearClienteSupabase(env)),
+  crearRepoCancelaciones: (env) => crearRepoCancelaciones(crearClienteSupabase(env)),
   crearRepoChat: (env) => crearRepoChat(crearClienteSupabase(env)),
   crearRepoCocina: (env) => crearRepoCocina(crearClienteSupabase(env)),
   crearRepoCaja: (env) => crearRepoCaja(crearClienteSupabase(env)),

@@ -1,6 +1,7 @@
 export * from './alerta';
 export * from './auth';
 export * from './caja';
+export * from './cancelacion';
 export * from './busqueda';
 export * from './chat';
 export * from './cocina';

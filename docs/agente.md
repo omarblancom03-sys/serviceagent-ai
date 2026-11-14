@@ -13,7 +13,7 @@ Retell llama a nuestra API. **Toda petición de Retell se verifica con la firma 
 | `cotizar_pedido`        | `POST /pedidos/cotizar`         | Valida productos y calcula total (sin guardar)                                                    |
 | `crear_pedido`          | `POST /pedidos`                 | Crea el pedido tras confirmación explícita (D48, D55)                                             |
 | `modificar_pedido`      | `PATCH /pedidos/:folio`         | Cambios antes de preparación                                                                      |
-| `cancelar_pedido`       | `POST /pedidos/:folio/cancelar` | Solo antes de `preparando`                                                                        |
+| `cancelar_pedido`       | `POST /pedidos/cancelar`        | Folio y teléfono que coincidan, antes de `preparando` y sin pagos; guarda el motivo (D71)         |
 | `estado_pedido`         | `POST /agente/estado`           | Requiere folio **y** teléfono que coincidan                                                       |
 | `tiempo_estimado`       | `GET /tiempo-estimado`          | Antes de confirmar                                                                                |
 | `transferir_a_empleado` | `POST /agente/escalar`          | Crea alerta en caja/admin, una pendiente por conversación; sin `chat.chat_id` no la crea (D59)    |

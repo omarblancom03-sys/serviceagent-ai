@@ -1,13 +1,16 @@
 import { createRoute, type OpenAPIHono } from '@hono/zod-openapi';
 import {
+  CancelarPedidoPeticionSchema,
   CotizarPedidoPeticionSchema,
   CrearPedidoPeticionSchema,
   ErrorPedidoSchema,
+  RespuestaCancelarPedidoSchema,
   RespuestaCotizarPedidoSchema,
   RespuestaCrearPedidoSchema,
 } from '@serviceagent/shared';
 import type { AppEnv, Bindings } from '../lib/env';
 import { requiereFirmaRetell } from '../lib/firmaRetell';
+import { cancelarPedido, type CancelacionesRepo } from '../services/cancelacion';
 import { mensajesDeLaConversacion } from '../services/confirmacion';
 import { obtenerCotizacion } from '../services/cotizacion';
 import { crearPedido, type PedidosRepo } from '../services/pedido';
@@ -17,6 +20,7 @@ import type { DependenciasMenu } from './menu';
 /** Cotizar y crear leen el mismo menú que `GET /menu`: usan el mismo repo. */
 export type DependenciasPedidos = DependenciasMenu & {
   crearRepoPedidos: (env: Bindings) => PedidosRepo;
+  crearRepoCancelaciones: (env: Bindings) => CancelacionesRepo;
 };
 
 const tags = ['Pedidos'];
@@ -81,7 +85,55 @@ export const crearPedidoRoute = createRoute({
   },
 });
 
+export const cancelarPedidoRoute = createRoute({
+  method: 'post',
+  path: '/pedidos/cancelar',
+  tags,
+  summary: 'Cancela un pedido a nombre del cliente (custom function `cancelar_pedido`)',
+  description:
+    FIRMA_RETELL +
+    'Cancela el pedido solo si el folio es de ese teléfono, todavía no entra a preparación ' +
+    '(`confirmado`, `esperando_pago` o `en_cola`) y no tiene pagos; guarda el motivo en el ' +
+    'historial (D71). La regla la cumple la base con la fila bloqueada. Siempre 200 con un cuerpo ' +
+    'que el agente puede leer: `ok: true` (también si ya estaba cancelado, con ' +
+    '`yaEstabaCancelado`), u `ok: false` con lo que falta corregir (folio, teléfono o un motivo ' +
+    'de más de 200 caracteres) o con el `rechazo`: `no_encontrado` (no existe o es de otro ' +
+    'teléfono: la misma respuesta), `en_preparacion`, `con_pago` o `cerrado`. La pantalla de ' +
+    'cocina se entera por la señal de Realtime (D47).',
+  security: [{ FirmaRetell: [] }],
+  middleware: [requiereFirmaRetell()] as const,
+  request: { body: { content: json(CancelarPedidoPeticionSchema), required: true } },
+  responses: {
+    200: {
+      content: json(RespuestaCancelarPedidoSchema),
+      description: 'Pedido cancelado, o por qué no se canceló',
+    },
+    ...respuestasDeError('la cancelación'),
+  },
+});
+
 export function registrarPedidos(app: OpenAPIHono<AppEnv>, deps: DependenciasPedidos) {
+  app.openapi(
+    cancelarPedidoRoute,
+    async (c) => {
+      const { args } = c.req.valid('json');
+      try {
+        return c.json(await cancelarPedido(deps.crearRepoCancelaciones(c.env), args), 200);
+      } catch (error) {
+        console.error('POST /pedidos/cancelar', error);
+        return c.json(
+          { error: 'No se pudo cancelar el pedido. Intenta de nuevo en un momento.' },
+          500,
+        );
+      }
+    },
+    (resultado, c) => {
+      if (!resultado.success) {
+        return c.json(errorDeFormato('cancelar_pedido', resultado.error.issues), 400);
+      }
+    },
+  );
+
   app.openapi(
     cotizarPedidoRoute,
     async (c) => {
