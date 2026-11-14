@@ -20,7 +20,7 @@ import { crearClienteSupabase } from './lib/supabase';
 import { registrarAgente, type DependenciasAgente } from './routes/agente';
 import { registrarAlertas, type DependenciasAlertas } from './routes/alertas';
 import { registrarAuth, type DependenciasAuth } from './routes/auth';
-import { registrarCaja, type DependenciasCaja } from './routes/caja';
+import { ERROR_PETICION_CAJA, registrarCaja, type DependenciasCaja } from './routes/caja';
 import { ERROR_PETICION_INVALIDA, registrarChat, type DependenciasChat } from './routes/chat';
 import { ERROR_PETICION_COCINA, registrarCocina, type DependenciasCocina } from './routes/cocina';
 import { registrarConfiguracion, type DependenciasConfiguracion } from './routes/configuracion';
@@ -84,12 +84,13 @@ export function crearApp(reemplazos: Partial<Dependencias> = {}) {
   registrarAlertas(app, dependencias);
   registrarConfiguracion(app, dependencias);
 
-  // Igual que el manejador por defecto de Hono, salvo una cosa: en /chat/* y /cocina/* el 400 de
+  // Igual que el manejador por defecto de Hono, salvo una cosa: en /chat/*, /cocina/* y /caja/* el 400 de
   // un cuerpo que no es JSON válido (Hono lo responde en texto) sale con el formato de su contrato.
   app.onError((error, c) => {
     if (error instanceof HTTPException && error.status === 400) {
       if (c.req.path.startsWith('/chat/')) return c.json(ERROR_PETICION_INVALIDA, 400);
       if (c.req.path.startsWith('/cocina/')) return c.json(ERROR_PETICION_COCINA, 400);
+      if (c.req.path.startsWith('/caja/')) return c.json(ERROR_PETICION_CAJA, 400);
     }
     if ('getResponse' in error) {
       const res = error.getResponse();

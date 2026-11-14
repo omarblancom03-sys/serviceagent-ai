@@ -4,6 +4,7 @@ import { crearApp } from '../src/index';
 import { firmarToken } from '../src/lib/auth';
 import type { Bindings } from '../src/lib/env';
 import type { CajaRepo, PedidoCajaLeido } from '../src/services/caja';
+import { accionesSinUso } from './cajaEnMemoria';
 
 const env = { JWT_SECRET: 'secreto-de-prueba-de-al-menos-32-caracteres' } as Bindings;
 
@@ -33,6 +34,7 @@ const pedidos: PedidoCajaLeido[] = [
 ];
 
 const repoCon = (lista: PedidoCajaLeido[]): CajaRepo => ({
+  ...accionesSinUso,
   leerPedidosCaja: () => Promise.resolve(lista),
 });
 const app = crearApp({ crearRepoCaja: () => repoCon(pedidos) });
@@ -86,6 +88,7 @@ describe('GET /caja/pedidos (US-20)', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     const appQueFalla = crearApp({
       crearRepoCaja: () => ({
+        ...accionesSinUso,
         leerPedidosCaja: () => Promise.reject(new Error('Supabase no responde')),
       }),
     });

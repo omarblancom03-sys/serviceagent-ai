@@ -1,9 +1,19 @@
-import type { EstadoPedido, MetodoPago, PedidoCaja } from '@serviceagent/shared';
+import type {
+  ConflictoCaja,
+  EstadoPedido,
+  MetodoCobroCaja,
+  MetodoPago,
+  PedidoCaja,
+  RespuestaCobroCaja,
+  RespuestaEntregaCaja,
+} from '@serviceagent/shared';
 import { formatearPesos } from '../lib/pesos';
 
 /*
  * Pantalla de caja (US-20). Recibe los pedidos ya leídos de la base y arma lo que caja necesita:
  * total, si ya está pagado y con qué, y cuándo entró a su estado actual. La pantalla los agrupa.
+ * Cobrar y entregar (US-21, D66) pasan por dos funciones SQL que bloquean el pedido: aquí solo se
+ * traduce su resultado a la respuesta o al conflicto que ve caja.
  */
 
 /** Zona del restaurante: el "día" de caja empieza a las 00:00 de Chihuahua, no de UTC. */
@@ -45,7 +55,32 @@ export interface PedidoCajaLeido {
 export interface CajaRepo {
   /** Pedidos creados desde `desde`, más los de antes que siguen en un estado de `ESTADOS_ABIERTOS`. */
   leerPedidosCaja(desde: Date): Promise<PedidoCajaLeido[]>;
+  /**
+   * Registra un pago por lo que falta del total (lo calcula la base) a nombre del empleado. `null`
+   * si el folio no existe. No cobra si ya está pagado ni si el pedido no está en la cola,
+   * preparándose o listo. La hora la pone la base (D42).
+   */
+  cobrarPedido(datos: {
+    folio: number;
+    metodo: MetodoCobroCaja;
+    idEmpleado: string;
+  }): Promise<CobroGuardado | null>;
+  /**
+   * Pasa el pedido de `listo` a `entregado` y guarda en el historial la hora y el empleado. `null`
+   * si el folio no existe. No entrega si ya no está listo ni si falta cobrarlo.
+   */
+  entregarPedido(datos: { folio: number; idEmpleado: string }): Promise<EntregaGuardada | null>;
 }
+
+/** Lo que devuelve `cobrar_pedido_caja`. */
+export type CobroGuardado =
+  | { resultado: 'cobrado'; montoCentavos: number; cobradoEn: Date }
+  | { resultado: 'ya_pagado' | 'estado_no_cobrable'; estadoActual: EstadoPedido };
+
+/** Lo que devuelve `entregar_pedido_caja`. */
+export type EntregaGuardada =
+  | { resultado: 'entregado'; entregadoEn: Date }
+  | { resultado: 'estado_distinto' | 'falta_pago'; estadoActual: EstadoPedido };
 
 /** Fecha y hora de pared de `instante` en `zona`. */
 function paredEn(instante: Date, zona: string) {
@@ -114,6 +149,7 @@ export function armarPedidosCaja(pedidos: PedidoCajaLeido[]): PedidoCaja[] {
     .sort((a, b) => a.folio - b.folio)
     .map((p) => {
       const pagadoCentavos = p.pagos.reduce((suma, pago) => suma + pago.montoCentavos, 0);
+      const porCobrar = Math.max(0, p.totalCentavos - pagadoCentavos);
       return {
         folio: p.folio,
         folioTexto: `#${p.folio}`,
@@ -125,6 +161,8 @@ export function armarPedidosCaja(pedidos: PedidoCajaLeido[]): PedidoCaja[] {
         totalCentavos: p.totalCentavos,
         totalTexto: formatearPesos(p.totalCentavos),
         pagado: pagadoCentavos >= p.totalCentavos,
+        porCobrarCentavos: porCobrar,
+        porCobrarTexto: formatearPesos(porCobrar),
         metodosPago: metodosDe(p.pagos),
       };
     });
@@ -136,4 +174,99 @@ export async function obtenerPedidosCaja(
   ahora = new Date(),
 ): Promise<PedidoCaja[]> {
   return armarPedidosCaja(await repo.leerPedidosCaja(inicioDelDia(ahora)));
+}
+
+// Cobrar y entregar (US-21, D66)
+
+/** Resultado para la ruta: la respuesta 200, el folio no existe (404) o un conflicto (409). */
+export type ResultadoCaja<T> =
+  | { tipo: 'ok'; respuesta: T }
+  | { tipo: 'no_existe' }
+  | { tipo: 'conflicto'; conflicto: ConflictoCaja };
+
+const folioTexto = (folio: number) => `#${folio}`;
+
+/** Por qué no se cobra un pedido que no está en la cola, preparándose ni listo. */
+function textoNoCobrable(folio: number, estado: EstadoPedido): string {
+  const pedido = `El pedido ${folioTexto(folio)}`;
+  if (estado === 'cancelado') return `${pedido} está cancelado: no se cobra.`;
+  if (estado === 'expirado') return `${pedido} expiró: no se cobra.`;
+  if (estado === 'entregado') return `${pedido} ya se entregó.`;
+  // confirmado o esperando_pago: con pago por transferencia, el pedido espera el depósito (D55).
+  return `${pedido} espera una transferencia: todavía no se cobra en caja.`;
+}
+
+/** Por qué no se entrega un pedido que ya no está listo. */
+function textoNoEntregable(folio: number, estado: EstadoPedido): string {
+  const pedido = `El pedido ${folioTexto(folio)}`;
+  if (estado === 'entregado') return `${pedido} ya se entregó.`;
+  if (estado === 'cancelado') return `${pedido} está cancelado.`;
+  return `${pedido} ya no está listo para entregar. Actualiza la lista.`;
+}
+
+/**
+ * Botón Cobrar: registra el pago de lo que falta, en efectivo o con tarjeta. `idEmpleado` sale de
+ * la sesión. Nunca recibe un monto: lo calcula la base. Los errores del repo se propagan (500).
+ */
+export async function cobrarPedidoCaja(
+  repo: CajaRepo,
+  folio: number,
+  metodo: MetodoCobroCaja,
+  idEmpleado: string,
+): Promise<ResultadoCaja<RespuestaCobroCaja>> {
+  const cobro = await repo.cobrarPedido({ folio, metodo, idEmpleado });
+  if (!cobro) return { tipo: 'no_existe' };
+  if (cobro.resultado !== 'cobrado') {
+    const { resultado, estadoActual } = cobro;
+    const error =
+      resultado === 'ya_pagado'
+        ? `El pedido ${folioTexto(folio)} ya está pagado.`
+        : textoNoCobrable(folio, estadoActual);
+    return { tipo: 'conflicto', conflicto: { error, codigo: resultado, estadoActual } };
+  }
+  return {
+    tipo: 'ok',
+    respuesta: {
+      folio,
+      folioTexto: folioTexto(folio),
+      metodo,
+      montoCentavos: cobro.montoCentavos,
+      montoTexto: formatearPesos(cobro.montoCentavos),
+      cobradoEn: cobro.cobradoEn.toISOString(),
+    },
+  };
+}
+
+/**
+ * Botón Entregado: `listo` → `entregado`, solo si el pedido ya está pagado. `idEmpleado` sale de
+ * la sesión. Los errores del repo se propagan (500).
+ */
+export async function entregarPedidoCaja(
+  repo: CajaRepo,
+  folio: number,
+  idEmpleado: string,
+): Promise<ResultadoCaja<RespuestaEntregaCaja>> {
+  const entrega = await repo.entregarPedido({ folio, idEmpleado });
+  if (!entrega) return { tipo: 'no_existe' };
+  if (entrega.resultado !== 'entregado') {
+    const { resultado, estadoActual } = entrega;
+    const conflicto: ConflictoCaja =
+      resultado === 'falta_pago'
+        ? {
+            error: `Cobra el pedido ${folioTexto(folio)} antes de entregarlo.`,
+            codigo: 'falta_pago',
+            estadoActual,
+          }
+        : { error: textoNoEntregable(folio, estadoActual), codigo: 'estado_cambio', estadoActual };
+    return { tipo: 'conflicto', conflicto };
+  }
+  return {
+    tipo: 'ok',
+    respuesta: {
+      folio,
+      folioTexto: folioTexto(folio),
+      estado: 'entregado',
+      entregadoEn: entrega.entregadoEn.toISOString(),
+    },
+  };
 }
