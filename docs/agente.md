@@ -54,6 +54,8 @@ Lógica en `apps/api/src/services/chat.ts`; Retell se llama con `fetch` directo 
 3. `create-chat` con `agent_version: "latest_published"`, la versión publicada más reciente ([D52](decisiones.md)); timeout 10 s. Si falla por cualquier causa, o el chat no queda `ongoing`, o no se puede guardar su `chat_id`: se termina la conversación y 503.
 4. 201 con los mensajes `agent` que traiga `message_with_tool_calls` (o vacío), 0 usados y límite 30.
 
+Al cliente solo le llegan los mensajes `agent` con texto; si en una misma respuesta el agente repite la pregunta de confirmación (preguntó, llamó a `crear_pedido` sin el "sí" y volvió a preguntar), pasa solo la primera ([D69](decisiones.md)).
+
 **Enviar** (`POST /chat/conversaciones/{id}/mensajes`):
 
 1. Id o cuerpo mal formados (incluido JSON inválido): 400 sin tocar la base. Sin `RETELL_API_KEY`: 503 sin tocar la base.

@@ -36,13 +36,17 @@ const MensajeCrudoSchema = z.object({
   message_id: z.unknown().optional(),
   content: z.unknown().optional(),
   created_timestamp: z.unknown().optional(),
+  // Nombre de la herramienta en `tool_call_invocation`: obligatorio en la respuesta de
+  // create-chat-completion según la referencia de la API de Retell (y así llegó en un chat real el
+  // 22-oct). Solo se usa para saber si se volvió a cotizar (D69).
+  name: z.unknown().optional(),
 });
 
 function leerMensajes(crudos: unknown[]): MensajeRetell[] {
   return crudos.flatMap((crudo) => {
     const m = MensajeCrudoSchema.safeParse(crudo);
     if (!m.success) return [];
-    const { role, message_id: id, content, created_timestamp: ms } = m.data;
+    const { role, message_id: id, content, created_timestamp: ms, name } = m.data;
     return [
       {
         rol: role,
@@ -50,6 +54,7 @@ function leerMensajes(crudos: unknown[]): MensajeRetell[] {
         texto: typeof content === 'string' ? content : null,
         creadoEnMs:
           typeof ms === 'number' && Number.isSafeInteger(ms) && ms >= 0 && ms <= MAX_MS ? ms : null,
+        ...(typeof name === 'string' && name !== '' ? { nombre: name } : {}),
       },
     ];
   });
