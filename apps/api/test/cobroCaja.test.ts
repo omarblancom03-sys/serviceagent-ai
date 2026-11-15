@@ -18,7 +18,9 @@ import { crearCajaEnMemoria, type PedidoCajaEnMemoria } from './cajaEnMemoria';
 
 /*
  * Cobro en caja y entrega (US-21, D66): servicio sobre el repo en memoria, rutas y repo de Supabase.
- * El candado de la base (dos cajas a la vez) se prueba con supabase/ensayos/caja_cobro_entrega.sql.
+ * El ensayo supabase/ensayos/caja_cobro_entrega.sql corre en una sola transacción y en secuencia, y el
+ * repo en memoria no tiene candado: dos cajas a la vez contra la base real se prueban con
+ * `pnpm --filter @serviceagent/api probar-candado-cobro` (scripts/probarCandadoCobro.ts).
  */
 
 const t = (iso: string) => new Date(iso);
