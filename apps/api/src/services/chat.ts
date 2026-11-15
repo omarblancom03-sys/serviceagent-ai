@@ -33,6 +33,11 @@ export interface ChatRepo {
   registrarMensaje(id: string, limite: number, ahora: Date): Promise<ResultadoRegistrar>;
   /** Resta el mensaje contado; nunca baja de 0. `null` si la conversación no existe. */
   devolverMensaje(id: string): Promise<number | null>;
+  /**
+   * Descarta una conversación que Retell no llegó a abrir: queda terminada y deja de contar en el
+   * tope diario (D64). `false` si no existe, ya tenía chat de Retell o ya estaba descartada.
+   */
+  descartarApertura(id: string, ahora: Date): Promise<boolean>;
   /** Marca la conversación como terminada; `false` si ya lo estaba o no existe. */
   terminar(id: string, ahora: Date): Promise<boolean>;
 }
@@ -137,8 +142,9 @@ export type ResultadoIniciar =
   | { tipo: 'no_disponible' };
 
 /**
- * Abre la conversación en la base (gasta un lugar del tope) y luego el chat en Retell. Si
- * Retell falla, la conversación se termina y el lugar queda gastado (D39).
+ * Abre la conversación en la base (gasta un lugar del tope) y luego el chat en Retell. Si Retell
+ * claramente no creó el chat (lo rechazó o no hubo conexión), la conversación se descarta y su
+ * lugar se recupera (D64). Ante timeout, 5xx o duda se termina y el lugar queda gastado (D39).
  */
 export async function iniciarConversacion(
   { repo, retell }: DependenciasServicioChat,
@@ -153,7 +159,11 @@ export async function iniciarConversacion(
     const chat = await retell.crearChat(agentId);
     if (!chat.ok) {
       avisarFalla('create-chat', chat);
-      await terminarSinFallar(repo, id, ahora);
+      if (chat.falla === 'rechazo' || chat.falla === 'sin_conexion') {
+        await descartarSinFallar(repo, id, ahora);
+      } else {
+        await terminarSinFallar(repo, id, ahora);
+      }
       return { tipo: 'no_disponible' };
     }
     if (chat.datos.estado !== 'ongoing') {
@@ -253,6 +263,20 @@ async function terminarSinFallar(repo: ChatRepo, id: string, ahora: Date) {
     await repo.terminar(id, ahora);
   } catch (error) {
     avisarError('terminar la conversación', error);
+  }
+}
+
+/**
+ * Si no se puede descartar (falla la base, o la función todavía no existe en ella), la
+ * conversación al menos se termina, igual que antes de D64: queda cerrada y sigue contando en el
+ * tope. Nunca se queda abierta sin chat.
+ */
+async function descartarSinFallar(repo: ChatRepo, id: string, ahora: Date) {
+  try {
+    await repo.descartarApertura(id, ahora);
+  } catch (error) {
+    avisarError('descartar la apertura', error);
+    await terminarSinFallar(repo, id, ahora);
   }
 }
 
