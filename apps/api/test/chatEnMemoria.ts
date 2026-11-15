@@ -5,6 +5,7 @@ interface FilaConversacion {
   chatIdRetell: string | null;
   mensajesUsados: number;
   terminadaEn: Date | null;
+  aperturaFallidaEn: Date | null;
   creadoEn: Date;
 }
 
@@ -14,8 +15,8 @@ const diaChihuahua = (fecha: Date) =>
 
 /**
  * `ChatRepo` en memoria que imita las funciones SQL de `conversaciones_chat`: tope por día de
- * Chihuahua, conversación sin `chat_id` como no encontrada, terminada, límite y devolver sin
- * bajar de 0. Cada operación lee y escribe sin `await` de por medio, así que es atómica.
+ * Chihuahua sin contar las aperturas fallidas, conversación sin `chat_id` como no encontrada,
+ * terminada, límite y devolver sin bajar de 0. Cada operación lee y escribe sin `await` de por medio, así que es atómica.
  */
 export function crearChatRepoEnMemoria() {
   const filas = new Map<string, FilaConversacion>();
@@ -24,13 +25,16 @@ export function crearChatRepoEnMemoria() {
     registrar: 0,
     devolver: [] as string[],
     terminar: [] as string[],
+    descartar: [] as string[],
   };
 
   const repo: ChatRepo = {
     async abrir(topeDiario, ahora) {
       llamadas.abrir++;
       const hoy = diaChihuahua(ahora);
-      const abiertasHoy = [...filas.values()].filter((f) => diaChihuahua(f.creadoEn) === hoy);
+      const abiertasHoy = [...filas.values()].filter(
+        (f) => diaChihuahua(f.creadoEn) === hoy && f.aperturaFallidaEn === null,
+      );
       if (abiertasHoy.length >= topeDiario) return { resultado: 'tope_alcanzado' };
       const id = crypto.randomUUID();
       filas.set(id, {
@@ -38,6 +42,7 @@ export function crearChatRepoEnMemoria() {
         chatIdRetell: null,
         mensajesUsados: 0,
         terminadaEn: null,
+        aperturaFallidaEn: null,
         creadoEn: ahora,
       });
       return { resultado: 'abierta', id };
@@ -71,6 +76,15 @@ export function crearChatRepoEnMemoria() {
       if (!fila) return null;
       fila.mensajesUsados = Math.max(0, fila.mensajesUsados - 1);
       return fila.mensajesUsados;
+    },
+
+    async descartarApertura(id, ahora) {
+      llamadas.descartar.push(id);
+      const fila = filas.get(id);
+      if (!fila || fila.chatIdRetell !== null || fila.aperturaFallidaEn) return false;
+      fila.aperturaFallidaEn = ahora;
+      fila.terminadaEn ??= ahora;
+      return true;
     },
 
     async terminar(id, ahora) {
