@@ -60,7 +60,7 @@ confirmado → (esperando_pago) → en_cola → preparando → listo → entrega
 | en_cola → preparando | Cocina (botón **Empezar**)                                                           |
 | preparando → listo   | Cocina (botón verde **Terminado**) → dispara aviso por WhatsApp                      |
 | listo → preparando   | Cocina (botón **Regresar**, hasta 15 min después del último Terminado, D63)          |
-| listo → entregado    | Caja                                                                                 |
+| listo → entregado    | Caja (botón **Entregado**, solo si el pedido ya está pagado, D66)                    |
 | → cancelado          | Cliente vía agente (solo antes de `preparando`) o empleado                           |
 | → expirado           | Sistema, si una transferencia no llega a tiempo                                      |
 
@@ -73,6 +73,7 @@ confirmado → (esperando_pago) → en_cola → preparando → listo → entrega
 
 - Métodos: transferencia (vía agente), efectivo y tarjeta (en caja).
 - Cada pago es una fila de `pagos` (método, monto en centavos, quién lo cobró y hora). Un pedido está pagado cuando la suma de sus pagos cubre su total ([D54](decisiones.md)).
+- **Caja** ([D66](decisiones.md)): **Cobrar** registra un solo pago por lo que falta del total, en efectivo o con tarjeta, a nombre del empleado de la sesión; el monto lo calcula la base. Solo se cobra un pedido en `en_cola`, `preparando` o `listo` que no esté pagado, y nunca dos veces. **Entregado** pasa el pedido de `listo` a `entregado` solo si ya está pagado y guarda la hora y quién lo entregó. Ninguno tiene Deshacer: la pantalla pide elegir el método y confirmar la entrega.
 - Transferencia: referencia única por pedido + CLABE ficticia. El Banco Simulado llama a `POST /webhooks/banco` con **firma HMAC**. El backend concilia por referencia + monto.
 - Casos borde obligatorios: monto distinto, referencia inexistente, webhook duplicado (idempotencia), pago tardío de pedido expirado.
 
