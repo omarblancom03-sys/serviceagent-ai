@@ -170,3 +170,15 @@ export function mensajesDeLaConversacion(conversacion: unknown): MensajeConversa
     return [leido.success ? leido.data : { role: ROL_ILEGIBLE }];
   });
 }
+
+/** Texto para comparar dos mensajes: sin mayúsculas, acentos ni signos. */
+export function textoNormalizado(texto: string): string {
+  return palabrasDe(texto).join(' ');
+}
+
+const SOLO_LA_PREGUNTA = new RegExp(`^(te )?${textoNormalizado(FRASE_PREGUNTA_CONFIRMACION)}$`);
+
+/** El mensaje es solo la pregunta fija, sin resumen ni nada más: "¿Confirmo tu pedido?" (D69). */
+export function esSoloLaPreguntaDeConfirmacion(texto: string): boolean {
+  return SOLO_LA_PREGUNTA.test(textoNormalizado(texto));
+}

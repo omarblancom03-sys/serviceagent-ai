@@ -88,6 +88,51 @@ describe('sinConfirmacionRepetida (D69)', () => {
     ).toEqual([RESUMEN, nueva]);
   });
 
+  // Revisión de Martín al #71: D48 toma el "sí" para la ÚLTIMA pregunta, así que el cliente tiene
+  // que ver cualquier pregunta que diga algo distinto de lo que ya vio.
+  it('si la segunda pregunta trae otro contenido (corrige un dato sin recotizar), pasan las dos', () => {
+    const corregida =
+      'Perdón, a nombre de Ana Pérez. Tu pedido: 1 Hamburguesa Granero, por $149.00, al 614 123 4567. ¿Confirmo tu pedido?';
+    expect(
+      textos([agente(RESUMEN), llamada('crear_pedido'), FALTA_CONFIRMACION, agente(corregida)]),
+    ).toEqual([RESUMEN, corregida]);
+  });
+
+  it('el mismo texto con otras mayúsculas, acentos o signos cuenta como repetido', () => {
+    const casiIgual = RESUMEN.replace('Tu pedido:', 'tu pedido -').replace('López', 'Lopez');
+    expect(textos([agente(RESUMEN), llamada('crear_pedido'), agente(casiIgual)])).toEqual([
+      RESUMEN,
+    ]);
+  });
+
+  it('después de una pregunta distinta, repetir cualquiera de las dos sí se quita', () => {
+    const corregida = RESUMEN.replace('Ana López', 'Ana Pérez');
+    expect(
+      textos([agente(RESUMEN), agente(corregida), agente(RESUMEN), agente(SOLO_PREGUNTA)]),
+    ).toEqual([RESUMEN, corregida]);
+  });
+
+  it('si la primera fue la frase sola y después llega el resumen, pasan las dos', () => {
+    expect(textos([agente(SOLO_PREGUNTA), llamada('crear_pedido'), agente(RESUMEN)])).toEqual([
+      SOLO_PREGUNTA,
+      RESUMEN,
+    ]);
+  });
+
+  it('una llamada sin nombre pudo ser una cotización: pasan las dos, aunque sean iguales', () => {
+    const sinNombre: MensajeRetell = {
+      rol: 'tool_call_invocation',
+      id: null,
+      texto: null,
+      creadoEnMs: null,
+    };
+    expect(textos([agente(RESUMEN), sinNombre, agente(RESUMEN)])).toEqual([RESUMEN, RESUMEN]);
+    expect(textos([agente(RESUMEN), sinNombre, agente(SOLO_PREGUNTA)])).toEqual([
+      RESUMEN,
+      SOLO_PREGUNTA,
+    ]);
+  });
+
   it('otro mensaje del agente después de la pregunta sí pasa', () => {
     const telefono = 'El teléfono debe ser de México: 10 dígitos. ¿Me lo repites?';
     expect(textos([agente(RESUMEN), llamada('crear_pedido'), agente(telefono)])).toEqual([

@@ -36,9 +36,11 @@ const MensajeCrudoSchema = z.object({
   message_id: z.unknown().optional(),
   content: z.unknown().optional(),
   created_timestamp: z.unknown().optional(),
-  // Nombre de la herramienta en `tool_call_invocation`: obligatorio en la respuesta de
-  // create-chat-completion según la referencia de la API de Retell (y así llegó en un chat real el
-  // 22-oct). Solo se usa para saber si se volvió a cotizar (D69).
+  // Nombre de la herramienta en `tool_call_invocation`. La referencia de la API de Retell lo marca
+  // obligatorio en la respuesta de create-chat-completion, pero ahí no lo hemos comprobado: en el
+  // chat real del 22-oct se vio en la conversación que Retell le manda a `crear_pedido`
+  // (`chat.message_with_tool_calls`). Por eso una invocación sin nombre se trata como posible
+  // cotización (D69). Solo se usa para saber si se volvió a cotizar.
   name: z.unknown().optional(),
 });
 

@@ -4,7 +4,11 @@ import {
   type RespuestaEnviarMensaje,
   type RespuestaIniciarConversacion,
 } from '@serviceagent/shared';
-import { esPreguntaDeConfirmacion } from './confirmacion';
+import {
+  esPreguntaDeConfirmacion,
+  esSoloLaPreguntaDeConfirmacion,
+  textoNormalizado,
+} from './confirmacion';
 
 /**
  * Chat web (US-09-P1): la API abre la conversación y cuenta los mensajes del cliente en
@@ -129,21 +133,35 @@ function valorLimpio(valor: string | undefined): string | null {
  * `crear_pedido`; el backend no crea nada (`faltaConfirmacion`, D48) y el modelo vuelve a hacer la
  * pregunta, así que el cliente la vería dos veces seguidas. Aquí se deja solo la primera.
  *
- * La segunda sí se conserva si entre las dos se volvió a llamar a `cotizar_pedido`: el pedido pudo
- * cambiar y esa pregunta es de otra cotización (la misma regla con que D48 invalida un "sí").
+ * Una pregunta posterior solo se esconde si no le dice nada nuevo al cliente: es la frase sola
+ * ("¿Confirmo tu pedido?") o el mismo texto, ya normalizado, de una que ya se mostró. Si trae otro
+ * contenido ("Perdón, a nombre de Ana Pérez… ¿Confirmo tu pedido?") se muestra: D48 toma el "sí"
+ * para la última pregunta, y el cliente tiene que haber visto ese resumen.
+ *
+ * Tampoco se esconde si entre las dos se volvió a llamar a `cotizar_pedido`: el pedido pudo cambiar
+ * y esa pregunta es de otra cotización (la misma regla con que D48 invalida un "sí"). Una llamada
+ * sin nombre se trata igual, como posible cotización: ante la duda, se muestra.
  * Solo se quitan preguntas de confirmación (`esPreguntaDeConfirmacion`); cualquier otro mensaje
  * del agente pasa. En Retell la conversación sigue completa: el "sí" del cliente llega después de
  * la última pregunta y `crear_pedido` lo acepta igual.
  */
 export function sinConfirmacionRepetida(mensajes: MensajeRetell[]): MensajeRetell[] {
-  let preguntaEnPantalla = false;
+  // Preguntas ya mostradas desde la última (posible) cotización, normalizadas.
+  let mostradas: string[] = [];
   return mensajes.filter((m) => {
-    if (m.rol === 'tool_call_invocation' && m.nombre === 'cotizar_pedido') {
-      preguntaEnPantalla = false;
+    if (
+      m.rol === 'tool_call_invocation' &&
+      (m.nombre === undefined || m.nombre === 'cotizar_pedido')
+    ) {
+      mostradas = [];
     }
     if (m.rol !== 'agent' || m.texto === null || !esPreguntaDeConfirmacion(m.texto)) return true;
-    if (preguntaEnPantalla) return false;
-    preguntaEnPantalla = true;
+    const texto = textoNormalizado(m.texto);
+    const repetida =
+      mostradas.length > 0 &&
+      (esSoloLaPreguntaDeConfirmacion(m.texto) || mostradas.includes(texto));
+    if (repetida) return false;
+    mostradas.push(texto);
     return true;
   });
 }
