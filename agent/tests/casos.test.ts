@@ -280,6 +280,11 @@ describe('prompt (agent/prompt.md)', () => {
     expect(prompt).toContain('¿Confirmo tu pedido?');
   });
 
+  // Para cancelar, el backend busca "¿Cancelo tu pedido…?" (FRASE_PREGUNTA_CANCELACION, D73).
+  it('pregunta antes de cancelar con la frase fija que busca el backend', () => {
+    expect(prompt).toContain('¿Cancelo tu pedido');
+  });
+
   // docs/negocio.md -> Dinero: el modelo nunca calcula ni inventa precios.
   it('no contiene montos', () => {
     expect(prompt).not.toMatch(/\$\s*\d/);

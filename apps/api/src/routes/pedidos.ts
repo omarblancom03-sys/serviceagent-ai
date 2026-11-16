@@ -94,10 +94,13 @@ export const cancelarPedidoRoute = createRoute({
     FIRMA_RETELL +
     'Cancela el pedido solo si el folio es de ese teléfono, todavía no entra a preparación ' +
     '(`confirmado`, `esperando_pago` o `en_cola`) y no tiene pagos; guarda el motivo en el ' +
-    'historial (D71). La regla la cumple la base con la fila bloqueada. Siempre 200 con un cuerpo ' +
+    'historial (D71). Antes, en `chat.message_with_tool_calls` el cliente tiene que haber ' +
+    'respondido que sí a la última pregunta "¿Cancelo tu pedido…?" del agente; si no, ' +
+    '`faltaConfirmacion: true` sin tocar la base (D73). La regla la cumple la base con la fila ' +
+    'bloqueada. Siempre 200 con un cuerpo ' +
     'que el agente puede leer: `ok: true` (también si ya estaba cancelado, con ' +
-    '`yaEstabaCancelado`), u `ok: false` con lo que falta corregir (folio, teléfono o un motivo ' +
-    'de más de 200 caracteres) o con el `rechazo`: `no_encontrado` (no existe o es de otro ' +
+    '`yaEstabaCancelado`), u `ok: false` con lo que falta corregir (folio, teléfono, un motivo ' +
+    'de más de 200 caracteres o la confirmación) o con el `rechazo`: `no_encontrado` (no existe o es de otro ' +
     'teléfono: la misma respuesta), `en_preparacion`, `con_pago` o `cerrado`. La pantalla de ' +
     'cocina se entera por la señal de Realtime (D47).',
   security: [{ FirmaRetell: [] }],
@@ -116,9 +119,18 @@ export function registrarPedidos(app: OpenAPIHono<AppEnv>, deps: DependenciasPed
   app.openapi(
     cancelarPedidoRoute,
     async (c) => {
-      const { args } = c.req.valid('json');
+      // Sin el "sí" a "¿Cancelo tu pedido…?" en la conversación no se cancela (D73).
+      const { args, chat } = c.req.valid('json');
+      const mensajes = mensajesDeLaConversacion(chat);
+      if (mensajes.length === 0) {
+        const llaves = chat !== null && typeof chat === 'object' ? Object.keys(chat) : [];
+        console.warn('POST /pedidos/cancelar sin mensajes en la conversación', { llaves });
+      }
       try {
-        return c.json(await cancelarPedido(deps.crearRepoCancelaciones(c.env), args), 200);
+        return c.json(
+          await cancelarPedido(deps.crearRepoCancelaciones(c.env), args, mensajes),
+          200,
+        );
       } catch (error) {
         console.error('POST /pedidos/cancelar', error);
         return c.json(
