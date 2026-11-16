@@ -205,7 +205,7 @@ describe('POST /chat/conversaciones', () => {
     expect(tope.status).toBe(503);
     const error = ErrorEstricto.parse(tope.cuerpo);
     expect(error.codigo).toBe('servicio_no_disponible');
-    expect(error.error).toBe('El chat llegó a su límite de hoy. Intenta de nuevo mañana.');
+    expect(error.error).toBe('Servicio no disponible por el momento.');
     expect(error.error).not.toBe(ErrorChatSchema.parse(noDisponible.cuerpo).error);
     expect(falso.llamadas.crearChat).toHaveLength(llamadasAntes);
   });
@@ -259,7 +259,7 @@ describe('POST /chat/conversaciones', () => {
     // Los tres lugares del tope siguen libres y el cuarto ya no entra.
     for (let i = 0; i < 3; i++) expect((await iniciar()).status).toBe(201);
     const tope = await iniciar();
-    expect(ErrorEstricto.parse(tope.cuerpo).error).toContain('límite de hoy');
+    expect(ErrorEstricto.parse(tope.cuerpo).error).toBe('Servicio no disponible por el momento.');
   });
 
   it('si falla la base al descartar, responde 503 y la conversación queda terminada, como antes', async () => {
