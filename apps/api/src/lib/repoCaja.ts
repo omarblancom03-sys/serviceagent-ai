@@ -1,7 +1,13 @@
 import { EstadoPedidoSchema, MetodoPagoSchema } from '@serviceagent/shared';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
-import { ESTADOS_ABIERTOS, type CajaRepo, type PedidoCajaLeido } from '../services/caja';
+import {
+  ESTADOS_ABIERTOS,
+  type CajaRepo,
+  type CobroGuardado,
+  type EntregaGuardada,
+  type PedidoCajaLeido,
+} from '../services/caja';
 
 /*
  * Pedidos de caja con su historial y sus pagos, en una sola consulta de PostgREST
@@ -23,6 +29,30 @@ const FilaPedidoSchema = z.object({
 const COLUMNAS =
   'folio, nombre_cliente, telefono, estado, total_centavos, creado_en, ' +
   'historial_estado_pedido(estado, creado_en), pagos(metodo, monto_centavos, creado_en)';
+
+/*
+ * Filas de `cobrar_pedido_caja` y `entregar_pedido_caja`
+ * (supabase/migrations/*_caja_cobro_entrega.sql, US-21). Cero filas: el folio no existe.
+ */
+const FilaCobroSchema = z.discriminatedUnion('resultado', [
+  z.object({
+    resultado: z.literal('cobrado'),
+    cobrado_centavos: z.number().int().positive(),
+    cobrado_en: z.string(),
+  }),
+  z.object({
+    resultado: z.enum(['ya_pagado', 'estado_no_cobrable']),
+    estado_actual: EstadoPedidoSchema,
+  }),
+]);
+
+const FilaEntregaSchema = z.discriminatedUnion('resultado', [
+  z.object({ resultado: z.literal('entregado'), entregado_en: z.string() }),
+  z.object({
+    resultado: z.enum(['estado_distinto', 'falta_pago']),
+    estado_actual: EstadoPedidoSchema,
+  }),
+]);
 
 /** Implementación de `CajaRepo` sobre Supabase. */
 export function crearRepoCaja(cliente: SupabaseClient): CajaRepo {
@@ -55,6 +85,39 @@ export function crearRepoCaja(cliente: SupabaseClient): CajaRepo {
             creadoEn: new Date(p.creado_en),
           })),
         }));
+    },
+
+    async cobrarPedido({ folio, metodo, idEmpleado }): Promise<CobroGuardado | null> {
+      const { data, error } = await cliente.rpc('cobrar_pedido_caja', {
+        p_folio: folio,
+        p_metodo: metodo,
+        p_id_empleado: idEmpleado,
+      });
+      if (error) throw new Error(`No se pudo cobrar el pedido: ${error.message}`);
+
+      const [fila] = z.array(FilaCobroSchema).max(1).parse(data);
+      if (!fila) return null;
+      return fila.resultado === 'cobrado'
+        ? {
+            resultado: 'cobrado',
+            montoCentavos: fila.cobrado_centavos,
+            cobradoEn: new Date(fila.cobrado_en),
+          }
+        : { resultado: fila.resultado, estadoActual: fila.estado_actual };
+    },
+
+    async entregarPedido({ folio, idEmpleado }): Promise<EntregaGuardada | null> {
+      const { data, error } = await cliente.rpc('entregar_pedido_caja', {
+        p_folio: folio,
+        p_id_empleado: idEmpleado,
+      });
+      if (error) throw new Error(`No se pudo entregar el pedido: ${error.message}`);
+
+      const [fila] = z.array(FilaEntregaSchema).max(1).parse(data);
+      if (!fila) return null;
+      return fila.resultado === 'entregado'
+        ? { resultado: 'entregado', entregadoEn: new Date(fila.entregado_en) }
+        : { resultado: fila.resultado, estadoActual: fila.estado_actual };
     },
   };
 }
