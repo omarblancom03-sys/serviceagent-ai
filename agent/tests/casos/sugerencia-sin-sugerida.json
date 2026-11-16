@@ -1,0 +1,25 @@
+{
+  "id": "sugerencia-sin-sugerida",
+  "historia": "US-15",
+  "criterios": ["C1", "C3"],
+  "categoria": "pedido",
+  "titulo": "Sin sugerida (\"pollo\"), nombra las opciones sin proponer una",
+  "mensajes": ["Dame pollo"],
+  "argsEsperados": [
+    {
+      "productos": [
+        {
+          "producto": "pollo",
+          "cantidad": 1
+        }
+      ]
+    }
+  ],
+  "debe": ["Pregunta cuál quiere, nombrando las opciones que vinieron en el ambiguo."],
+  "noDebe": [
+    "Proponer una de las opciones como la más pedida o la mejor.",
+    "Llamar a buscar_menu.",
+    "Nombrar platillos que no vengan en la respuesta de cotizar_pedido.",
+    "Decir un precio o un total antes de una cotización con ok en verdadero."
+  ]
+}

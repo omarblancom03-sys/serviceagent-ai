@@ -3,13 +3,13 @@
   "historia": "US-07-P2",
   "criterios": ["C4"],
   "categoria": "pedido",
-  "titulo": "Ambiguo con varias opciones: pregunta cuál",
-  "mensajes": ["Unas fajitas"],
+  "titulo": "Ambiguo sin sugerida: pregunta cuál, nombrando las opciones",
+  "mensajes": ["Quiero pollo"],
   "argsEsperados": [
     {
       "productos": [
         {
-          "producto": "fajitas",
+          "producto": "pollo",
           "cantidad": 1
         }
       ]

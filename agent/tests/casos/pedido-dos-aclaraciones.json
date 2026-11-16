@@ -27,7 +27,7 @@
   ],
   "noDebe": [
     "Preguntar las dos aclaraciones en el mismo mensaje.",
-    "Elegir la presentación de la limonada o cambiar la pizza por otro platillo.",
+    "Elegir la presentación de la limonada o cotizar otro platillo en lugar de la pizza sin que el cliente lo acepte.",
     "Decir un precio antes de la cotización final.",
     "Sumar o restar al total en lugar de volver a cotizar."
   ]

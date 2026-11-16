@@ -1,0 +1,42 @@
+{
+  "id": "sugerencia-y-parecido-juntos",
+  "historia": "US-15",
+  "criterios": ["C1", "C2"],
+  "categoria": "pedido",
+  "titulo": "Con un ambiguo y un no_existe, una aclaración por mensaje",
+  "mensajes": ["Una hamburguesa y una pizza de pepperoni", "Sí", "No, sin la pizza"],
+  "respuestas": [
+    "Si pregunta primero por la pizza: \"No, sin la pizza\". Si pregunta por la hamburguesa: \"Sí\"."
+  ],
+  "argsEsperados": [
+    {
+      "productos": [
+        {
+          "producto": "hamburguesa",
+          "cantidad": 1
+        },
+        {
+          "producto": "pizza de pepperoni",
+          "cantidad": 1
+        }
+      ]
+    },
+    {
+      "productos": [
+        {
+          "producto": "Hamburguesa Granero",
+          "cantidad": 1
+        }
+      ]
+    }
+  ],
+  "debe": [
+    "Cada mensaje habla de una sola aclaración: la sugerida de la hamburguesa o el parecido de la pizza, en el orden de la lista.",
+    "Con las dos resueltas (la Hamburguesa Granero sí, la pizza no) cotiza solo la Hamburguesa Granero y da su total. argsEsperados fija la primera y la última llamada."
+  ],
+  "noDebe": [
+    "Preguntar las dos aclaraciones en el mismo mensaje.",
+    "Volver a cotizar con una aclaración pendiente.",
+    "Nombrar platillos que no vengan en la respuesta de cotizar_pedido."
+  ]
+}

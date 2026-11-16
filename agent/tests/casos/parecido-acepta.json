@@ -1,0 +1,27 @@
+{
+  "id": "parecido-acepta",
+  "historia": "US-15",
+  "criterios": ["C2", "C3"],
+  "categoria": "pedido",
+  "titulo": "No existe: lo dice, ofrece solo el parecido y lo cotiza con el sí",
+  "mensajes": ["Una pizza de pepperoni", "Sí"],
+  "argsEsperados": [
+    {
+      "productos": [
+        {
+          "producto": "pizza de pepperoni",
+          "cantidad": 1
+        }
+      ]
+    }
+  ],
+  "debe": [
+    "Dice que no tienen pizza de pepperoni y, si la respuesta trae parecido, en la misma pregunta ofrece ese platillo con su nombre tal cual. Si parecido viene en nulo, pregunta qué quiere en su lugar sin proponer nada.",
+    "Con el \"Sí\" vuelve a cotizar con el nombre que vino en parecido y da el total de esa respuesta. argsEsperados solo fija la primera llamada: la segunda lleva el nombre de parecido."
+  ],
+  "noDebe": [
+    "Ofrecer un platillo distinto al de parecido o varios.",
+    "Cotizar el parecido antes del \"Sí\".",
+    "Decir un precio o un total antes de una cotización con ok en verdadero."
+  ]
+}

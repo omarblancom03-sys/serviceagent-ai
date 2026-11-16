@@ -1,0 +1,44 @@
+{
+  "id": "sugerencia-luego-presentacion",
+  "historia": "US-15",
+  "criterios": ["C1"],
+  "categoria": "pedido",
+  "titulo": "Tras aceptar la sugerida, pregunta la presentación que falta",
+  "mensajes": ["Una limonada", "Sí", "En vaso"],
+  "argsEsperados": [
+    {
+      "productos": [
+        {
+          "producto": "limonada",
+          "cantidad": 1
+        }
+      ]
+    },
+    {
+      "productos": [
+        {
+          "producto": "Limonada natural",
+          "cantidad": 1
+        }
+      ]
+    },
+    {
+      "productos": [
+        {
+          "producto": "Limonada natural",
+          "cantidad": 1,
+          "variante": "Vaso 500 ml"
+        }
+      ]
+    }
+  ],
+  "debe": [
+    "Primero pregunta si se refiere a la Limonada natural.",
+    "Con el sí la cotiza y, con el falta_variante, pregunta la presentación nombrando las opciones tal cual.",
+    "Con \"En vaso\" cotiza con la variante \"Vaso 500 ml\" y da su total."
+  ],
+  "noDebe": [
+    "Elegir la presentación por el cliente.",
+    "Decir un precio o un total antes de una cotización con ok en verdadero."
+  ]
+}

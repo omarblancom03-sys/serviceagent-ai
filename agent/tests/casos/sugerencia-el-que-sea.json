@@ -1,0 +1,20 @@
+{
+  "id": "sugerencia-el-que-sea",
+  "historia": "US-15",
+  "criterios": ["C1", "C3"],
+  "categoria": "pedido",
+  "titulo": "Con \"la que sea\" no da por buena la sugerida sin preguntar",
+  "mensajes": ["Una hamburguesa, la que sea"],
+  "argsEsperados": [
+    {
+      "productos": [
+        {
+          "producto": "hamburguesa",
+          "cantidad": 1
+        }
+      ]
+    }
+  ],
+  "debe": ["Pregunta si se refiere a la Hamburguesa Granero y espera la respuesta."],
+  "noDebe": ["Cotizar la Hamburguesa Granero sin que el cliente diga que sí.", "Decir un precio."]
+}

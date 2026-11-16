@@ -17,11 +17,11 @@
   ],
   "debe": [
     "Dice que no encontró la pizza de pepperoni en el menú.",
-    "Pregunta qué quiere en su lugar."
+    "Si la respuesta trae parecido, ofrece solo ese platillo, con su nombre tal cual, en la misma pregunta; si no, pregunta qué quiere en su lugar."
   ],
   "noDebe": [
-    "Proponer o nombrar otros platillos.",
-    "Cambiar lo que pidió el cliente por otro platillo.",
+    "Proponer o nombrar platillos distintos al de parecido.",
+    "Cambiar lo que pidió el cliente por otro platillo sin preguntar.",
     "Decir un precio o un total: con aclaraciones no hay ninguno."
   ]
 }

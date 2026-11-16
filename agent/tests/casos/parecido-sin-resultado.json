@@ -1,0 +1,27 @@
+{
+  "id": "parecido-sin-resultado",
+  "historia": "US-15",
+  "criterios": ["C2", "C3"],
+  "categoria": "pedido",
+  "titulo": "Si no hay parecido, dice que no lo tienen y no propone nada",
+  "mensajes": ["Un helado de pistache"],
+  "argsEsperados": [
+    {
+      "productos": [
+        {
+          "producto": "helado de pistache",
+          "cantidad": 1
+        }
+      ]
+    }
+  ],
+  "debe": [
+    "Dice que no encontró helado de pistache en el menú.",
+    "Si parecido viene en nulo, pregunta qué quiere en su lugar sin nombrar platillos; si trae un nombre, ofrece solo ese."
+  ],
+  "noDebe": [
+    "Inventar un postre o un sabor.",
+    "Nombrar platillos que no vengan en la respuesta de cotizar_pedido.",
+    "Decir un precio o un total antes de una cotización con ok en verdadero."
+  ]
+}

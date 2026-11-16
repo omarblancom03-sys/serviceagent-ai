@@ -54,6 +54,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). *
 - US-08-P1-T1: script `probar-candado` de la API, que manda varios `crear_pedido` idénticos a la vez contra la base real; comprobado en `serviceagent-dev` con 2 y con 5 llamadas simultáneas: un solo pedido y el mismo folio en todas (D34).
 - US-19-P1-T1: al llegar al tope diario, el chat de `/pedir` muestra "Servicio no disponible por el momento." (API y web, D68); caso del agente de manipulación a media orden (`ajena-manipulacion-a-media-orden`; falla menor hasta la línea del prompt de US-18 P2) y cómo subir `CHAT_TOPE_DIARIO` para una demo en `docs/despliegue.md`.
 - US-15-P1 (API y base de datos): cuando el cliente dice solo una palabra que junta varios platillos ("una hamburguesa"), `cotizar_pedido` trae en la aclaración `ambiguo` la opción que marcó el PO (`sugerida`; tabla `sugerencia_ambiguo` y seed `06_sugerencias_ambiguo.sql` con 14 frases, datos simulados). Cuando pide algo que no está en el menú, el `no_existe` trae el platillo más parecido según la búsqueda semántica de `buscar_menu` (`parecido`, o `null` si nada se parece). Si Workers AI falla, cotiza igual sin `parecido` (D72).
+- US-15-P2 (agente): ante un pedido ambiguo, el agente pregunta primero por lo que más se pide ("¿Te refieres a Hamburguesa Granero?") y ante algo que no existe ofrece lo más parecido del menú; cotiza solo con el sí del cliente y, si dice que no, nombra las opciones o pregunta qué quiere. 12 casos nuevos (D72).
 
 ### Corregido
 

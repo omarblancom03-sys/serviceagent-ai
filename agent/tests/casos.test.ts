@@ -242,6 +242,22 @@ describe('cobertura de US-19', () => {
   });
 });
 
+describe('cobertura de US-15', () => {
+  const casos = archivosCasos
+    .map(leerCaso)
+    .filter((caso) => caso.historia === 'US-15' && caso.categoria === 'pedido');
+
+  // C1: la sugerida en un ambiguo; C2: el parecido en un no_existe; C3: nunca inventa. C4 son
+  // estos casos (al menos 10 ambiguos documentados) y su corrida.
+  it.each(['C1', 'C2', 'C3'])('el criterio %s tiene al menos un caso', (criterio) => {
+    expect(casos.filter((caso) => caso.criterios.includes(criterio)).length).toBeGreaterThan(0);
+  });
+
+  it('hay al menos 10 casos ambiguos o inexistentes', () => {
+    expect(casos.length).toBeGreaterThanOrEqual(10);
+  });
+});
+
 describe('prompt (agent/prompt.md)', () => {
   const prompt = readFileSync(path.join(raizAgente, 'prompt.md'), 'utf-8');
 
