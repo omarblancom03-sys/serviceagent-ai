@@ -20,6 +20,8 @@ const pedido = (folio: number, extra: Partial<PedidoCaja> = {}): PedidoCaja => (
   totalCentavos: 18800,
   totalTexto: '$188.00',
   pagado: false,
+  porCobrarCentavos: 18800,
+  porCobrarTexto: '$188.00',
   metodosPago: [],
   ...extra,
 });
