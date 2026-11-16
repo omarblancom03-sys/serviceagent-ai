@@ -21,7 +21,7 @@ const SECRETO = 'secreto-de-prueba-del-banco';
 const env = { BANCO_WEBHOOK_SECRET: SECRETO } as Bindings;
 const AHORA = Date.UTC(2026, 10, 13, 18, 0, 0);
 
-const CLABE = '646180157000000004';
+const CLABE = '999180157000000005';
 const PETICION = { clabeDestino: CLABE, montoCentavos: 18800, referencia: 'GRN-1001-K7' };
 const AVISO = {
   idTransferencia: '0b9f6a52-3c1d-4e8a-9f60-2d7c5b1a4e33',
@@ -213,6 +213,16 @@ describe('POST /webhooks/banco', () => {
     const { status, json } = await firmado(cuerpo);
     expect(status).toBe(400);
     expect(ErrorBancoSchema.parse(json).error).toBe('El aviso no tiene el formato esperado.');
+  });
+
+  it('el mensaje del banco para JSON mal formado no se usa en otras rutas de /webhooks', async () => {
+    const res = await crearApp().request(
+      '/webhooks/whatsapp',
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"mensaje":' },
+      env,
+    );
+    expect(res.status).not.toBe(200);
+    expect(await res.text()).not.toContain('El aviso no tiene el formato esperado.');
   });
 
   it.each([undefined, '', '   '])('sin BANCO_WEBHOOK_SECRET (%j) responde 500', async (secreto) => {

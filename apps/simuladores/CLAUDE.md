@@ -17,7 +17,7 @@ SPA en React + Vite + Tailwind que simula los **sistemas externos** con los que 
 - `src/lib/banco.ts`: lógica pura de `/banco`. `pesosACentavos` (texto a centavos sin punto flotante), `leerFormulario` (valida con los esquemas de `@serviceagent/shared` y dice qué corregir en cada campo), `aplicarErrorSimulado` (`monto_distinto`: un peso menos; `referencia_equivocada`: cambia el último carácter), el historial en `localStorage` (`leerHistorial`, `agregarAlHistorial`, `almacenDelNavegador`; hasta 50, lo dañado se descarta) y los textos (`formatearFecha` en America/Chihuahua, `formatearClabe`, `mensajeDeError`).
 - `src/lib/api.ts`: `enviarApi` (`POST` con JSON a `VITE_API_URL` y respuesta validada con zod) y `ErrorApi`.
 - `src/pages/WhatsApp.tsx`: placeholder; lo reemplaza US-28.
-- `test/`: tests de Vitest de la lógica (`banco.test.ts`), sin navegador.
+- `test/`: tests de Vitest, sin navegador: la lógica (`banco.test.ts`) y la página `/banco` pintada en memoria (`bancoPagina.test.tsx`).
 
 ## Convenciones de esta área
 

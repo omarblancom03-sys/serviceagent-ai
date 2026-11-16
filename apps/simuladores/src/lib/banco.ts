@@ -196,7 +196,7 @@ export function formatearFecha(iso: string): string {
   return Number.isNaN(fecha.getTime()) ? '' : formatoFecha.format(fecha);
 }
 
-/** CLABE en grupos, como la muestran los bancos: 646 180 15700000000 4. */
+/** CLABE en grupos, como la muestran los bancos: 999 180 15700000000 5. */
 export function formatearClabe(clabe: string): string {
   return /^\d{18}$/.test(clabe)
     ? `${clabe.slice(0, 3)} ${clabe.slice(3, 6)} ${clabe.slice(6, 17)} ${clabe.slice(17)}`

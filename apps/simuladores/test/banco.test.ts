@@ -24,7 +24,7 @@ import {
 
 /* US-24 (D70): lógica de la pantalla `/banco`. */
 
-const CLABE = '646180157000000004';
+const CLABE = '999180157000000005';
 const PETICION: TransferenciaBancoPeticion = {
   clabeDestino: CLABE,
   montoCentavos: 18800,
@@ -97,7 +97,7 @@ describe('leerFormulario', () => {
   it('acepta la CLABE con espacios y la referencia con espacios alrededor', () => {
     expect(
       leerFormulario({
-        clabe: '646 180 15700000000 4',
+        clabe: '999 180 15700000000 5',
         monto: '188',
         referencia: '  GRN-1001-K7 ',
       }),
@@ -270,7 +270,7 @@ describe('textos', () => {
   });
 
   it('la CLABE se muestra en grupos', () => {
-    expect(formatearClabe(CLABE)).toBe('646 180 15700000000 4');
+    expect(formatearClabe(CLABE)).toBe('999 180 15700000000 5');
     expect(formatearClabe('123')).toBe('123');
   });
 
