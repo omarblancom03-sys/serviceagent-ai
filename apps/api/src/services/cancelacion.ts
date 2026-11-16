@@ -24,9 +24,11 @@ export const DETALLE_RECHAZO: Record<RechazoCancelacion, string> = {
   no_encontrado:
     'No hay un pedido con ese número y ese teléfono. Pídele al cliente que revise los dos datos.',
   en_preparacion:
-    'El pedido ya está en preparación y no se puede cancelar. Ofrécele hablar con un empleado.',
+    'El pedido ya está en preparación y no se puede cancelar desde el chat.' +
+    ' Sugiérele verlo directamente en el restaurante con su número de pedido.',
   con_pago:
-    'El pedido ya tiene un pago y no se puede cancelar desde el chat. Ofrécele hablar con un empleado.',
+    'El pedido ya tiene un pago y no se puede cancelar desde el chat.' +
+    ' Sugiérele verlo directamente en el restaurante con su número de pedido.',
   cerrado: 'El pedido ya se entregó o ya venció: no hay nada que cancelar.',
 };
 

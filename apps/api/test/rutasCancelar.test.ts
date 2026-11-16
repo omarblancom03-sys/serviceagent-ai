@@ -204,10 +204,10 @@ describe('POST /pedidos/cancelar: no cancela', () => {
     expect(repo.pedidos[0]?.historial).toHaveLength(1);
   });
 
-  it('en preparación, el detalle le dice al agente que ofrezca hablar con un empleado', () => {
+  it('en preparación o con pago, el detalle manda al cliente al restaurante con su folio', () => {
     expect(DETALLE_RECHAZO.en_preparacion).toContain('no se puede cancelar');
-    expect(DETALLE_RECHAZO.en_preparacion).toContain('hablar con un empleado');
-    expect(DETALLE_RECHAZO.con_pago).toContain('hablar con un empleado');
+    expect(DETALLE_RECHAZO.en_preparacion).toContain('en el restaurante con su número de pedido');
+    expect(DETALLE_RECHAZO.con_pago).toContain('en el restaurante con su número de pedido');
   });
 
   it('un pedido en cola que ya tiene un pago responde con_pago y no cambia', async () => {
