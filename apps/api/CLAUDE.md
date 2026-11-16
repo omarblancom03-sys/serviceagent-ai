@@ -28,7 +28,7 @@ API del sistema: la usan el agente de Retell (custom functions), los frontends y
 | `scripts/probarCandadoCobro.ts` | `pnpm --filter @serviceagent/api probar-candado-cobro`: crea un pedido de prueba y manda de 2 a 10 cobros simultáneos a `/caja/pedidos/{folio}/cobrar`; solo uno debe cobrar y los demás recibir 409 `ya_pagado` (`for update` de D66). Firma la sesión de caja con `JWT_SECRET` e `ID_EMPLEADO`. Deja los pedidos pagados en esa base y lista sus folios. |
 | `test/`                  | Tests de Vitest (`*.test.ts`) y repos en memoria con datos falsos: `repoEnMemoria.ts` (empleados), `menuEnMemoria.ts` (menú chico), `pedidosEnMemoria.ts` (mismas reglas que `crear_pedido`: folio desde 1001 y duplicados), `seedEnMemoria.ts` (menú real leído de los seeds `01`, `02` y `04`), `firmaDePrueba.ts` (firma una petición igual que Retell), `cocinaEnMemoria.ts` (`CocinaRepo` con las mismas reglas que las funciones de cambio de estado, terminados recientes y Regresar, y un reloj que el test mueve), `embeddingsEnMemoria.ts` (`EmbeddingsRepo` con coseno y un embedder de bolsa de palabras), `infoEnMemoria.ts` (`InfoRepo` con 4 entradas de ejemplo), `chatEnMemoria.ts` (`ChatRepo` que imita el SQL y un Retell falso que anota las llamadas), `cajaEnMemoria.ts` (`CajaRepo` con las reglas de `cobrar_pedido_caja` y `entregar_pedido_caja` y un reloj que el test elige) y `alertasEnMemoria.ts` (`AlertasRepo` con las reglas de `crear_alerta_atencion`: una pendiente por chat y folio del mismo teléfono; y las de `marcar_alerta_atendida`, con un reloj que el test elige; las pendientes salen ordenadas y cortadas en 100, como la consulta real). |
 
-Pendiente en `src/lib/`: límites de uso en US-19, notificador de WhatsApp en US-28.
+Pendiente en `src/lib/`: Turnstile en US-19-P1-T2 y límites por IP en US-19-P2 ([D68](../../docs/decisiones.md)), notificador de WhatsApp en US-28.
 
 ## Convenciones de esta área
 
@@ -58,4 +58,4 @@ Los tests usan `crearApp({ ... })` con repos en memoria y `app.request(ruta, ini
 - [docs/negocio.md](../../docs/negocio.md): estados del pedido, pagos, inventario, tiempo estimado, auth y roles.
 - [docs/agente.md](../../docs/agente.md): endpoints de las custom functions y verificación de `X-Retell-Signature`.
 - [docs/despliegue.md](../../docs/despliegue.md): secretos del Worker (`JWT_SECRET`, `PIN_PEPPER`, `RETELL_API_KEY`, `RETELL_AGENT_ID`, `CHAT_TOPE_DIARIO`, `SUPABASE_*`) y despliegue.
-- [docs/decisiones.md](../../docs/decisiones.md): D2, D7, D8, D9, D12, D13, D14, D19, D20, D21, D36, D38, D39, D41, D44, D46, D47, D48, D50, D52, D54, D55, D56, D59, D62, D63, D64, D66.
+- [docs/decisiones.md](../../docs/decisiones.md): D2, D7, D8, D9, D12, D13, D14, D19, D20, D21, D36, D38, D39, D41, D44, D46, D47, D48, D50, D52, D54, D55, D56, D59, D62, D63, D64, D66, D68.
