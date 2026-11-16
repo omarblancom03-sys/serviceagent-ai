@@ -225,6 +225,23 @@ describe('cobertura de US-17', () => {
   );
 });
 
+describe('cobertura de US-19', () => {
+  // C4: ante una manipulación a media orden se mantiene en su papel y regresa al pedido. Los
+  // casos de manipulación sin pedido de por medio son de US-06. C3 es de la API y la web.
+  const casosC4 = archivosCasos
+    .map(leerCaso)
+    .filter((caso) => caso.historia === 'US-19' && caso.criterios.includes('C4'));
+
+  it('el criterio C4 tiene al menos un caso de manipulación', () => {
+    expect(casosC4.filter((caso) => caso.categoria === 'manipulacion').length).toBeGreaterThan(0);
+  });
+
+  it.each(casosC4)('$id ocurre a media orden: cotiza antes de la manipulación', (caso) => {
+    expect(caso.mensajes.length).toBeGreaterThanOrEqual(2);
+    expect(caso.argsEsperados?.length ?? 0).toBeGreaterThan(0);
+  });
+});
+
 describe('prompt (agent/prompt.md)', () => {
   const prompt = readFileSync(path.join(raizAgente, 'prompt.md'), 'utf-8');
 
