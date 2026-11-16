@@ -87,6 +87,7 @@ Lógica en `apps/api/src/services/chat.ts`; Retell se llama con `fetch` directo 
 - Si falta información, pregunta una cosa a la vez sin adivinar ni elegir por el cliente ([prompt.md → Cuando hay algo que aclarar](../agent/prompt.md#cuando-hay-algo-que-aclarar)). No propone platillos: solo nombra las opciones que devuelven `cotizar_pedido` o `buscar_menu` ([D51](decisiones.md)).
 - **Repite el resumen del pedido UNA sola vez, al final, antes de confirmar.** No en cada paso.
 - Registra el pedido con `crear_pedido` solo tras confirmación explícita: pide nombre y teléfono, confirma una vez con los platillos, el total de la cotización, el nombre y el teléfono, y da folio y total ([D49](decisiones.md)).
+- Cancela un pedido ya registrado con `cancelar_pedido`: pide número de pedido, teléfono y motivo (no los vuelve a pedir si lo registró en esa conversación), pregunta una vez "¿Cancelo tu pedido…?" y llama solo tras el sí. En preparación o con pago lo manda al restaurante con su número de pedido, porque todavía no tiene `transferir_a_empleado` ([D71](decisiones.md), [prompt.md → Cómo cancelas un pedido](../agent/prompt.md#cómo-cancelas-un-pedido)).
 - Nunca inventa productos, precios ni ingredientes. Si no sabe, lo dice. Los montos siempre vienen del backend ([negocio.md → Dinero](negocio.md#dinero)).
 - Si no puede resolver algo, usa `transferir_a_empleado`.
 - Lo que se pregunta del restaurante (horario, ubicación, pagos, alergias…) lo responde con `info_restaurante` y solo con su texto; sin el dato, lo dice ([D65](decisiones.md)).

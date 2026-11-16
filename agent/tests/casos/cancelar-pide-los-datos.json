@@ -1,0 +1,30 @@
+{
+  "id": "cancelar-pide-los-datos",
+  "historia": "US-14",
+  "criterios": ["C2", "C4"],
+  "categoria": "cancelacion",
+  "titulo": "En una conversación nueva pide número, teléfono y motivo en un solo mensaje y cancela",
+  "mensajes": [
+    "Quiero cancelar mi pedido",
+    "Es el [folio de un pedido en cola, sin pagos, al 614 123 4567], al 614 123 4567. Ya no lo voy a necesitar",
+    "Sí"
+  ],
+  "argsCancelarPedido": [
+    {
+      "folio": 1001,
+      "telefono": "614 123 4567",
+      "motivo": "ya no lo va a necesitar"
+    }
+  ],
+  "debe": [
+    "Con \"Quiero cancelar mi pedido\" pide en un solo mensaje el número de pedido, el teléfono con el que lo registró y por qué lo cancela, sin llamar a ninguna herramienta.",
+    "Con los datos pregunta una sola vez si cancela ese pedido, con su número.",
+    "Con el \"Sí\" llama a cancelar_pedido con el número sin \"#\", el teléfono tal como lo dijo y el motivo resumido. En los args, folio 1001 es un ejemplo: vale el número de pedido del caso.",
+    "Dice que el pedido quedó cancelado y pregunta si le ayuda en algo más."
+  ],
+  "noDebe": [
+    "Pedir el nombre.",
+    "Llamar a cancelar_pedido antes del \"Sí\".",
+    "Decir que desde el chat no puede cancelar."
+  ]
+}

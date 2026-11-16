@@ -5,6 +5,7 @@ import path from 'node:path';
 import { z } from 'zod';
 import {
   BuscarMenuArgsSchema,
+  CancelarPedidoArgsSchema,
   CotizarPedidoArgsSchema,
   CrearPedidoArgsSchema,
   InfoRestauranteArgsSchema,
@@ -34,6 +35,7 @@ const esquemaCaso = z.strictObject({
     'pedido',
     'busqueda',
     'informacion',
+    'cancelacion',
   ]),
   titulo: textoNoVacio,
   mensajes: z.array(textoNoVacio).min(1),
@@ -48,6 +50,8 @@ const esquemaCaso = z.strictObject({
   argsCrearPedido: z.array(z.record(z.string(), z.unknown())).min(1).optional(),
   // Args de cada llamada esperada a info_restaurante; se validan contra su contrato.
   argsInfoRestaurante: z.array(z.record(z.string(), z.unknown())).min(1).optional(),
+  // Args de cada llamada esperada a cancelar_pedido; se validan contra su contrato.
+  argsCancelarPedido: z.array(z.record(z.string(), z.unknown())).min(1).optional(),
   debe: z.array(textoNoVacio).min(1),
   noDebe: z.array(textoNoVacio),
 });
@@ -225,6 +229,44 @@ describe('cobertura de US-17', () => {
   );
 });
 
+describe('cobertura de US-14', () => {
+  const casos = archivosCasos.map(leerCaso);
+  const casosUs14 = casos.filter((caso) => caso.historia === 'US-14');
+  const casosCancelar = casosUs14.filter((caso) => caso.categoria === 'cancelacion');
+
+  // C1: cambiar el pedido antes de confirmarlo (un caso de pedido). C2 a C4: cancelar con
+  // cancelar_pedido, el rechazo en preparación y el motivo. C5 (cocina en tiempo real) es de la API.
+  it('el criterio C1 tiene al menos un caso de pedido', () => {
+    expect(
+      casosUs14.filter((caso) => caso.categoria === 'pedido' && caso.criterios.includes('C1'))
+        .length,
+    ).toBeGreaterThan(0);
+  });
+
+  it.each(['C2', 'C3', 'C4'])(
+    'el criterio %s tiene al menos un caso de cancelación',
+    (criterio) => {
+      expect(
+        casosCancelar.filter((caso) => caso.criterios.includes(criterio)).length,
+      ).toBeGreaterThan(0);
+    },
+  );
+
+  it('algún caso cancela (trae argsCancelarPedido)', () => {
+    expect(casosCancelar.some((caso) => caso.argsCancelarPedido)).toBe(true);
+  });
+
+  it.each(casos.filter((caso) => caso.argsCancelarPedido))(
+    '$id cumple el contrato de cancelar_pedido',
+    (caso) => {
+      for (const args of caso.argsCancelarPedido ?? []) {
+        const resultado = CancelarPedidoArgsSchema.safeParse(args);
+        expect(resultado.error?.issues ?? []).toEqual([]);
+      }
+    },
+  );
+});
+
 describe('prompt (agent/prompt.md)', () => {
   const prompt = readFileSync(path.join(raizAgente, 'prompt.md'), 'utf-8');
 
@@ -302,6 +344,7 @@ describe('configuracion (agent/retell.json)', () => {
     ['el saludo fijo (begin_message)', llm.begin_message ?? ''],
     ['la descripcion de cotizar_pedido', descripcion('cotizar_pedido')],
     ['la descripcion de crear_pedido', descripcion('crear_pedido')],
+    ['la descripcion de cancelar_pedido', descripcion('cancelar_pedido')],
   ])('%s no contiene montos', (_nombre, texto) => {
     expect(texto).toBeDefined();
     expect(texto).not.toMatch(/\$\s*\d/);

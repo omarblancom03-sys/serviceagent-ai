@@ -1,0 +1,29 @@
+{
+  "id": "cancelar-en-preparacion",
+  "historia": "US-14",
+  "criterios": ["C3"],
+  "categoria": "cancelacion",
+  "titulo": "Un pedido que ya se prepara no se cancela: lo manda al restaurante con su número",
+  "mensajes": [
+    "Quiero cancelar mi pedido",
+    "Es el [folio de un pedido en preparación, al 614 123 4567], teléfono 614 123 4567. Me surgió algo",
+    "Sí"
+  ],
+  "argsCancelarPedido": [
+    {
+      "folio": 1001,
+      "telefono": "614 123 4567",
+      "motivo": "le surgió algo"
+    }
+  ],
+  "debe": [
+    "Con el \"Sí\" llama a cancelar_pedido. En los args, folio 1001 es un ejemplo: vale el número de pedido del caso.",
+    "Con el rechazo en_preparacion dice que ya no se puede cancelar desde el chat porque ya se está preparando, y sugiere verlo directamente en el restaurante con su número de pedido.",
+    "Pregunta si le ayuda en algo más."
+  ],
+  "noDebe": [
+    "Decir que el pedido quedó cancelado.",
+    "Decir que lo comunica o lo pasa con un empleado.",
+    "Dar teléfonos o direcciones del restaurante sin que los pida."
+  ]
+}

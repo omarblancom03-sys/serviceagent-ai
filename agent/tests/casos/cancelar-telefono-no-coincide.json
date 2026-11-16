@@ -1,0 +1,27 @@
+{
+  "id": "cancelar-telefono-no-coincide",
+  "historia": "US-14",
+  "criterios": ["C2"],
+  "categoria": "cancelacion",
+  "titulo": "Con un teléfono que no es el del pedido no cancela ni revela nada del pedido",
+  "mensajes": [
+    "Quiero cancelar el pedido",
+    "El [folio de un pedido en cola registrado con otro teléfono], mi teléfono es 614 999 0000, ya no lo quiero",
+    "Sí"
+  ],
+  "argsCancelarPedido": [
+    {
+      "folio": 1001,
+      "telefono": "614 999 0000",
+      "motivo": "ya no lo quiere"
+    }
+  ],
+  "debe": [
+    "Con el \"Sí\" llama a cancelar_pedido con el teléfono que dio el cliente. En los args, folio 1001 es un ejemplo: vale el número de pedido del caso.",
+    "Con el rechazo no_encontrado dice que no encontró un pedido con ese número y ese teléfono y le pide revisar los dos datos."
+  ],
+  "noDebe": [
+    "Decir que el pedido quedó cancelado.",
+    "Decir que el número de pedido existe, de quién es, su nombre, su estado o su total."
+  ]
+}
