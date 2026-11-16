@@ -37,9 +37,13 @@ export const CancelarPedidoArgsSchema = z.strictObject({
   motivo: z.string().trim().min(1).max(MAX_CARACTERES_MOTIVO_PETICION),
 });
 
-/** Sobre que manda Retell en un agente de chat. `chat` no se usa: se descarta. */
+/**
+ * Sobre que manda Retell en un agente de chat. De `chat` solo se lee la conversación, para revisar
+ * que el cliente dijo que sí a "¿Cancelo tu pedido…?" (D73).
+ */
 export const CancelarPedidoPeticionSchema = z.object({
   name: z.literal('cancelar_pedido'),
+  chat: z.unknown().optional(),
   args: CancelarPedidoArgsSchema,
 });
 
@@ -54,7 +58,8 @@ export const PedidoCanceladoSchema = z.object({
 
 /**
  * No se canceló. Si `rechazo` es `null`, falta corregir lo que mandó el agente: `faltaFolio`,
- * `datosCliente` (el teléfono) o `aclaracionMotivo` (más de 200 caracteres). Si no, `rechazo` dice
+ * `datosCliente` (el teléfono), `aclaracionMotivo` (más de 200 caracteres) o `faltaConfirmacion`
+ * (el cliente todavía no respondió que sí a "¿Cancelo tu pedido…?", D73). Si no, `rechazo` dice
  * por qué y `detalle` le dice al agente qué hacer; `estadoActual` es el estado del pedido (o
  * `null` si no se encontró).
  */
@@ -66,6 +71,7 @@ export const CancelacionRechazadaSchema = z.object({
   faltaFolio: z.boolean(),
   datosCliente: z.array(DatoClienteInvalidoSchema),
   aclaracionMotivo: z.string().nullable(),
+  faltaConfirmacion: z.boolean(),
 });
 
 /** Respuesta 200 de `POST /pedidos/cancelar`: siempre un cuerpo que el agente puede leer. */

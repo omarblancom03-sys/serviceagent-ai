@@ -3,9 +3,11 @@ import {
   type CancelarPedidoArgs,
   type DatoClienteInvalido,
   type EstadoPedido,
+  type MensajeConversacion,
   type RechazoCancelacion,
   type RespuestaCancelarPedido,
 } from '@serviceagent/shared';
+import { clienteConfirmoCancelacion } from './confirmacion';
 import { DETALLE_FALTA_TELEFONO, DETALLE_TELEFONO, normalizarTelefono } from './pedido';
 
 /*
@@ -63,17 +65,20 @@ function rechazar(rechazo: RechazoCancelacion, estadoActual: EstadoPedido | null
     faltaFolio: false,
     datosCliente: [],
     aclaracionMotivo: null,
+    faltaConfirmacion: false,
   };
 }
 
 /**
- * Revisa lo que mandó el agente y, si todo sirve, cancela. Lo que haya que volver a pedir (folio,
- * teléfono, motivo largo) sale junto en una respuesta, sin tocar la base. Los errores del repo se
- * propagan (la ruta responde 500).
+ * Revisa lo que mandó el agente y, si todo sirve y el cliente dijo que sí a "¿Cancelo tu pedido…?"
+ * en `mensajes` (D73), cancela. Lo que haya que volver a pedir (folio, teléfono, motivo largo, la
+ * confirmación) sale junto en una respuesta, sin tocar la base. Los errores del repo se propagan
+ * (la ruta responde 500).
  */
 export async function cancelarPedido(
   repo: CancelacionesRepo,
   args: CancelarPedidoArgs,
+  mensajes: readonly MensajeConversacion[],
 ): Promise<RespuestaCancelarPedido> {
   const datosCliente: DatoClienteInvalido[] = [];
   const telefono = args.telefono === undefined ? null : normalizarTelefono(args.telefono);
@@ -86,13 +91,21 @@ export async function cancelarPedido(
       ? DETALLE_MOTIVO_CANCELACION_LARGO
       : null;
 
-  if (args.folio === undefined || telefono === null || aclaracionMotivo !== null) {
+  const faltaConfirmacion = !clienteConfirmoCancelacion(mensajes);
+
+  if (
+    args.folio === undefined ||
+    telefono === null ||
+    aclaracionMotivo !== null ||
+    faltaConfirmacion
+  ) {
     return {
       ok: false,
       ...SIN_RECHAZO,
       faltaFolio: args.folio === undefined,
       datosCliente,
       aclaracionMotivo,
+      faltaConfirmacion,
     };
   }
 

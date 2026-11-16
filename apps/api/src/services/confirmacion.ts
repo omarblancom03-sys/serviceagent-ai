@@ -88,16 +88,19 @@ const RELLENO: ReadonlySet<string> = new Set([
  * ("está listo", "mi pedido está listo", "pedido listo"). Así "¿Cuánto sale?", "¿Ya está listo?",
  * "Sí, y otra horchata" o "Sí, pero sin cebolla" no crean el pedido.
  */
-export function esAfirmativo(texto: string): boolean {
+export function esAfirmativo(
+  texto: string,
+  otrasAfirmativas: ReadonlySet<string> = new Set(),
+): boolean {
   if (texto.includes('?') || texto.includes('¿')) return false;
   const palabras = palabrasDe(texto);
   // "¿Ya está listo?" o "¿mi pedido listo?" escrito sin signos: es una pregunta, no un sí.
   if (palabras.includes('listo') && (palabras.includes('esta') || palabras.includes('pedido'))) {
     return false;
   }
+  const afirma = (palabra: string) => AFIRMATIVAS.has(palabra) || otrasAfirmativas.has(palabra);
   return (
-    palabras.some((palabra) => AFIRMATIVAS.has(palabra)) &&
-    palabras.every((palabra) => AFIRMATIVAS.has(palabra) || RELLENO.has(palabra))
+    palabras.some(afirma) && palabras.every((palabra) => afirma(palabra) || RELLENO.has(palabra))
   );
 }
 
@@ -107,10 +110,34 @@ export function esAfirmativo(texto: string): boolean {
  * crearía.
  */
 export const FRASE_PREGUNTA_CONFIRMACION = '¿Confirmo tu pedido?';
-const FRASE_NORMALIZADA = palabrasDe(FRASE_PREGUNTA_CONFIRMACION).join(' ');
-// Las palabras se unen con un espacio: la frase va al inicio y termina en espacio o al final.
-const INICIO_PREGUNTA = new RegExp(`^(te )?${FRASE_NORMALIZADA}( |$)`);
-const EXACTA = new RegExp(`^(te )?${FRASE_NORMALIZADA}$`);
+
+/**
+ * Frase fija con la que el agente pregunta si cancela un pedido (D73): "¿Cancelo tu pedido #1025?".
+ * La usa agent/prompt.md ("Cómo cancelas un pedido"); si cambia allá, cambia aquí.
+ */
+export const FRASE_PREGUNTA_CANCELACION = '¿Cancelo tu pedido?';
+
+interface PreguntaFija {
+  /** Con "¿": la última pregunta empieza con la frase. */
+  inicio: RegExp;
+  /** Sin "¿": la última pregunta es la frase sola. */
+  exacta: RegExp;
+}
+
+function preguntaFija(frase: string): PreguntaFija {
+  // Las palabras se unen con un espacio: la frase va al inicio y termina en espacio o al final.
+  const normalizada = palabrasDe(frase).join(' ');
+  return {
+    inicio: new RegExp(`^(te )?${normalizada}( |$)`),
+    exacta: new RegExp(`^(te )?${normalizada}$`),
+  };
+}
+
+const PREGUNTA_CONFIRMACION = preguntaFija(FRASE_PREGUNTA_CONFIRMACION);
+const PREGUNTA_CANCELACION = preguntaFija(FRASE_PREGUNTA_CANCELACION);
+
+/** Palabras que, solo como respuesta a "¿Cancelo tu pedido?", también dicen que sí: "sí, cancélalo". */
+const AFIRMATIVAS_CANCELACION: ReadonlySet<string> = new Set(['cancelalo', 'cancela', 'cancelado']);
 
 /**
  * Mensaje del agente que pide la confirmación del pedido: termina en una pregunta que empieza con
@@ -119,6 +146,15 @@ const EXACTA = new RegExp(`^(te )?${FRASE_NORMALIZADA}$`);
  * ¿Algo más?", donde un "sí" significa otra cosa.
  */
 export function esPreguntaDeConfirmacion(texto: string): boolean {
+  return terminaEnPregunta(texto, PREGUNTA_CONFIRMACION);
+}
+
+/** Mensaje del agente que pregunta si cancela el pedido: "… ¿Cancelo tu pedido #1025?" (D73). */
+export function esPreguntaDeCancelacion(texto: string): boolean {
+  return terminaEnPregunta(texto, PREGUNTA_CANCELACION);
+}
+
+function terminaEnPregunta(texto: string, pregunta: PreguntaFija): boolean {
   const recortado = texto.trim();
   if (!recortado.endsWith('?')) return false;
   // La última pregunta empieza después del último "¿", o del último ".", "!" o "?" seguido de un
@@ -131,9 +167,9 @@ export function esPreguntaDeConfirmacion(texto: string): boolean {
   // ser la frase sola: "Confirmo tu pedido, algo más?" escrito sin signos no es la pregunta. Y no
   // puede venir justo después de otra pregunta: en "¿Algo más? Confirmo tu pedido?" un "sí" puede
   // ser "sí, quiero algo más".
-  if (sinFinal[corte] === '¿') return INICIO_PREGUNTA.test(ultimaPregunta);
+  if (sinFinal[corte] === '¿') return pregunta.inicio.test(ultimaPregunta);
   if (sinFinal[corte] === '?') return false;
-  return EXACTA.test(ultimaPregunta);
+  return pregunta.exacta.test(ultimaPregunta);
 }
 
 /** Rol que se le pone a un mensaje de la conversación que no se pudo leer. */
@@ -151,10 +187,33 @@ export function clienteConfirmo(mensajes: readonly MensajeConversacion[]): boole
   if (despues.some((m) => m.role === 'tool_call_invocation' && m.name === 'cotizar_pedido')) {
     return false;
   }
-  // Un mensaje que no se pudo leer ocupa su lugar: si es el primero después de la pregunta, pudo
-  // ser la respuesta del cliente, así que no hay confirmación (falla hacia lo seguro).
+  return respondioQueSi(despues);
+}
+
+/**
+ * Lo mismo para cancelar (D73): `true` si el cliente respondió que sí a la última pregunta "¿Cancelo
+ * tu pedido…?". Si el modelo llama a `cancelar_pedido` en el turno en que pregunta, o sin preguntar,
+ * no hay confirmación y el pedido no se cancela.
+ */
+export function clienteConfirmoCancelacion(mensajes: readonly MensajeConversacion[]): boolean {
+  let pregunta = -1;
+  mensajes.forEach((m, i) => {
+    if (m.role === 'agent' && esPreguntaDeCancelacion(m.content ?? '')) pregunta = i;
+  });
+  if (pregunta === -1) return false;
+  return respondioQueSi(mensajes.slice(pregunta + 1), AFIRMATIVAS_CANCELACION);
+}
+
+/**
+ * El primer mensaje del cliente es un "sí". Un mensaje que no se pudo leer ocupa su lugar: si es el
+ * primero, pudo ser la respuesta del cliente, así que no hay confirmación (falla hacia lo seguro).
+ */
+function respondioQueSi(
+  despues: readonly MensajeConversacion[],
+  otrasAfirmativas?: ReadonlySet<string>,
+): boolean {
   const respuesta = despues.find((m) => m.role === 'user' || m.role === ROL_ILEGIBLE);
-  return respuesta?.role === 'user' && esAfirmativo(respuesta.content ?? '');
+  return respuesta?.role === 'user' && esAfirmativo(respuesta.content ?? '', otrasAfirmativas);
 }
 
 /**

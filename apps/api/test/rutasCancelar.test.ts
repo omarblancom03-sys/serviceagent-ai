@@ -36,9 +36,22 @@ const args = (cambios: Record<string, unknown> = {}) => ({
   ...cambios,
 });
 
+/** Conversación en la que el cliente ya dijo que sí a "¿Cancelo tu pedido…?" (D73). */
+const CONFIRMADA = [
+  { role: 'user', content: 'Quiero cancelar mi pedido' },
+  { role: 'agent', content: '¿Me das tu número de pedido, tu teléfono y por qué lo cancelas?' },
+  { role: 'user', content: 'El 1001, al 614 123 4567, ya no voy a poder pasar' },
+  { role: 'agent', content: '¿Cancelo tu pedido #1001?' },
+  { role: 'user', content: 'Sí' },
+];
+
 /** Cuerpo como lo manda Retell en un agente de chat: `{ name, chat, args }`. */
-const sobre = (a: unknown, name = 'cancelar_pedido') =>
-  JSON.stringify({ name, chat: { chat_id: 'chat_1', transcript: 'User: hola' }, args: a });
+const sobre = (a: unknown, name = 'cancelar_pedido', mensajes: unknown[] = CONFIRMADA) =>
+  JSON.stringify({
+    name,
+    chat: { chat_id: 'chat_1', transcript: 'User: hola', message_with_tool_calls: mensajes },
+    args: a,
+  });
 
 async function cancelar(
   cuerpo: string,
@@ -176,6 +189,7 @@ describe('POST /pedidos/cancelar: no cancela', () => {
     faltaFolio: false,
     datosCliente: [],
     aclaracionMotivo: null,
+    faltaConfirmacion: false,
   });
 
   it('un folio que no existe y el folio de otro teléfono dan la misma respuesta', async () => {
@@ -232,6 +246,7 @@ describe('POST /pedidos/cancelar: falta algo por corregir', () => {
     faltaFolio: false,
     datosCliente: [],
     aclaracionMotivo: null,
+    faltaConfirmacion: false,
     ...cambios,
   });
 
@@ -363,6 +378,78 @@ describe('repoCancelaciones sobre Supabase', () => {
   });
 });
 
+describe('POST /pedidos/cancelar: sin el sí del cliente no cancela (D73)', () => {
+  const sinConfirmar = {
+    ok: false,
+    rechazo: null,
+    estadoActual: null,
+    detalle: null,
+    faltaFolio: false,
+    datosCliente: [],
+    aclaracionMotivo: null,
+    faltaConfirmacion: true,
+  };
+  const pregunta = { role: 'agent', content: 'Tu pedido es el #1001. ¿Cancelo tu pedido #1001?' };
+
+  it.each<[string, unknown[]]>([
+    ['sin conversación', []],
+    [
+      'sin preguntar (pidió los datos y llamó)',
+      [
+        { role: 'user', content: 'Quiero cancelar mi pedido' },
+        { role: 'agent', content: '¿Me das tu número de pedido y tu teléfono?' },
+        { role: 'user', content: 'El 1001, al 614 123 4567' },
+      ],
+    ],
+    ['en el mismo turno de la pregunta', [CONFIRMADA[0], pregunta]],
+    ['el cliente dijo que no', [pregunta, { role: 'user', content: 'No, mejor déjalo' }]],
+    ['un sí con otra cosa', [pregunta, { role: 'user', content: 'Sí, pero ¿me devuelven algo?' }]],
+    [
+      'el sí era a "¿Confirmo tu pedido?"',
+      [
+        { role: 'agent', content: 'Tu pedido: 1 Hamburguesa. ¿Confirmo tu pedido?' },
+        { role: 'user', content: 'Sí' },
+      ],
+    ],
+  ])('%s: faltaConfirmacion sin llamar al repo', async (_caso, mensajes) => {
+    const repo = crearRepoCancelacionesEnMemoria([pedidoCancelable(1001, 'en_cola')]);
+    const { status, json } = await cancelar(sobre(args(), 'cancelar_pedido', mensajes), { repo });
+    expect(status).toBe(200);
+    expect(RespuestaCancelarPedidoSchema.parse(json)).toEqual(sinConfirmar);
+    expect(repo.llamadas).toBe(0);
+    expect(repo.pedidos[0]?.estado).toBe('en_cola');
+  });
+
+  it('"Sí, cancélalo" confirma', async () => {
+    const repo = crearRepoCancelacionesEnMemoria([pedidoCancelable(1001, 'en_cola')]);
+    const mensajes = [pregunta, { role: 'user', content: 'Sí, cancélalo por favor' }];
+    const { json } = await cancelar(sobre(args(), 'cancelar_pedido', mensajes), { repo });
+    expect(RespuestaCancelarPedidoSchema.parse(json).ok).toBe(true);
+    expect(repo.pedidos[0]?.estado).toBe('cancelado');
+  });
+
+  it('"cancélalo" no confirma un pedido nuevo: solo vale para cancelar', async () => {
+    const { clienteConfirmo } = await import('../src/services/confirmacion');
+    expect(
+      clienteConfirmo([
+        { role: 'agent', content: 'Tu pedido: 1 Hamburguesa. ¿Confirmo tu pedido?' },
+        { role: 'user', content: 'Cancélalo' },
+      ]),
+    ).toBe(false);
+  });
+
+  it('sin folio ni confirmación responde las dos cosas juntas', async () => {
+    const repo = crearRepoCancelacionesEnMemoria();
+    const { json } = await cancelar(sobre(args({ folio: undefined }), 'cancelar_pedido', []), {
+      repo,
+    });
+    expect(RespuestaCancelarPedidoSchema.parse(json)).toEqual({
+      ...sinConfirmar,
+      faltaFolio: true,
+    });
+  });
+});
+
 describe('cancelarPedido (servicio)', () => {
   it('manda a la base el teléfono ya normalizado a 10 dígitos', async () => {
     const recibidos: unknown[] = [];
@@ -375,6 +462,10 @@ describe('cancelarPedido (servicio)', () => {
     await cancelarPedido(
       repo,
       CancelarPedidoArgsSchema.parse(args({ telefono: '+52 (614) 123-4567' })),
+      [
+        { role: 'agent', content: '¿Cancelo tu pedido #1001?' },
+        { role: 'user', content: 'Sí, cancélalo' },
+      ],
     );
     expect(recibidos).toEqual([{ folio: 1001, telefono: TELEFONO, motivo: MOTIVO }]);
   });
