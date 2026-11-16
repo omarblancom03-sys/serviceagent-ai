@@ -83,9 +83,10 @@ describe('Contrato de cotizar pedido: petición', () => {
     expect(() => CotizarPedidoPeticionSchema.parse({ name: 'crear_pedido', args })).toThrow();
   });
 
-  it('rechaza args sin productos ni extras sueltos', () => {
-    expect(() => CotizarPedidoArgsSchema.parse({})).toThrow();
-    expect(() => CotizarPedidoArgsSchema.parse({ productos: [], extrasSueltos: [] })).toThrow();
+  it('acepta args sin productos ni extras sueltos: el servicio responde pedidoVacio (D67)', () => {
+    const vacio = { productos: [], extrasSueltos: [] };
+    expect(CotizarPedidoArgsSchema.parse({})).toEqual(vacio);
+    expect(CotizarPedidoArgsSchema.parse(vacio)).toEqual(vacio);
   });
 
   it('rechaza args con una llave desconocida (p. ej. extrasSuelto mal escrito)', () => {
@@ -138,8 +139,11 @@ describe('Contrato de cotizar pedido: petición', () => {
     expect(pedido.extrasSueltos).toHaveLength(1);
   });
 
-  it('sigue rechazando args con productos y extrasSueltos en null', () => {
-    expect(() => CotizarPedidoArgsSchema.parse({ productos: null, extrasSueltos: null })).toThrow();
+  it('args con productos y extrasSueltos en null valen como un pedido vacío (D67)', () => {
+    expect(CotizarPedidoArgsSchema.parse({ productos: null, extrasSueltos: null })).toEqual({
+      productos: [],
+      extrasSueltos: [],
+    });
   });
 
   it.each([
@@ -203,6 +207,7 @@ describe('Contrato de cotizar pedido: respuesta', () => {
   it('acepta una respuesta con aclaraciones', () => {
     const respuesta = RespuestaCotizarPedidoSchema.parse({
       ok: false,
+      pedidoVacio: false,
       aclaraciones: [
         {
           tipo: 'ambiguo',
