@@ -16,12 +16,14 @@
     }
   ],
   "debe": [
-    "Al \"Quiero hacer un pedido\" pregunta qué quiere, sin pedir nombre ni teléfono.",
+    "Al \"Quiero hacer un pedido\" pregunta qué quiere, sin pedir nombre ni teléfono y sin decir que hubo un error.",
+    "Si en ese turno llama a cotizar_pedido sin platillos, la respuesta trae pedidoVacio (D67) y el cliente no lo nota: esa llamada no cuenta en argsEsperados.",
     "Cotiza la hamburguesa y da el resumen con el total de la respuesta.",
     "Con \"Eso es todo\" pide nombre y teléfono, sin despedirse."
   ],
   "noDebe": [
     "Pedir nombre o teléfono antes de la cotización con ok en verdadero.",
+    "Decir que no pudo cotizar o que hubo un problema cuando el cliente todavía no dice qué quiere.",
     "Llamar a crear_pedido.",
     "Despedirse con \"Eso es todo\"."
   ]
