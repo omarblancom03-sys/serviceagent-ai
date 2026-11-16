@@ -98,8 +98,10 @@ const ERROR_NO_DISPONIBLE: ErrorChat = {
   error: 'El chat no está disponible en este momento. Intenta de nuevo en unos minutos.',
   codigo: 'servicio_no_disponible',
 };
+// Tope diario (D38), texto del PO (US-19). La web reconoce el tope por este texto
+// (`MENSAJE_TOPE_DIARIO` en apps/web/src/lib/chat.ts): si cambia aquí, cambia allá.
 const ERROR_TOPE_DIARIO: ErrorChat = {
-  error: 'El chat llegó a su límite de hoy. Intenta de nuevo mañana.',
+  error: 'Servicio no disponible por el momento.',
   codigo: 'servicio_no_disponible',
 };
 const ERROR_NO_ENCONTRADA: ErrorChat = {
