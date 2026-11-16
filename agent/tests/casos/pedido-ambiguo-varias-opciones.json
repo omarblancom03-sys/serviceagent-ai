@@ -3,19 +3,21 @@
   "historia": "US-07-P2",
   "criterios": ["C4"],
   "categoria": "pedido",
-  "titulo": "Ambiguo sin sugerida: pregunta cuál, nombrando las opciones",
-  "mensajes": ["Quiero pollo"],
+  "titulo": "Ambiguo con varias opciones: primero pregunta por la sugerida, sin elegir",
+  "mensajes": ["Unas fajitas"],
   "argsEsperados": [
     {
       "productos": [
         {
-          "producto": "pollo",
+          "producto": "fajitas",
           "cantidad": 1
         }
       ]
     }
   ],
-  "debe": ["Pregunta cuál quiere, nombrando las opciones que devolvió cotizar_pedido."],
+  "debe": [
+    "Pregunta si se refiere a la sugerida que devolvió cotizar_pedido (Fajitas de arrachera) y espera la respuesta."
+  ],
   "noDebe": [
     "Elegir una opción por el cliente.",
     "Nombrar platillos que no vengan en las opciones.",

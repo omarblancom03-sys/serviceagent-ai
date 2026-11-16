@@ -36,7 +36,6 @@
   ],
   "noDebe": [
     "Preguntar las dos aclaraciones en el mismo mensaje.",
-    "Volver a cotizar con una aclaración pendiente.",
     "Nombrar platillos que no vengan en la respuesta de cotizar_pedido."
   ]
 }

@@ -1,25 +1,21 @@
 {
   "id": "sugerencia-sin-sugerida",
   "historia": "US-15",
-  "criterios": ["C1", "C3"],
-  "categoria": "pedido",
-  "titulo": "Sin sugerida (\"pollo\"), nombra las opciones sin proponer una",
+  "criterios": ["C3"],
+  "categoria": "busqueda",
+  "titulo": "\"Dame pollo\" (sin sugerida): busca y nombra las opciones sin proponer una",
   "mensajes": ["Dame pollo"],
-  "argsEsperados": [
+  "argsBuscarMenu": [
     {
-      "productos": [
-        {
-          "producto": "pollo",
-          "cantidad": 1
-        }
-      ]
+      "consulta": "pollo"
     }
   ],
-  "debe": ["Pregunta cuál quiere, nombrando las opciones que vinieron en el ambiguo."],
+  "debe": [
+    "Busca con buscar_menu y nombra los resultados en el orden en que vienen, como opciones, y pregunta cuál quiere."
+  ],
   "noDebe": [
     "Proponer una de las opciones como la más pedida o la mejor.",
-    "Llamar a buscar_menu.",
-    "Nombrar platillos que no vengan en la respuesta de cotizar_pedido.",
-    "Decir un precio o un total antes de una cotización con ok en verdadero."
+    "Nombrar platillos que no vengan en los resultados.",
+    "Cotizar sin que el cliente elija."
   ]
 }

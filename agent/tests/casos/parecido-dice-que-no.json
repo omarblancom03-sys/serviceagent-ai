@@ -17,7 +17,7 @@
   ],
   "debe": [
     "Dice que no tienen alitas y ofrece solo el platillo de parecido, si vino.",
-    "Con \"No, gracias\" pregunta qué quiere en su lugar o si le ayuda en algo más, sin proponer otro platillo."
+    "Con \"No, gracias\" no propone otro platillo: pregunta qué quiere en su lugar o, si lo toma como despedida, se despide."
   ],
   "noDebe": [
     "Proponer otro platillo después del \"No\".",
