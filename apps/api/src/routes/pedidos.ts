@@ -100,7 +100,9 @@ export const cancelarPedidoRoute = createRoute({
     '(`confirmado`, `esperando_pago` o `en_cola`) y no tiene pagos; guarda el motivo en el ' +
     'historial (D71). Antes, en `chat.message_with_tool_calls` el cliente tiene que haber ' +
     'respondido que sí a la última pregunta "¿Cancelo tu pedido…?" del agente; si no, ' +
-    '`faltaConfirmacion: true` sin tocar la base (D73). La regla la cumple la base con la fila ' +
+    '`faltaConfirmacion: true` sin tocar la base (D73). La pregunta tiene que nombrar el mismo ' +
+    'folio que se va a cancelar: un sí a "¿Cancelo tu pedido #1001?" no cancela el #1002 (D74). ' +
+    'La regla del pedido la cumple la base con la fila ' +
     'bloqueada. Siempre 200 con un cuerpo ' +
     'que el agente puede leer: `ok: true` (también si ya estaba cancelado, con ' +
     '`yaEstabaCancelado`), u `ok: false` con lo que falta corregir (folio, teléfono, un motivo ' +
