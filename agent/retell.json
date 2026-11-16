@@ -80,7 +80,7 @@
       {
         "type": "custom",
         "name": "cancelar_pedido",
-        "description": "Cancela un pedido ya registrado si todavía no se empieza a preparar y no tiene pagos; devuelve si quedó cancelado, por qué no se pudo o qué dato falta. Úsala solo después de que el cliente respondió que sí a la pregunta de si cancelas su pedido, nunca en el mismo turno en que la haces. Manda el número de pedido, el teléfono con el que se registró y el motivo resumido.",
+        "description": "Cancela un pedido ya registrado si todavía no se empieza a preparar y no tiene pagos; devuelve si quedó cancelado, por qué no se pudo o qué dato falta. Úsala solo cuando ya tienes el número de pedido y el teléfono y, en un mensaje posterior a tu pregunta de si cancelas su pedido, el cliente respondió que sí: nunca en el mismo turno en que la haces ni para pedir datos. Manda el número de pedido, el teléfono con el que se registró y el motivo resumido.",
         "url": "/pedidos/cancelar",
         "method": "POST",
         "parameters": "agent/functions/cancelar_pedido.json",
