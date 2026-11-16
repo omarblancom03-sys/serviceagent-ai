@@ -257,12 +257,22 @@ describe('clasificarErrorChat', () => {
     });
   });
 
-  it('el tope se reconoce sin importar acentos ni mayúsculas', () => {
+  it('el tope se reconoce sin importar acentos, mayúsculas ni puntuación', () => {
     const cuerpo: ErrorChat = {
-      error: 'EL CHAT LLEGO A SU LIMITE DE HOY.',
+      error: 'SERVICIO NO DISPONÍBLE, POR EL MOMENTO',
       codigo: 'servicio_no_disponible',
     };
     expect(clasificarErrorChat(errorApi(503, cuerpo), 'crear', 30).fase).toBe('tope_diario');
+  });
+
+  it('el texto del tope es el del PO (US-19) y no se confunde con el de una falla', () => {
+    expect(MENSAJE_TOPE_DIARIO).toBe('Servicio no disponible por el momento.');
+    // El texto anterior ya no es tope: la API dejó de mandarlo.
+    const anterior: ErrorChat = {
+      error: 'El chat llegó a su límite de hoy. Intenta de nuevo mañana.',
+      codigo: 'servicio_no_disponible',
+    };
+    expect(clasificarErrorChat(errorApi(503, anterior), 'crear', 30)).toEqual(reintentar);
   });
 
   it('el mismo texto al enviar no es tope diario (el tope solo ocurre al crear)', () => {
