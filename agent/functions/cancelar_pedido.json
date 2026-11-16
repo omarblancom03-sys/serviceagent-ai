@@ -14,7 +14,7 @@
     },
     "motivo": {
       "type": "string",
-      "description": "Por qué cancela, resumido en pocas palabras: \"se equivocó de platillo\". Si el cliente no quiere decirlo, manda \"El cliente no dio motivo\". Máximo 200 caracteres."
+      "description": "Por qué cancela, resumido en pocas palabras y sin datos personales (ni nombres, ni teléfonos): \"se equivocó de platillo\". Si el cliente no quiere decirlo, manda \"El cliente no dio motivo\". Máximo 200 caracteres."
     }
   }
 }

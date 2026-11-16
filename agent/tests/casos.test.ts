@@ -302,6 +302,11 @@ describe('prompt (agent/prompt.md)', () => {
     expect(prompt).toContain('¿Cancelo tu pedido');
   });
 
+  // El backend lee el número de la pregunta y lo compara con el folio (D74).
+  it('el ejemplo de la pregunta de cancelación lleva el número justo después de la frase', () => {
+    expect(prompt).toMatch(/¿Cancelo tu pedido #\d+\?/);
+  });
+
   // docs/negocio.md -> Dinero: el modelo nunca calcula ni inventa precios.
   it('no contiene montos', () => {
     expect(prompt).not.toMatch(/\$\s*\d/);

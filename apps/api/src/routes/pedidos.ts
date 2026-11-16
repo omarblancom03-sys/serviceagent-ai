@@ -43,14 +43,18 @@ export const cotizarPedidoRoute = createRoute({
     FIRMA_RETELL +
     'No guarda nada. Resuelve los nombres tal como los dijo el cliente y calcula el total con ' +
     'precios de la base, en centavos. Si algo no existe, es ambiguo o no se puede, responde 200 ' +
-    'con `ok: false` y todas las aclaraciones juntas; nunca cotiza una parte del pedido.',
+    'con `ok: false` y todas las aclaraciones juntas; nunca cotiza una parte del pedido. Una ' +
+    'llamada sin platillos ni extras (`{}`) no es un error: responde 200 con `ok: false`, ' +
+    '`pedidoVacio: true` y sin aclaraciones. Si no viene `variante`, resuelve la que el modelo ' +
+    'mandó pegada en `producto` con "con", solo si la coincidencia es única (D67).',
   security: [{ FirmaRetell: [] }],
   middleware: [requiereFirmaRetell()] as const,
   request: { body: { content: json(CotizarPedidoPeticionSchema), required: true } },
   responses: {
     200: {
       content: json(RespuestaCotizarPedidoSchema),
-      description: 'Cotización con renglones y total, o las aclaraciones que hacen falta',
+      description:
+        'Cotización con renglones y total, las aclaraciones que hacen falta, o `pedidoVacio`',
     },
     ...respuestasDeError('la lectura del menú'),
   },
@@ -96,7 +100,9 @@ export const cancelarPedidoRoute = createRoute({
     '(`confirmado`, `esperando_pago` o `en_cola`) y no tiene pagos; guarda el motivo en el ' +
     'historial (D71). Antes, en `chat.message_with_tool_calls` el cliente tiene que haber ' +
     'respondido que sí a la última pregunta "¿Cancelo tu pedido…?" del agente; si no, ' +
-    '`faltaConfirmacion: true` sin tocar la base (D73). La regla la cumple la base con la fila ' +
+    '`faltaConfirmacion: true` sin tocar la base (D73). La pregunta tiene que nombrar el mismo ' +
+    'folio que se va a cancelar: un sí a "¿Cancelo tu pedido #1001?" no cancela el #1002 (D74). ' +
+    'La regla del pedido la cumple la base con la fila ' +
     'bloqueada. Siempre 200 con un cuerpo ' +
     'que el agente puede leer: `ok: true` (también si ya estaba cancelado, con ' +
     '`yaEstabaCancelado`), u `ok: false` con lo que falta corregir (folio, teléfono, un motivo ' +

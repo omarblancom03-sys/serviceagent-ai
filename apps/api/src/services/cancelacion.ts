@@ -70,8 +70,8 @@ function rechazar(rechazo: RechazoCancelacion, estadoActual: EstadoPedido | null
 }
 
 /**
- * Revisa lo que mandó el agente y, si todo sirve y el cliente dijo que sí a "¿Cancelo tu pedido…?"
- * en `mensajes` (D73), cancela. Lo que haya que volver a pedir (folio, teléfono, motivo largo, la
+ * Revisa lo que mandó el agente y, si todo sirve y el cliente dijo que sí a "¿Cancelo tu pedido #N?"
+ * en `mensajes`, con N igual al folio (D73 y D74), cancela. Lo que haya que volver a pedir (folio, teléfono, motivo largo, la
  * confirmación) sale junto en una respuesta, sin tocar la base. Los errores del repo se propagan
  * (la ruta responde 500).
  */
@@ -91,7 +91,9 @@ export async function cancelarPedido(
       ? DETALLE_MOTIVO_CANCELACION_LARGO
       : null;
 
-  const faltaConfirmacion = !clienteConfirmoCancelacion(mensajes);
+  // Sin folio no hay con qué comparar la pregunta: tampoco hay confirmación (D74).
+  const faltaConfirmacion =
+    args.folio === undefined || !clienteConfirmoCancelacion(mensajes, args.folio);
 
   if (
     args.folio === undefined ||

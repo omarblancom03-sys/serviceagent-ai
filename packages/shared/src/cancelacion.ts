@@ -59,7 +59,8 @@ export const PedidoCanceladoSchema = z.object({
 /**
  * No se canceló. Si `rechazo` es `null`, falta corregir lo que mandó el agente: `faltaFolio`,
  * `datosCliente` (el teléfono), `aclaracionMotivo` (más de 200 caracteres) o `faltaConfirmacion`
- * (el cliente todavía no respondió que sí a "¿Cancelo tu pedido…?", D73). Si no, `rechazo` dice
+ * (el cliente todavía no respondió que sí a "¿Cancelo tu pedido #N?" con N igual al folio, D73 y
+ * D74). Si no, `rechazo` dice
  * por qué y `detalle` le dice al agente qué hacer; `estadoActual` es el estado del pedido (o
  * `null` si no se encontró).
  */
