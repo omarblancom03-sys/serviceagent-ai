@@ -22,6 +22,7 @@ import {
   type AccionChat,
   type EstadoChat,
 } from '../src/lib/chat';
+import { ErrorTurnstile } from '../src/lib/turnstile';
 
 const ID = '3f1c2a9e-8b7d-4c6e-9a1b-2d3e4f5a6b7c';
 
@@ -254,6 +255,49 @@ describe('clasificarErrorChat', () => {
     expect(clasificarErrorChat(errorApi(503, cuerpo), 'crear', 30)).toEqual({
       fase: 'tope_diario',
       aviso: { mensaje: MENSAJE_TOPE_DIARIO, accion: 'ninguna' },
+    });
+  });
+
+  describe('Turnstile (D68, D77)', () => {
+    const verificacion = {
+      fase: 'error',
+      aviso: { mensaje: MENSAJE_TOPE_DIARIO, accion: 'reintentar' },
+    };
+
+    it('verificacion_fallida al crear: el texto del tope con Reintentar', () => {
+      const cuerpo: ErrorChat = { error: MENSAJE_TOPE_DIARIO, codigo: 'verificacion_fallida' };
+      expect(clasificarErrorChat(errorApi(503, cuerpo), 'crear', 30)).toEqual(verificacion);
+    });
+
+    it('verificacion_fallida al enviar (no debería pasar): no disponible con Reintentar', () => {
+      const cuerpo: ErrorChat = { error: MENSAJE_TOPE_DIARIO, codigo: 'verificacion_fallida' };
+      expect(clasificarErrorChat(errorApi(503, cuerpo), 'enviar', 30)).toEqual(reintentar);
+    });
+
+    it('el widget falló o tardó: el texto del tope con Reintentar', () => {
+      expect(clasificarErrorChat(new ErrorTurnstile('fallo'), 'crear', 30)).toEqual(verificacion);
+    });
+
+    it('la web no tiene llave del sitio: igual que el tope, sin Reintentar', () => {
+      expect(clasificarErrorChat(new ErrorTurnstile('sin_llave'), 'crear', 30)).toEqual({
+        fase: 'tope_diario',
+        aviso: { mensaje: MENSAJE_TOPE_DIARIO, accion: 'ninguna' },
+      });
+    });
+
+    it('Reintentar tras verificacion_fallida vuelve a enviar el mismo texto', () => {
+      const cuerpo: ErrorChat = { error: MENSAJE_TOPE_DIARIO, codigo: 'verificacion_fallida' };
+      let estado = reducirChat(estadoInicial(), { tipo: 'enviar', texto: 'Ver menú' });
+      estado = reducirChat(estado, {
+        tipo: 'fallo',
+        falla: clasificarErrorChat(errorApi(503, cuerpo), 'crear', 30),
+      });
+      expect(estado.pendiente).toBe('Ver menú');
+
+      estado = reducirChat(estado, { tipo: 'reintentar' });
+      expect(estado.fase).toBe('enviando');
+      expect(estado.conversacionId).toBeNull();
+      expect(estado.burbujas.filter((b) => b.autor === 'cliente')).toHaveLength(1);
     });
   });
 
