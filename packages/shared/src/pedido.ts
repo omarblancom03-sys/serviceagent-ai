@@ -247,7 +247,7 @@ export const AclaracionSchema = z.object({
   opciones: z.array(z.string()).optional(),
   /**
    * Solo en `ambiguo`: la opción que el PO marcó para lo que dijo el cliente ("hamburguesa" →
-   * "Hamburguesa Granero", D72). Siempre es una de `opciones`. No viene si esa frase no tiene
+   * "Hamburguesa Delicias", D72). Siempre es una de `opciones`. No viene si esa frase no tiene
    * sugerencia.
    */
   sugerida: z.string().optional(),
