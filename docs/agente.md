@@ -41,7 +41,7 @@ Errores: `{ error, codigo }`, con `error` en español para el cliente y sin deta
 | `conversacion_no_encontrada` | 404  | Id bien formado que no existe                                                                                                                                                                                               |
 | `conversacion_terminada`     | 409  | El chat cerró (por inactividad o porque terminó); la web ofrece iniciar otro                                                                                                                                                |
 | `limite_alcanzado`           | 429  | Ya se enviaron los mensajes permitidos; hay que iniciar otra conversación                                                                                                                                                   |
-| `servicio_no_disponible`     | 503  | Retell falló, tardó, no tiene saldo, llegó al límite de la cuenta o falta la llave; al iniciar, también si se alcanzó el tope diario de conversaciones nuevas. El texto del error puede variar según la causa; el código no |
+| `servicio_no_disponible`     | 503  | Retell falló, tardó, no tiene saldo, llegó al límite de la cuenta o falta la llave; al iniciar, también con el tope diario o con Turnstile sin validar de nuestro lado. El texto puede cambiar según la causa; el código no |
 | `verificacion_fallida`       | 503  | Al iniciar: Turnstile rechazó el token (no válido, vencido o ya usado) o no llegó. Mismo texto que el tope; la web pide un token nuevo y ofrece Reintentar (D77)                                                            |
 
 ### Cómo funciona el proxy
