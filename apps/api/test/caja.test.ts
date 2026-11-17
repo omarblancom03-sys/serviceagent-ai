@@ -9,6 +9,7 @@ import {
   type CajaRepo,
   type PedidoCajaLeido,
 } from '../src/services/caja';
+import { accionesSinUso } from './cajaEnMemoria';
 
 const t = (iso: string) => new Date(iso);
 
@@ -74,6 +75,8 @@ describe('armarPedidosCaja (US-20)', () => {
       totalCentavos: 18800,
       totalTexto: '$188.00',
       pagado: false,
+      porCobrarCentavos: 18800,
+      porCobrarTexto: '$188.00',
       metodosPago: [],
     });
     expect(RespuestaPedidosCajaSchema.safeParse({ pedidos: [p] }).success).toBe(true);
@@ -143,6 +146,7 @@ describe('obtenerPedidosCaja (US-20)', () => {
   it('pide al repo desde el inicio del día del restaurante', async () => {
     const pedidas: Date[] = [];
     const repo: CajaRepo = {
+      ...accionesSinUso,
       leerPedidosCaja: (desde) => {
         pedidas.push(desde);
         return Promise.resolve([pedido(1001)]);

@@ -91,9 +91,37 @@ describe('POST /pedidos/cotizar', () => {
     expect(res.status).toBe(200);
     expect(RespuestaCotizarPedidoSchema.parse(await res.json())).toEqual({
       ok: false,
+      pedidoVacio: false,
       aclaraciones: [
         { tipo: 'no_existe', origen: 'producto', indice: 0, producto: 'pizza de pepperoni' },
       ],
+    });
+  });
+
+  it.each([
+    ['args vacíos', { name: 'cotizar_pedido', chat: {}, args: {} }],
+    ['sin args', { name: 'cotizar_pedido', chat: {} }],
+  ])('con %s responde 200 con pedidoVacio, no un 400 (D67)', async (_caso, cuerpo) => {
+    const res = await cotizar(JSON.stringify(cuerpo));
+
+    expect(res.status).toBe(200);
+    expect(RespuestaCotizarPedidoSchema.parse(await res.json())).toEqual({
+      ok: false,
+      pedidoVacio: true,
+      aclaraciones: [],
+    });
+  });
+
+  it('resuelve la variante pegada con "con" (D67)', async () => {
+    const res = await cotizar(
+      sobre({ productos: [{ producto: 'tiras de pollo con salsa BBQ', cantidad: 1 }] }),
+    );
+
+    expect(res.status).toBe(200);
+    expect(RespuestaCotizarPedidoSchema.parse(await res.json())).toMatchObject({
+      ok: true,
+      renglones: [{ nombre: 'Tiras de pollo', variante: 'Salsa BBQ' }],
+      totalTexto: '$186.00',
     });
   });
 

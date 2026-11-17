@@ -854,6 +854,7 @@ describe('cotizarPedido: reglas generales', () => {
     const dePrueba = armarCatalogo(armarMenu(filasMenuDePrueba()), []);
     expect(cotizarCon(dePrueba, uno('Platillo dado de baja'))).toEqual({
       ok: false,
+      pedidoVacio: false,
       aclaraciones: [
         { tipo: 'no_existe', origen: 'producto', indice: 0, producto: 'Platillo dado de baja' },
       ],

@@ -45,8 +45,11 @@ export const cotizarPedidoRoute = createRoute({
     FIRMA_RETELL +
     'No guarda nada. Resuelve los nombres tal como los dijo el cliente y calcula el total con ' +
     'precios de la base, en centavos. Si algo no existe, es ambiguo o no se puede, responde 200 ' +
-    'con `ok: false` y todas las aclaraciones juntas; nunca cotiza una parte del pedido. Un ' +
-    '`ambiguo` trae `sugerida` si el PO marcó una opción para lo que dijo el cliente, y un ' +
+    'con `ok: false` y todas las aclaraciones juntas; nunca cotiza una parte del pedido. Una ' +
+    'llamada sin platillos ni extras (`{}`) no es un error: responde 200 con `ok: false`, ' +
+    '`pedidoVacio: true` y sin aclaraciones. Si no viene `variante`, resuelve la que el modelo ' +
+    'mandó pegada en `producto` con "con", solo si la coincidencia es única (D67). ' +
+    'Un `ambiguo` trae `sugerida` si el PO marcó una opción para lo que dijo el cliente, y un ' +
     '`no_existe` de producto trae `parecido`, el platillo más parecido según la búsqueda ' +
     'semántica o `null`; sin el binding `AI`, o si Workers AI falla, no lo trae (D72).',
   security: [{ FirmaRetell: [] }],
@@ -55,7 +58,8 @@ export const cotizarPedidoRoute = createRoute({
   responses: {
     200: {
       content: json(RespuestaCotizarPedidoSchema),
-      description: 'Cotización con renglones y total, o las aclaraciones que hacen falta',
+      description:
+        'Cotización con renglones y total, las aclaraciones que hacen falta, o `pedidoVacio`',
     },
     ...respuestasDeError('la lectura del menú'),
   },
