@@ -1,4 +1,7 @@
-import { RespuestaEnviarMensajeSchema } from '@serviceagent/shared';
+import {
+  RespuestaEnviarMensajeSchema,
+  RespuestaIniciarConversacionSchema,
+} from '@serviceagent/shared';
 import { describe, expect, it } from 'vitest';
 import { crearApp } from '../src/index';
 import { crearClienteRetell } from '../src/lib/clienteRetell';
@@ -141,6 +144,19 @@ describe('sinConfirmacionRepetida (D69)', () => {
     ]);
   });
 
+  it('si entre las dos el agente corrige algo sin recotizar, la frase sola sí pasa', () => {
+    const correccion = 'Perdón, es a nombre de Ana Pérez.';
+    expect(textos([agente(RESUMEN), agente(correccion), agente(SOLO_PREGUNTA)])).toEqual([
+      RESUMEN,
+      correccion,
+      SOLO_PREGUNTA,
+    ]);
+  });
+
+  it('un mensaje del agente vacío no cuenta como corrección: la repetida se quita', () => {
+    expect(textos([agente(RESUMEN), agente('  '), agente(SOLO_PREGUNTA)])).toEqual([RESUMEN]);
+  });
+
   it('no toca preguntas que no son la de confirmación, aunque se repitan', () => {
     expect(textos([agente('¿Algo más?'), agente('¿Algo más?')])).toEqual([
       '¿Algo más?',
@@ -205,6 +221,37 @@ describe('POST /chat/conversaciones/{id}/mensajes: pregunta de confirmación rep
   });
 });
 
+describe('POST /chat/conversaciones: pregunta de confirmación repetida al abrir (D69)', () => {
+  const env = { RETELL_API_KEY: 'llave', RETELL_AGENT_ID: 'agent_1' } as Bindings;
+
+  it('el filtro también se aplica a los mensajes de create-chat', async () => {
+    const falso = crearRetellFalso();
+    falso.respuestas.crearChat = () => ({
+      ok: true,
+      datos: {
+        chatId: 'chat_abrir',
+        estado: 'ongoing',
+        mensajes: [
+          agente(RESUMEN),
+          llamada('crear_pedido'),
+          FALTA_CONFIRMACION,
+          agente(SOLO_PREGUNTA),
+        ],
+      },
+    });
+    const app = crearApp({
+      crearRepoChat: () => crearChatRepoEnMemoria().repo,
+      crearClienteRetell: () => falso.retell,
+    });
+
+    const res = await app.request('/chat/conversaciones', { method: 'POST' }, env);
+
+    expect(res.status).toBe(201);
+    const cuerpo = RespuestaIniciarConversacionSchema.parse(await res.json());
+    expect(cuerpo.mensajes.map((m) => m.texto)).toEqual([RESUMEN]);
+  });
+});
+
 describe('clienteRetell: nombre de la herramienta (D69)', () => {
   it('lee `name` de los mensajes de create-chat-completion y no lo pone si no viene', async () => {
     const respuesta = {
@@ -232,5 +279,33 @@ describe('clienteRetell: nombre de la herramienta (D69)', () => {
       ['tool_call_invocation', 'crear_pedido'],
       ['tool_call_result', null],
     ]);
+  });
+});
+
+describe('clienteRetell: un `name` que no es texto (D69)', () => {
+  it('no lo pone, y la invocación cuenta como posible cotización: pasan las dos preguntas', async () => {
+    const respuesta = {
+      messages: [
+        { role: 'agent', message_id: 'm1', content: RESUMEN, created_timestamp: 1 },
+        { role: 'tool_call_invocation', tool_call_id: 't1', name: 123, arguments: '{}' },
+        { role: 'tool_call_result', tool_call_id: 't1', content: '{"ok":false}' },
+        { role: 'agent', message_id: 'm2', content: SOLO_PREGUNTA, created_timestamp: 2 },
+      ],
+    };
+    const cliente = crearClienteRetell('llave', {
+      fetch: () =>
+        Promise.resolve(
+          new Response(JSON.stringify(respuesta), {
+            status: 201,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        ),
+    });
+
+    const enviado = await cliente.enviarMensaje('chat_1', 'hola');
+
+    if (!enviado.ok) throw new Error('se esperaba ok');
+    expect(enviado.datos.mensajes[1]?.nombre).toBeUndefined();
+    expect(textos(enviado.datos.mensajes)).toEqual([RESUMEN, SOLO_PREGUNTA]);
   });
 });

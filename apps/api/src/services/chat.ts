@@ -140,7 +140,9 @@ function valorLimpio(valor: string | undefined): string | null {
  *
  * Tampoco se esconde si entre las dos se volvió a llamar a `cotizar_pedido`: el pedido pudo cambiar
  * y esa pregunta es de otra cotización (la misma regla con que D48 invalida un "sí"). Una llamada
- * sin nombre se trata igual, como posible cotización: ante la duda, se muestra.
+ * sin nombre se trata igual, como posible cotización: ante la duda, se muestra. Lo mismo si entre
+ * las dos hay otro mensaje del agente con texto ("Perdón, es a nombre de Ana Pérez."): la pregunta
+ * que sigue se muestra, para que lo último que vea el cliente sea la pregunta.
  * Solo se quitan preguntas de confirmación (`esPreguntaDeConfirmacion`); cualquier otro mensaje
  * del agente pasa. En Retell la conversación sigue completa: el "sí" del cliente llega después de
  * la última pregunta y `crear_pedido` lo acepta igual.
@@ -155,7 +157,12 @@ export function sinConfirmacionRepetida(mensajes: MensajeRetell[]): MensajeRetel
     ) {
       mostradas = [];
     }
-    if (m.rol !== 'agent' || m.texto === null || !esPreguntaDeConfirmacion(m.texto)) return true;
+    if (m.rol !== 'agent' || m.texto === null) return true;
+    if (!esPreguntaDeConfirmacion(m.texto)) {
+      // Otro mensaje del agente con texto: la pregunta siguiente ya no es repetida.
+      if (m.texto.trim() !== '') mostradas = [];
+      return true;
+    }
     const texto = textoNormalizado(m.texto);
     const repetida =
       mostradas.length > 0 &&

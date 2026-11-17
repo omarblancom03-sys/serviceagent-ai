@@ -176,9 +176,8 @@ export function textoNormalizado(texto: string): string {
   return palabrasDe(texto).join(' ');
 }
 
-const SOLO_LA_PREGUNTA = new RegExp(`^(te )?${textoNormalizado(FRASE_PREGUNTA_CONFIRMACION)}$`);
-
 /** El mensaje es solo la pregunta fija, sin resumen ni nada más: "¿Confirmo tu pedido?" (D69). */
 export function esSoloLaPreguntaDeConfirmacion(texto: string): boolean {
-  return SOLO_LA_PREGUNTA.test(textoNormalizado(texto));
+  // La misma regla con que D48 reconoce la pregunta exacta: así D48 y D69 no se separan.
+  return EXACTA.test(textoNormalizado(texto));
 }
