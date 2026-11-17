@@ -3,8 +3,10 @@ import {
   EnviarMensajePeticionSchema,
   ErrorChatSchema,
   IdConversacionSchema,
+  IniciarConversacionPeticionSchema,
   LIMITE_MENSAJES_CLIENTE,
   MAX_CARACTERES_MENSAJE,
+  MAX_CARACTERES_TOKEN_TURNSTILE,
   MensajeAgenteSchema,
   ParamsConversacionSchema,
   RespuestaEnviarMensajeSchema,
@@ -90,6 +92,28 @@ describe('Contrato del chat: enviar mensaje', () => {
     ['con una llave desconocida', { texto: 'hola', rol: 'sistema' }],
   ])('rechaza un cuerpo %s', (_, cuerpo) => {
     expect(EnviarMensajePeticionSchema.safeParse(cuerpo).success).toBe(false);
+  });
+});
+
+describe('Contrato del chat: iniciar conversación', () => {
+  it('acepta el token de Turnstile y le quita los espacios', () => {
+    const token = '  XXXX.DUMMY.TOKEN.XXXX ';
+    expect(IniciarConversacionPeticionSchema.parse({ tokenTurnstile: token }).tokenTurnstile).toBe(
+      'XXXX.DUMMY.TOKEN.XXXX',
+    );
+    const largo = { tokenTurnstile: 'a'.repeat(MAX_CARACTERES_TOKEN_TURNSTILE) };
+    expect(IniciarConversacionPeticionSchema.safeParse(largo).success).toBe(true);
+  });
+
+  it.each([
+    ['sin token', {}],
+    ['con token vacío', { tokenTurnstile: '' }],
+    ['con token de solo espacios', { tokenTurnstile: '   ' }],
+    ['con token de más de 2048 caracteres', { tokenTurnstile: 'a'.repeat(2049) }],
+    ['con token numérico', { tokenTurnstile: 5 }],
+    ['con una llave desconocida', { tokenTurnstile: 'tok', extra: true }],
+  ])('rechaza un cuerpo %s', (_, cuerpo) => {
+    expect(IniciarConversacionPeticionSchema.safeParse(cuerpo).success).toBe(false);
   });
 });
 
@@ -220,13 +244,14 @@ describe('Contrato del chat: sin campos de herramientas', () => {
 });
 
 describe('Contrato del chat: errores', () => {
-  it('tiene exactamente los cinco códigos acordados', () => {
+  it('tiene exactamente los seis códigos acordados', () => {
     expect([...CODIGOS_ERROR_CHAT].sort()).toEqual([
       'conversacion_no_encontrada',
       'conversacion_terminada',
       'limite_alcanzado',
       'peticion_invalida',
       'servicio_no_disponible',
+      'verificacion_fallida',
     ]);
   });
 
