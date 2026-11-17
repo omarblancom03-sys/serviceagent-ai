@@ -3,6 +3,7 @@ import type {
   DatoClienteInvalido,
   EstadoPedido,
   MensajeConversacion,
+  MetodoPago,
   ModoPago,
   RenglonCotizacion,
   RespuestaCrearPedido,
@@ -11,6 +12,7 @@ import { formatearPesos } from '../lib/pesos';
 import { clienteConfirmo } from './confirmacion';
 import { obtenerCotizacion } from './cotizacion';
 import type { MenuRepo } from './menu';
+import { armarDatosTransferencia, validarMetodoPago, type DatosWhatsappRepo } from './pago';
 
 /*
  * Crear un pedido (US-08-P1). El agente manda el mismo pedido que cotizó más nombre y teléfono;
@@ -36,6 +38,8 @@ export interface NuevoPedido {
   huella: string;
   totalCentavos: number;
   renglones: RenglonCotizacion[];
+  /** El que eligió el cliente, ya revisado contra el modo (US-23, D76). */
+  metodoPago: MetodoPago;
 }
 
 export interface PedidoGuardado {
@@ -48,16 +52,24 @@ export interface PedidoGuardado {
   estado: EstadoPedido;
   /** Modo de pago con que se creó: el vigente al guardarlo, o el del pedido que ya existía. */
   modoPago: ModoPago;
+  /** Con el que se creó; `null` en un pedido de antes de US-23. */
+  metodoPago: MetodoPago | null;
+  /** Solo con transferencia: la referencia única y la CLABE del restaurante (D76). */
+  referenciaPago: string | null;
+  clabeTransferencia: string | null;
   yaExistia: boolean;
 }
 
 /** Interfaz de datos de pedidos. La implementa `lib/repoPedidos.ts` (Supabase) o un repo en memoria. */
-export interface PedidosRepo {
+export interface PedidosRepo extends DatosWhatsappRepo {
+  /** Modo de pago vigente del restaurante (D55): decide qué métodos se ofrecen (D76). */
+  leerModoPago(): Promise<ModoPago>;
   /**
    * Guarda el pedido en una sola transacción con el modo de pago vigente, que decide si va a la cola
    * de cocina (D46) o espera el pago (D55), o devuelve el que ya existe
    * si el mismo teléfono mandó la misma huella hace menos de `minutosDuplicado` minutos. La hora
-   * la pone la base, no la API (D42).
+   * la pone la base, no la API (D42). Con transferencia, la base genera la referencia del pago y
+   * el método siempre es transferencia, aunque el modo haya cambiado después de revisarlo (D76).
    */
   guardarPedido(pedido: NuevoPedido, minutosDuplicado: number): Promise<PedidoGuardado>;
 }
@@ -141,7 +153,8 @@ export async function calcularHuella(
 /**
  * Si el cliente no confirmó en la conversación (D48), responde `faltaConfirmacion` sin tocar la base.
  * Si confirmó, cotiza con precios de la base y, si no falta nada, guarda el pedido. Junta en una sola
- * respuesta las aclaraciones del pedido y las de los datos del cliente. Los errores de los repos se
+ * respuesta las aclaraciones del pedido y las de los datos del cliente, incluido el método de pago
+ * (US-23, D76). Los errores de los repos se
  * propagan (la ruta responde 500).
  */
 export async function crearPedido(
@@ -155,17 +168,19 @@ export async function crearPedido(
   }
 
   const datos = validarDatosCliente(args);
-  const cotizacion = await obtenerCotizacion(repoMenu, {
-    productos: args.productos,
-    extrasSueltos: args.extrasSueltos,
-  });
+  const [cotizacion, modo] = await Promise.all([
+    obtenerCotizacion(repoMenu, { productos: args.productos, extrasSueltos: args.extrasSueltos }),
+    repoPedidos.leerModoPago(),
+  ]);
+  const pago = validarMetodoPago(args.metodoPago, modo);
+  const datosCliente = pago.invalido ? [...datos.invalidos, pago.invalido] : datos.invalidos;
 
-  if (!cotizacion.ok || datos.nombre === null || datos.telefono === null) {
+  if (!cotizacion.ok || datos.nombre === null || datos.telefono === null || pago.metodo === null) {
     return {
       ok: false,
       faltaConfirmacion: false,
       aclaraciones: cotizacion.ok ? [] : cotizacion.aclaraciones,
-      datosCliente: datos.invalidos,
+      datosCliente,
     };
   }
 
@@ -176,6 +191,7 @@ export async function crearPedido(
       huella: await calcularHuella(cotizacion.renglones, datos.nombre),
       totalCentavos: cotizacion.totalCentavos,
       renglones: cotizacion.renglones,
+      metodoPago: pago.metodo,
     },
     MINUTOS_PEDIDO_DUPLICADO,
   );
@@ -187,6 +203,12 @@ export async function crearPedido(
     folioTexto: `#${guardado.folio}`,
     estado: guardado.estado,
     modoPago: guardado.modoPago,
+    metodoPago: guardado.metodoPago,
+    datosTransferencia: armarDatosTransferencia(
+      guardado.referenciaPago,
+      guardado.clabeTransferencia,
+      guardado.totalCentavos,
+    ),
     yaExistia: guardado.yaExistia,
     renglones: cotizacion.renglones,
     totalCentavos: guardado.totalCentavos,

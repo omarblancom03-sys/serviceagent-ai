@@ -23,7 +23,7 @@ const repoMenu = crearRepoMenuEnMemoria(seed.filas, seed.sinonimos);
 const AHORA = new Date('2026-10-09T18:00:00Z');
 const minutosDespues = (minutos: number) => new Date(AHORA.getTime() + minutos * 60_000);
 
-const CLIENTE = { nombre: 'María José', telefono: '614 123 4567' };
+const CLIENTE = { nombre: 'María José', telefono: '614 123 4567', metodoPago: 'efectivo' };
 
 /** Conversación en la que el cliente ya confirmó (D48). */
 const CONFIRMADO = [
@@ -179,7 +179,12 @@ describe('crearPedido', () => {
   });
 
   it('si el nombre o el teléfono no sirven, no guarda nada y dice qué volver a pedir', async () => {
-    const { respuesta, repo } = await crear({ ...DOS_TBONE, nombre: 'J', telefono: '614 123' });
+    const { respuesta, repo } = await crear({
+      ...DOS_TBONE,
+      nombre: 'J',
+      telefono: '614 123',
+      metodoPago: 'efectivo',
+    });
 
     expect(respuesta).toEqual({
       ok: false,
@@ -209,7 +214,12 @@ describe('crearPedido', () => {
   );
 
   it('nombre y teléfono que no vinieron (o vinieron null o "") → "falta"', async () => {
-    const { respuesta } = await crear({ ...DOS_TBONE, nombre: null, telefono: '' });
+    const { respuesta } = await crear({
+      ...DOS_TBONE,
+      nombre: null,
+      telefono: '',
+      metodoPago: 'efectivo',
+    });
     expect(respuesta).toMatchObject({
       ok: false,
       datosCliente: [
@@ -227,7 +237,7 @@ describe('crearPedido', () => {
     expect(respuesta).toMatchObject({
       ok: false,
       aclaraciones: [{ tipo: 'falta_variante' }],
-      datosCliente: [{ campo: 'telefono' }],
+      datosCliente: [{ campo: 'telefono' }, { campo: 'metodoPago' }],
     });
   });
 
@@ -242,6 +252,7 @@ describe('crearPedido', () => {
         ],
         nombre: 'María José',
         telefono: '+52 614-123-4567',
+        metodoPago: 'efectivo',
       };
       const { respuesta } = await crear(otraForma, repo, minutosDespues(9));
 
@@ -343,7 +354,7 @@ describe('crearPedido', () => {
     it('con transferencia el pedido espera el pago y no va a cocina', async () => {
       const repo = crearRepoPedidosEnMemoria();
       repo.modoPago = 'transferencia';
-      const { respuesta } = await crear({ ...DOS_TBONE, ...CLIENTE }, repo);
+      const { respuesta } = await crear({ ...DOS_TBONE, ...CLIENTE, metodoPago: undefined }, repo);
       expect(respuesta).toMatchObject({
         ok: true,
         estado: 'esperando_pago',
@@ -356,12 +367,19 @@ describe('crearPedido', () => {
       const repo = crearRepoPedidosEnMemoria();
       await crear({ ...DOS_TBONE, ...CLIENTE }, repo);
       repo.modoPago = 'transferencia';
-      const { respuesta } = await crear({ ...DOS_TBONE, ...CLIENTE }, repo, minutosDespues(1));
+      // Con transferencia el método puede faltar: llega al duplicado, que conserva lo suyo.
+      const { respuesta } = await crear(
+        { ...DOS_TBONE, ...CLIENTE, metodoPago: undefined },
+        repo,
+        minutosDespues(1),
+      );
       expect(respuesta).toMatchObject({
         folio: 1001,
         yaExistia: true,
         estado: 'en_cola',
         modoPago: 'al_recoger',
+        metodoPago: 'efectivo',
+        datosTransferencia: null,
       });
       expect(repo.pedidos).toHaveLength(1);
     });

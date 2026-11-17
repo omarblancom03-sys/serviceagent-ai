@@ -10,6 +10,7 @@ import {
   ExtraPedidoSchema,
   ExtraSueltoPedidoSchema,
   InfoRestauranteArgsSchema,
+  PedirDatosWhatsappArgsSchema,
   ProductoPedidoSchema,
 } from '@serviceagent/shared';
 
@@ -116,6 +117,11 @@ const funciones: { nombre: string; url: string; niveles: (raiz: Nodo) => Nivel[]
     nombre: 'info_restaurante',
     url: '/agente/info-restaurante',
     niveles: (raiz) => [{ nombre: 'args', nodo: raiz, contrato: InfoRestauranteArgsSchema }],
+  },
+  {
+    nombre: 'pedir_datos_whatsapp',
+    url: '/pedidos/datos-whatsapp',
+    niveles: (raiz) => [{ nombre: 'args', nodo: raiz, contrato: PedirDatosWhatsappArgsSchema }],
   },
 ];
 

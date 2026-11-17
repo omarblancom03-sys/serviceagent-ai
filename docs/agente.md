@@ -10,8 +10,9 @@ Retell llama a nuestra API. **Toda petición de Retell se verifica con la firma 
 | ----------------------- | ------------------------------- | ------------------------------------------------------------------------------------------------- |
 | `buscar_menu`           | `POST /agente/buscar-menu`      | RAG: hasta 5 productos relevantes (0 si nada se parece) con precio y disponibilidad en vivo (D50) |
 | `info_restaurante`      | `POST /agente/info-restaurante` | Hasta 3 textos aprobados (horario, ubicación, pagos, alérgenos, FAQs) o 0 (D62)                   |
-| `cotizar_pedido`        | `POST /pedidos/cotizar`         | Valida productos y calcula total (sin guardar); sin platillos responde `pedidoVacio` (D67)        |
-| `crear_pedido`          | `POST /pedidos`                 | Crea el pedido tras confirmación explícita (D48, D55)                                             |
+| `cotizar_pedido`        | `POST /pedidos/cotizar`         | Valida productos y calcula total (sin guardar); `pedidoVacio` (D67); `metodosPago` (D76)          |
+| `crear_pedido`          | `POST /pedidos`                 | Crea el pedido tras confirmación explícita (D48, D55); método y datos de transferencia (D76)      |
+| `pedir_datos_whatsapp`  | `POST /pedidos/datos-whatsapp`  | Anota que el cliente quiere los datos de pago por WhatsApp; envío en US-28 (D76)                  |
 | `modificar_pedido`      | `PATCH /pedidos/:folio`         | Cambios antes de preparación                                                                      |
 | `cancelar_pedido`       | `POST /pedidos/:folio/cancelar` | Solo antes de `preparando`                                                                        |
 | `estado_pedido`         | `POST /agente/estado`           | Requiere folio **y** teléfono que coincidan                                                       |
@@ -87,6 +88,7 @@ Lógica en `apps/api/src/services/chat.ts`; Retell se llama con `fetch` directo 
 - Si falta información, pregunta una cosa a la vez sin adivinar ni elegir por el cliente ([prompt.md → Cuando hay algo que aclarar](../agent/prompt.md#cuando-hay-algo-que-aclarar)). No propone platillos: solo nombra las opciones que devuelven `cotizar_pedido` o `buscar_menu` ([D51](decisiones.md)).
 - **Repite el resumen del pedido UNA sola vez, al final, antes de confirmar.** No en cada paso.
 - Registra el pedido con `crear_pedido` solo tras confirmación explícita: pide nombre y teléfono, confirma una vez con los platillos, el total de la cotización, el nombre y el teléfono, y da folio y total ([D49](decisiones.md)).
+- Pago ([D76](decisiones.md)): con los datos del cliente pregunta cómo va a pagar, ofreciendo solo los `metodosPago` de la cotización (efectivo o tarjeta en caja, o solo transferencia), y lo incluye en la confirmación. Con transferencia, al registrar pregunta si está listo para anotar los datos y entonces dicta CLABE, monto y referencia tal como vienen en `datosTransferencia`; si los quiere por WhatsApp, llama a `pedir_datos_whatsapp`.
 - Nunca inventa productos, precios ni ingredientes. Si no sabe, lo dice. Los montos siempre vienen del backend ([negocio.md → Dinero](negocio.md#dinero)).
 - Si no puede resolver algo, usa `transferir_a_empleado`.
 - Lo que se pregunta del restaurante (horario, ubicación, pagos, alergias…) lo responde con `info_restaurante` y solo con su texto; sin el dato, lo dice ([D65](decisiones.md)).

@@ -1,0 +1,55 @@
+{
+  "id": "pago-al-recoger-elige-tarjeta",
+  "historia": "US-23",
+  "criterios": ["C1", "C4"],
+  "categoria": "pedido",
+  "titulo": "Con pago al recoger ofrece efectivo o tarjeta y registra el método que eligió",
+  "mensajes": [
+    "Una hamburguesa Granero y un refresco",
+    "Es todo",
+    "Prueba Agente, 614 123 4567",
+    "Con tarjeta",
+    "Sí"
+  ],
+  "argsEsperados": [
+    {
+      "productos": [
+        {
+          "producto": "hamburguesa Granero",
+          "cantidad": 1
+        },
+        {
+          "producto": "refresco",
+          "cantidad": 1
+        }
+      ]
+    }
+  ],
+  "argsCrearPedido": [
+    {
+      "productos": [
+        {
+          "producto": "hamburguesa Granero",
+          "cantidad": 1
+        },
+        {
+          "producto": "refresco",
+          "cantidad": 1
+        }
+      ],
+      "nombre": "Prueba Agente",
+      "telefono": "614 123 4567",
+      "metodoPago": "tarjeta"
+    }
+  ],
+  "debe": [
+    "Con \"Es todo\" pide nombre, teléfono y cómo va a pagar en caja al recoger: en efectivo o con tarjeta.",
+    "Sin el método, lo pide antes de confirmar; la confirmación dice \"pago con tarjeta en caja\" o algo equivalente.",
+    "Registra con metodoPago \"tarjeta\" y dice que lo paga en caja al recoger, con tarjeta."
+  ],
+  "noDebe": [
+    "Ofrecer transferencia.",
+    "Elegir el método por el cliente.",
+    "Llamar a crear_pedido sin método o antes del \"Sí\"."
+  ]
+}

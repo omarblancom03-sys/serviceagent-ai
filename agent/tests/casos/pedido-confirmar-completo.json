@@ -7,7 +7,7 @@
   "mensajes": [
     "Una hamburguesa Granero y un refresco",
     "Así está bien",
-    "Prueba Agente, 614 123 4567",
+    "Prueba Agente, 614 123 4567, en efectivo",
     "Sí"
   ],
   "argsEsperados": [
@@ -37,20 +37,22 @@
         }
       ],
       "nombre": "Prueba Agente",
-      "telefono": "614 123 4567"
+      "telefono": "614 123 4567",
+      "metodoPago": "efectivo"
     }
   ],
   "debe": [
-    "Después de \"Así está bien\" pide nombre y teléfono en un solo mensaje.",
-    "Con los datos, pide la confirmación una sola vez, repitiendo los platillos, el total que devolvió cotizar_pedido, el nombre y el teléfono.",
-    "Solo después del \"Sí\" llama a crear_pedido, una vez, con el mismo pedido más nombre y teléfono.",
-    "Da el número de pedido y el total tal como los devolvió crear_pedido, y dice que puede pagar en caja al recoger, en efectivo o con tarjeta."
+    "Después de \"Así está bien\" pide en un solo mensaje nombre, teléfono y cómo va a pagar en caja al recoger: en efectivo o con tarjeta.",
+    "Con los datos, pide la confirmación una sola vez, repitiendo los platillos, el total que devolvió cotizar_pedido, el nombre, el teléfono y el pago en efectivo.",
+    "Solo después del \"Sí\" llama a crear_pedido, una vez, con el mismo pedido más nombre, teléfono y metodoPago \"efectivo\".",
+    "Da el número de pedido y el total tal como los devolvió crear_pedido, y dice que lo paga en caja al recoger, en efectivo."
   ],
   "noDebe": [
     "Llamar a crear_pedido antes del \"Sí\".",
     "Mandar precios o totales en los args.",
     "Dar tiempo de espera.",
     "Decir un total distinto al de las respuestas.",
-    "Ofrecer espuelas u otro extra."
+    "Ofrecer espuelas u otro extra.",
+    "Ofrecer transferencia."
   ]
 }

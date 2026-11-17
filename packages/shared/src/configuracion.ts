@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 /*
  * Configuración del restaurante (US-22): el modo de pago, que también decide cuándo va el pedido a
- * cocina (D55). La lee y la cambia solo el administrador: `GET` y `PATCH /admin/configuracion`.
+ * cocina (D55) y qué métodos ofrece el agente (US-23, D76). La lee y la cambia solo el administrador: `GET` y `PATCH /admin/configuracion`.
  */
 
 /**
@@ -13,6 +13,19 @@ import { z } from 'zod';
  */
 export const MODOS_PAGO = ['al_recoger', 'transferencia'] as const;
 export const ModoPagoSchema = z.enum(MODOS_PAGO);
+
+/** Métodos de pago (docs/negocio.md → Pagos): efectivo y tarjeta en caja, transferencia por el agente. */
+export const METODOS_PAGO = ['efectivo', 'tarjeta', 'transferencia'] as const;
+export const MetodoPagoSchema = z.enum(METODOS_PAGO);
+
+/**
+ * Métodos que el agente ofrece según el modo de pago del restaurante (US-23, D76): con pago al
+ * recoger, efectivo o tarjeta en caja; con transferencia, solo transferencia.
+ */
+export const METODOS_POR_MODO = {
+  al_recoger: ['efectivo', 'tarjeta'],
+  transferencia: ['transferencia'],
+} as const satisfies Record<(typeof MODOS_PAGO)[number], readonly (typeof METODOS_PAGO)[number][]>;
 
 export const ConfiguracionRestauranteSchema = z.object({
   modoPago: ModoPagoSchema,
@@ -30,6 +43,7 @@ export const CambiarConfiguracionPeticionSchema = z.strictObject({
 export const ErrorConfiguracionSchema = z.object({ error: z.string() });
 
 export type ModoPago = z.infer<typeof ModoPagoSchema>;
+export type MetodoPago = z.infer<typeof MetodoPagoSchema>;
 export type ConfiguracionRestaurante = z.infer<typeof ConfiguracionRestauranteSchema>;
 export type CambiarConfiguracionPeticion = z.infer<typeof CambiarConfiguracionPeticionSchema>;
 export type ErrorConfiguracion = z.infer<typeof ErrorConfiguracionSchema>;

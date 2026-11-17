@@ -1,0 +1,54 @@
+{
+  "id": "pago-transferencia-por-whatsapp",
+  "historia": "US-23",
+  "criterios": ["C3"],
+  "categoria": "pedido",
+  "titulo": "Con transferencia, si el cliente pide los datos por WhatsApp, lo anota con pedir_datos_whatsapp",
+  "mensajes": [
+    "Una hamburguesa Granero y un refresco",
+    "Es todo",
+    "Prueba Agente, 614 123 4567",
+    "Sí",
+    "Mejor mándamelos por WhatsApp"
+  ],
+  "argsEsperados": [
+    {
+      "productos": [
+        {
+          "producto": "hamburguesa Granero",
+          "cantidad": 1
+        },
+        {
+          "producto": "refresco",
+          "cantidad": 1
+        }
+      ]
+    }
+  ],
+  "argsCrearPedido": [
+    {
+      "productos": [
+        {
+          "producto": "hamburguesa Granero",
+          "cantidad": 1
+        },
+        {
+          "producto": "refresco",
+          "cantidad": 1
+        }
+      ],
+      "nombre": "Prueba Agente",
+      "telefono": "614 123 4567"
+    }
+  ],
+  "debe": [
+    "Se corre con el modo de pago en transferencia (/admin) y al terminar se regresa a pago al recoger.",
+    "Con \"mándamelos por WhatsApp\" llama a pedir_datos_whatsapp una vez con el folioTexto y el teléfono del pedido.",
+    "Con resultado \"pedido\" dice que quedó anotado que se los manden por WhatsApp a ese teléfono."
+  ],
+  "noDebe": [
+    "Decir que ya se los mandó o que ya le llegaron.",
+    "Pedir otra vez el teléfono que ya dio.",
+    "Llamar a crear_pedido más de una vez."
+  ]
+}

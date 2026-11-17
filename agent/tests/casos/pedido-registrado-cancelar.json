@@ -7,7 +7,7 @@
   "mensajes": [
     "Una hamburguesa Granero y un refresco",
     "Así está bien",
-    "Prueba Agente, 614 123 4567",
+    "Prueba Agente, 614 123 4567, en efectivo",
     "Sí",
     "Mejor cancélalo"
   ],
@@ -38,7 +38,8 @@
         }
       ],
       "nombre": "Prueba Agente",
-      "telefono": "614 123 4567"
+      "telefono": "614 123 4567",
+      "metodoPago": "efectivo"
     }
   ],
   "debe": [

@@ -1,7 +1,9 @@
 import {
   ErrorPedidoSchema,
+  RespuestaCotizarConPagoSchema,
   RespuestaCotizarPedidoSchema,
   RespuestaCrearPedidoSchema,
+  RespuestaPedirDatosWhatsappSchema,
 } from '@serviceagent/shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { crearApp } from '../src/index';
@@ -23,7 +25,10 @@ afterEach(() => {
 });
 
 const seed = leerSeedMenu();
-const app = crearApp({ crearRepoMenu: () => crearRepoMenuEnMemoria(seed.filas, seed.sinonimos) });
+const app = crearApp({
+  crearRepoMenu: () => crearRepoMenuEnMemoria(seed.filas, seed.sinonimos),
+  crearRepoPedidos: () => crearRepoPedidosEnMemoria(),
+});
 const appQueFalla = crearApp({ crearRepoMenu: () => repoMenuQueFalla });
 
 const LLAVE = 'key_llave_de_prueba_con_badge_de_webhook';
@@ -237,6 +242,7 @@ describe('POST /pedidos', () => {
     productos: [{ producto: 't-bone', cantidad: 2, extras: [{ extra: 'espuelas', cantidad: 1 }] }],
     nombre: 'María José',
     telefono: '614 123 4567',
+    metodoPago: 'efectivo',
   };
   const crear = (cuerpo: string, opciones: Parameters<typeof cotizar>[1] = {}) =>
     cotizar(cuerpo, { ruta: '/pedidos', ...opciones });
@@ -469,5 +475,152 @@ describe('POST /pedidos', () => {
 
     expect(Object.keys(ruta?.responses ?? {})).toEqual(['200', '400', '401', '500']);
     expect(ruta?.security).toEqual([{ FirmaRetell: [] }]);
+  });
+});
+
+describe('métodos de pago en las custom functions (US-23, D76)', () => {
+  const repoMenu = () => crearRepoMenuEnMemoria(seed.filas, seed.sinonimos);
+  const nuevaApp = (modo: 'al_recoger' | 'transferencia' = 'al_recoger') => {
+    const repo = crearRepoPedidosEnMemoria();
+    repo.modoPago = modo;
+    return { repo, app: crearApp({ crearRepoMenu: repoMenu, crearRepoPedidos: () => repo }) };
+  };
+  const PEDIDO = {
+    productos: [{ producto: 't-bone', cantidad: 2, extras: [{ extra: 'espuelas', cantidad: 1 }] }],
+    nombre: 'María José',
+    telefono: '614 123 4567',
+  };
+
+  it('cotizar con pago al recoger ofrece efectivo o tarjeta', async () => {
+    const res = await cotizar(DOS_TBONE_CON_ESPUELAS, { aplicacion: nuevaApp().app });
+    expect(res.status).toBe(200);
+    expect(RespuestaCotizarConPagoSchema.parse(await res.json())).toMatchObject({
+      ok: true,
+      metodosPago: ['efectivo', 'tarjeta'],
+    });
+  });
+
+  it('cotizar con transferencia ofrece solo transferencia', async () => {
+    const res = await cotizar(DOS_TBONE_CON_ESPUELAS, {
+      aplicacion: nuevaApp('transferencia').app,
+    });
+    expect(await res.json()).toMatchObject({ ok: true, metodosPago: ['transferencia'] });
+  });
+
+  it('cotizar con aclaraciones no lee el modo ni manda métodos', async () => {
+    const aplicacion = crearApp({
+      crearRepoMenu: repoMenu,
+      crearRepoPedidos: () => repoPedidosQueFalla,
+    });
+    const res = await cotizar(sobre({ productos: [{ producto: 'sushi', cantidad: 1 }] }), {
+      aplicacion,
+    });
+    expect(res.status).toBe(200);
+    const cuerpo = (await res.json()) as Record<string, unknown>;
+    expect(cuerpo.ok).toBe(false);
+    expect(cuerpo).not.toHaveProperty('metodosPago');
+  });
+
+  it('cotizar responde 500 si no puede leer el modo de pago', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const aplicacion = crearApp({
+      crearRepoMenu: repoMenu,
+      crearRepoPedidos: () => repoPedidosQueFalla,
+    });
+    expect((await cotizar(DOS_TBONE_CON_ESPUELAS, { aplicacion })).status).toBe(500);
+  });
+
+  it('crear con transferencia responde los datos para transferir', async () => {
+    const { app: aplicacion, repo } = nuevaApp('transferencia');
+    const res = await cotizar(sobre(PEDIDO, 'crear_pedido'), { aplicacion, ruta: '/pedidos' });
+    expect(res.status).toBe(200);
+    expect(RespuestaCrearPedidoSchema.parse(await res.json())).toMatchObject({
+      ok: true,
+      metodoPago: 'transferencia',
+      datosTransferencia: {
+        clabeTexto: '999 180 15700000000 5',
+        referencia: 'GRN-1001-K7',
+        montoTexto: '$916.00',
+      },
+    });
+    expect(repo.pedidos[0]?.referenciaPago).toBe('GRN-1001-K7');
+  });
+
+  it('crear con pago al recoger y sin método pide el método en datosCliente', async () => {
+    const res = await cotizar(sobre(PEDIDO, 'crear_pedido'), {
+      aplicacion: nuevaApp().app,
+      ruta: '/pedidos',
+    });
+    expect(await res.json()).toMatchObject({
+      ok: false,
+      datosCliente: [{ campo: 'metodoPago' }],
+    });
+  });
+
+  describe('POST /pedidos/datos-whatsapp', () => {
+    const pedir = (args: unknown, opciones: Parameters<typeof cotizar>[1] = {}) =>
+      cotizar(sobre(args, 'pedir_datos_whatsapp'), {
+        ruta: '/pedidos/datos-whatsapp',
+        ...opciones,
+      });
+
+    it('anota el pedido de un cliente que paga por transferencia', async () => {
+      const { app: aplicacion, repo } = nuevaApp('transferencia');
+      await cotizar(sobre(PEDIDO, 'crear_pedido'), { aplicacion, ruta: '/pedidos' });
+
+      const res = await pedir({ folio: '#1001', telefono: '614 123 4567' }, { aplicacion });
+      expect(res.status).toBe(200);
+      expect(RespuestaPedirDatosWhatsappSchema.parse(await res.json())).toEqual({
+        resultado: 'pedido',
+        datosInvalidos: [],
+      });
+      expect(repo.pedidos[0]?.datosWhatsappPedidosEn).not.toBeNull();
+    });
+
+    it('sin firma responde 401 y no toca el pedido', async () => {
+      const { app: aplicacion, repo } = nuevaApp('transferencia');
+      const res = await pedir({ folio: 1001, telefono: '6141234567' }, { aplicacion, firma: null });
+      expect(res.status).toBe(401);
+      expect(repo.pedidos).toHaveLength(0);
+    });
+
+    it('una llave de más o un nombre de función equivocado da 400', async () => {
+      const { app: aplicacion } = nuevaApp('transferencia');
+      const conLlaveDeMas = await pedir(
+        { folio: 1001, telefono: '6141234567', monto: 100 },
+        { aplicacion },
+      );
+      expect(conLlaveDeMas.status).toBe(400);
+      const otraFuncion = await cotizar(
+        sobre({ folio: 1001, telefono: '6141234567' }, 'crear_pedido'),
+        { aplicacion, ruta: '/pedidos/datos-whatsapp' },
+      );
+      expect(otraFuncion.status).toBe(400);
+    });
+
+    it('responde 500 en español si falla la base', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      const aplicacion = crearApp({
+        crearRepoMenu: repoMenu,
+        crearRepoPedidos: () => repoPedidosQueFalla,
+      });
+      const res = await pedir({ folio: 1001, telefono: '6141234567' }, { aplicacion });
+      expect(res.status).toBe(500);
+      expect(ErrorPedidoSchema.parse(await res.json()).error).toBe(
+        'No se pudo anotar el envío por WhatsApp. Intenta de nuevo en un momento.',
+      );
+    });
+
+    it('aparece en /openapi.json con sus respuestas y la firma de Retell', async () => {
+      const doc = (await (await app.request('/openapi.json')).json()) as {
+        paths: Record<
+          string,
+          { post?: { responses: Record<string, unknown>; security?: unknown[] } }
+        >;
+      };
+      const ruta = doc.paths['/pedidos/datos-whatsapp']?.post;
+      expect(Object.keys(ruta?.responses ?? {})).toEqual(['200', '400', '401', '500']);
+      expect(ruta?.security).toEqual([{ FirmaRetell: [] }]);
+    });
   });
 });
