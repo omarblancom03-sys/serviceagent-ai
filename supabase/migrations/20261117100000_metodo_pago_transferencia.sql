@@ -91,11 +91,9 @@ declare
 begin
   perform pg_advisory_xact_lock(hashtext('crear_pedido:' || p_telefono));
 
-  -- `for share` espera a un cambio de modo que esté en curso (D55).
-  select c.modo_pago, c.clabe_transferencia into v_modo, v_clabe
-  from public.configuracion_restaurante c for share;
-
   -- Un duplicado devuelve el pedido que ya existía, con su modo, método y referencia (D34).
+  -- Va ANTES de leer la configuración: si no encuentra fila, `select ... into` deja en null todas
+  -- sus variables, y borraría el modo ya leído.
   select p.folio, p.total_centavos, p.estado, p.modo_pago, p.metodo_pago, p.referencia_pago
   into v_folio, v_total, v_estado, v_modo, v_metodo, v_referencia
   from public.pedidos p
@@ -106,10 +104,16 @@ begin
   order by p.creado_en desc
   limit 1;
   if found then
+    select c.clabe_transferencia into v_clabe from public.configuracion_restaurante c;
     return query select v_folio, v_total, v_estado, true, v_modo, v_metodo, v_referencia,
       case when v_referencia is null then null else v_clabe end;
     return;
   end if;
+
+  -- El modo vigente decide el método y a dónde va el pedido (D55, D76). `for share` espera a un
+  -- cambio de modo que esté en curso, así el pedido nunca se guarda con un modo a medio cambiar.
+  select c.modo_pago, c.clabe_transferencia into v_modo, v_clabe
+  from public.configuracion_restaurante c for share;
 
   if v_modo = 'transferencia' then
     v_metodo := 'transferencia';

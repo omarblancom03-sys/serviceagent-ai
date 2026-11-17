@@ -104,7 +104,7 @@ begin
   select * into v from pg_temp.crear('T', '6140000004', null);
   perform pg_temp.anotar('07 el duplicado devuelve la misma referencia',
     concat_ws(', ', v_folio_t, 'true', v_ref),
-    concat_ws(', ', v.folio, v.ya_existia, v.referencia));
+    concat_ws(', ', v.folio, v.ya_existia::text, v.referencia));
 
   perform pg_temp.anotar('08 el pedido de antes conserva su método aunque cambie el modo',
     'tarjeta', (select p.metodo_pago from public.pedidos p where p.folio = v_folio_a));
@@ -141,15 +141,15 @@ begin
   perform pg_temp.anotar('15 permisos de crear_pedido (anon, authenticated, service_role)',
     'false, false, true',
     concat_ws(', ',
-      has_function_privilege('anon', 'public.crear_pedido(text, text, text, integer, jsonb, integer, text)', 'execute'),
-      has_function_privilege('authenticated', 'public.crear_pedido(text, text, text, integer, jsonb, integer, text)', 'execute'),
-      has_function_privilege('service_role', 'public.crear_pedido(text, text, text, integer, jsonb, integer, text)', 'execute')));
+      has_function_privilege('anon', 'public.crear_pedido(text, text, text, integer, jsonb, integer, text)', 'execute')::text,
+      has_function_privilege('authenticated', 'public.crear_pedido(text, text, text, integer, jsonb, integer, text)', 'execute')::text,
+      has_function_privilege('service_role', 'public.crear_pedido(text, text, text, integer, jsonb, integer, text)', 'execute')::text));
   perform pg_temp.anotar('16 permisos de pedir_datos_whatsapp (anon, authenticated, service_role)',
     'false, false, true',
     concat_ws(', ',
-      has_function_privilege('anon', 'public.pedir_datos_whatsapp(integer, text)', 'execute'),
-      has_function_privilege('authenticated', 'public.pedir_datos_whatsapp(integer, text)', 'execute'),
-      has_function_privilege('service_role', 'public.pedir_datos_whatsapp(integer, text)', 'execute')));
+      has_function_privilege('anon', 'public.pedir_datos_whatsapp(integer, text)', 'execute')::text,
+      has_function_privilege('authenticated', 'public.pedir_datos_whatsapp(integer, text)', 'execute')::text,
+      has_function_privilege('service_role', 'public.pedir_datos_whatsapp(integer, text)', 'execute')::text));
   perform pg_temp.anotar('17 la función de 6 parámetros ya no existe', 'false',
     (to_regprocedure('public.crear_pedido(text, text, text, integer, jsonb, integer)') is not null)::text);
 end $$;
