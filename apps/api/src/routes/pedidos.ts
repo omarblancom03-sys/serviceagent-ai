@@ -103,8 +103,9 @@ export const cancelarPedidoRoute = createRoute({
     '`faltaConfirmacion: true` sin tocar la base (D73). La pregunta tiene que nombrar el mismo ' +
     'folio que se va a cancelar: un sí a "¿Cancelo tu pedido #1001?" no cancela el #1002 (D74). ' +
     'La regla del pedido la cumple la base con la fila ' +
-    'bloqueada. Siempre 200 con un cuerpo ' +
-    'que el agente puede leer: `ok: true` (también si ya estaba cancelado, con ' +
+    'bloqueada. Responde 200 con un cuerpo ' +
+    'que el agente puede leer (400 si el cuerpo está mal formado, 401 sin firma y 500 si falla ' +
+    'la base): `ok: true` (también si ya estaba cancelado, con ' +
     '`yaEstabaCancelado`), u `ok: false` con lo que falta corregir (folio, teléfono, un motivo ' +
     'de más de 200 caracteres o la confirmación) o con el `rechazo`: `no_encontrado` (no existe o es de otro ' +
     'teléfono: la misma respuesta), `en_preparacion`, `con_pago` o `cerrado`. La pantalla de ' +

@@ -113,8 +113,8 @@ export const FRASE_PREGUNTA_CONFIRMACION = '¿Confirmo tu pedido?';
 
 /**
  * Frase fija con la que el agente pregunta si cancela un pedido (D73): "¿Cancelo tu pedido #1025?".
- * Justo después va el número de pedido, que se compara con el folio a cancelar (D74). La usa
- * agent/prompt.md ("Cómo cancelas un pedido"); si cambia allá, cambia aquí.
+ * Justo después va el número de pedido, que se compara con el folio a cancelar (D74). La usará
+ * agent/prompt.md desde US-14-P2 ("Cómo cancelas un pedido", #75); si cambia allá, cambia aquí.
  */
 export const FRASE_PREGUNTA_CANCELACION = '¿Cancelo tu pedido?';
 
@@ -189,12 +189,16 @@ const FOLIO_EN_PREGUNTA = new RegExp(
 
 /**
  * El número de pedido que nombra la pregunta de cancelación ("¿Cancelo tu pedido #1001?" → 1001),
- * o `null` si no trae uno justo después de la frase (D74).
+ * o `null` si no trae uno justo después de la frase (D74). También `null` si la pregunta nombra
+ * otro número después ("¿Cancelo tu pedido #1001 o el #1002?"): un "sí" ahí no dice cuál.
  */
 export function folioDeLaPreguntaDeCancelacion(texto: string): number | null {
   if (!esPreguntaDeCancelacion(texto)) return null;
-  const folio = FOLIO_EN_PREGUNTA.exec(ultimaPreguntaDe(texto)?.pregunta ?? '')?.[1];
-  return folio === undefined ? null : Number(folio);
+  const pregunta = ultimaPreguntaDe(texto)?.pregunta ?? '';
+  const encontrado = FOLIO_EN_PREGUNTA.exec(pregunta);
+  if (!encontrado?.[1]) return null;
+  if (/[0-9]/.test(pregunta.slice(encontrado[0].length))) return null;
+  return Number(encontrado[1]);
 }
 
 /** Rol que se le pone a un mensaje de la conversación que no se pudo leer. */
@@ -212,7 +216,7 @@ export function clienteConfirmo(mensajes: readonly MensajeConversacion[]): boole
   if (despues.some((m) => m.role === 'tool_call_invocation' && m.name === 'cotizar_pedido')) {
     return false;
   }
-  return respondioQueSi(despues);
+  return respondioQueSi(despues, esPreguntaDeCancelacion);
 }
 
 /**
@@ -231,19 +235,30 @@ export function clienteConfirmoCancelacion(
   });
   if (pregunta === -1) return false;
   if (folioDeLaPreguntaDeCancelacion(mensajes[pregunta]?.content ?? '') !== folio) return false;
-  return respondioQueSi(mensajes.slice(pregunta + 1), AFIRMATIVAS_CANCELACION);
+  return respondioQueSi(
+    mensajes.slice(pregunta + 1),
+    esPreguntaDeConfirmacion,
+    AFIRMATIVAS_CANCELACION,
+  );
 }
 
 /**
  * El primer mensaje del cliente es un "sí". Un mensaje que no se pudo leer ocupa su lugar: si es el
  * primero, pudo ser la respuesta del cliente, así que no hay confirmación (falla hacia lo seguro).
+ * Si antes de esa respuesta el agente hizo la otra pregunta fija (`esPreguntaAjena`), el "sí" es de
+ * esa pregunta y no de esta: así un solo "sí" nunca vale para crear y cancelar a la vez.
  */
 function respondioQueSi(
   despues: readonly MensajeConversacion[],
+  esPreguntaAjena: (texto: string) => boolean,
   otrasAfirmativas?: ReadonlySet<string>,
 ): boolean {
-  const respuesta = despues.find((m) => m.role === 'user' || m.role === ROL_ILEGIBLE);
-  return respuesta?.role === 'user' && esAfirmativo(respuesta.content ?? '', otrasAfirmativas);
+  const indice = despues.findIndex((m) => m.role === 'user' || m.role === ROL_ILEGIBLE);
+  const respuesta = despues[indice];
+  if (respuesta?.role !== 'user') return false;
+  const antes = despues.slice(0, indice);
+  if (antes.some((m) => m.role === 'agent' && esPreguntaAjena(m.content ?? ''))) return false;
+  return esAfirmativo(respuesta.content ?? '', otrasAfirmativas);
 }
 
 /**
