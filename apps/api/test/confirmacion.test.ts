@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   FRASE_PREGUNTA_CONFIRMACION,
   clienteConfirmo,
+  clienteConfirmoCancelacion,
+  folioDeLaPreguntaDeCancelacion,
   esAfirmativo,
   esPreguntaDeConfirmacion,
   mensajesDeLaConversacion,
@@ -252,4 +254,45 @@ describe('mensajesDeLaConversacion', () => {
       expect(mensajesDeLaConversacion(conversacion)).toEqual([]);
     },
   );
+});
+
+describe('un solo "sí" no vale para crear y cancelar a la vez (revisión de Saúl en el #73)', () => {
+  const CANCELO = { role: 'agent', content: '¿Cancelo tu pedido #1001?' };
+
+  it('confirmar y luego cancelar, con un solo "Sí": cuenta solo para cancelar', () => {
+    const mensajes = [PREGUNTA, CANCELO, cliente('Sí')];
+    expect(clienteConfirmo(mensajes)).toBe(false);
+    expect(clienteConfirmoCancelacion(mensajes, 1001)).toBe(true);
+  });
+
+  it('cancelar y luego confirmar, con un solo "Sí": cuenta solo para crear', () => {
+    const mensajes = [CANCELO, PREGUNTA, cliente('Sí')];
+    expect(clienteConfirmoCancelacion(mensajes, 1001)).toBe(false);
+    expect(clienteConfirmo(mensajes)).toBe(true);
+  });
+
+  it('cada pregunta con su propio "sí" sigue valiendo', () => {
+    const mensajes = [PREGUNTA, cliente('Sí'), CANCELO, cliente('Sí')];
+    expect(clienteConfirmo(mensajes)).toBe(true);
+    expect(clienteConfirmoCancelacion(mensajes, 1001)).toBe(true);
+  });
+});
+
+describe('folioDeLaPreguntaDeCancelacion con dos números', () => {
+  it('"¿Cancelo tu pedido #1001 o el #1002?" no da folio: el "sí" no dice cuál', () => {
+    expect(folioDeLaPreguntaDeCancelacion('¿Cancelo tu pedido #1001 o el #1002?')).toBeNull();
+    expect(
+      clienteConfirmoCancelacion(
+        [{ role: 'agent', content: '¿Cancelo tu pedido #1001 o el #1002?' }, cliente('Sí')],
+        1001,
+      ),
+    ).toBe(false);
+  });
+
+  it('un solo número sigue dando su folio', () => {
+    expect(folioDeLaPreguntaDeCancelacion('Listo. ¿Cancelo tu pedido #1001?')).toBe(1001);
+    expect(folioDeLaPreguntaDeCancelacion('¿Cancelo tu pedido número 1001 a nombre de Ana?')).toBe(
+      1001,
+    );
+  });
 });
