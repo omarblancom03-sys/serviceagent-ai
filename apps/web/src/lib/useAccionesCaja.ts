@@ -2,16 +2,19 @@ import {
   RespuestaCobroCajaSchema,
   RespuestaEntregaCajaSchema,
   type MetodoCobroCaja,
+  type PedidoCaja,
 } from '@serviceagent/shared';
 import { useCallback, useState } from 'react';
 import {
   abrirCobro,
   cancelarPaso,
+  cerrarError,
   crearCandadoCaja,
   empezarGuardado,
   estadoAccionesCajaInicial,
   mensajeErrorAccionCaja,
   pedirEntrega,
+  podarPasos,
   terminarGuardado,
   type EstadoAccionesCaja,
 } from './accionesCaja';
@@ -24,6 +27,10 @@ export interface AccionesCajaUso {
   /** Toque en Entregado: pide confirmar. */
   pedirEntrega(folio: number): void;
   cancelar(folio: number): void;
+  /** Quita el aviso de error de un pedido. */
+  cerrarError(folio: number): void;
+  /** Con cada lista nueva: borra los pasos que ya no aplican. */
+  alLlegarLista(pedidos: readonly PedidoCaja[]): void;
   /** Eligió el método: manda el cobro. */
   cobrar(folio: number, metodo: MetodoCobroCaja): Promise<void>;
   /** Confirmó: manda la entrega. */
@@ -89,6 +96,8 @@ export function useAccionesCaja(
     abrirCobro: useCallback((folio) => setEstado((previo) => abrirCobro(previo, folio)), []),
     pedirEntrega: useCallback((folio) => setEstado((previo) => pedirEntrega(previo, folio)), []),
     cancelar: useCallback((folio) => setEstado((previo) => cancelarPaso(previo, folio)), []),
+    cerrarError: useCallback((folio) => setEstado((previo) => cerrarError(previo, folio)), []),
+    alLlegarLista: useCallback((pedidos) => setEstado((previo) => podarPasos(previo, pedidos)), []),
     cobrar,
     entregar,
   };

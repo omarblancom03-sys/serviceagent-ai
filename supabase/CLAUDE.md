@@ -48,13 +48,13 @@ pnpm dlx supabase login                                  # una vez: abre el nave
 pnpm dlx supabase link --project-ref <ref-del-proyecto>  # una vez: pide la contraseña de la base
 pnpm dlx supabase projects list                          # verificar a qué proyecto está enlazado (LINKED)
 pnpm dlx supabase db push --dry-run --include-seed       # ver qué se aplicaría
-pnpm dlx supabase db push --include-seed                 # aplicar (solo con el dry-run aprobado por un PO, si es serviceagent-dev)
+pnpm dlx supabase db push --include-seed                 # aplicar (en serviceagent-dev, solo con el dry-run aprobado por alguien que no sea el autor, D75)
 pnpm db:reset:personal                                    # recrea todo desde cero — solo contra tu proyecto personal
 ```
 
 - `db push` aplica solo las migraciones que faltan y lleva el registro en la base. `--include-seed` además corre los archivos de `seed/` declarados en `config.toml`.
 - **Antes de cualquier `db reset` o `db push`, verifica a qué proyecto está enlazado el CLI** (`projects list`).
-- **`serviceagent-dev` nunca se resetea** (D16): prohibido `db reset --linked` enlazado a él. Solo un PO (Omar o Martín, D61), o quien uno de ellos autorice, hace `db push` a `serviceagent-dev`, y solo después de que un PO apruebe la salida del `--dry-run`.
+- **`serviceagent-dev` nunca se resetea** (D16): prohibido `db reset --linked` enlazado a él. Solo un PO (Omar o Martín, D61), o quien uno de ellos autorice, hace `db push` a `serviceagent-dev`, y solo después de que **alguien que no sea el autor** de la migración apruebe la salida del `--dry-run` (D75). Nunca se aplica una migración a mano.
 - Para probar que la base se recrea desde cero (criterio de US-02-P1), usa el script `pnpm db:reset:personal` (equivale a `supabase db reset --linked`), enlazado a tu **proyecto personal** de Supabase. No lo uses enlazado al compartido.
 - Necesitan Docker, y **no** los usamos: `supabase start`, `db pull`, `db diff`.
 - Verificar: en el dashboard (Table Editor) debe verse `empleados` con 3 filas, el menú con sus categorías y platillos, `platillo_extra` con 5 filas (espuelas), `ingrediente_removible` con 54 filas de 18 platillos, ningún `platillo` con `tiempo_estimado_min` en `NULL`, y `POST /auth/login` con los PIN de arriba debe responder 200.
@@ -63,5 +63,5 @@ pnpm db:reset:personal                                    # recrea todo desde ce
 ## Reglas que aplican
 
 - [docs/negocio.md](../docs/negocio.md): autenticación, estados del pedido con su hora, pagos, inventario y recetas.
-- [docs/decisiones.md](../docs/decisiones.md): D2, D3, D7, D12, D13, D14, D15, D16, D18, D50 (embeddings del menú, US-16), D56, D59 (alertas de atención, US-18), D62 (información del restaurante, US-17), D63 (terminados recientes, US-52) y D66 (cobro y entrega en caja, US-21).
+- [docs/decisiones.md](../docs/decisiones.md): D2, D3, D7, D12, D13, D14, D15, D16, D18, D50 (embeddings del menú, US-16), D56, D59 (alertas de atención, US-18), D62 (información del restaurante, US-17), D63 (terminados recientes, US-52), D66 (cobro y entrega en caja, US-21) y D75 (migraciones a dev con dry-run aprobado por otra persona).
 - [docs/despliegue.md](../docs/despliegue.md): variables `SUPABASE_*`; la llave de servicio solo en la API.

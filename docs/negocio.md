@@ -76,6 +76,7 @@ confirmado → (esperando_pago) → en_cola → preparando → listo → entrega
 - **Caja** ([D66](decisiones.md)): **Cobrar** registra un solo pago por lo que falta del total, en efectivo o con tarjeta, a nombre del empleado de la sesión; el monto lo calcula la base. Solo se cobra un pedido en `en_cola`, `preparando` o `listo` que no esté pagado, y nunca dos veces. **Entregado** pasa el pedido de `listo` a `entregado` solo si ya está pagado y guarda la hora y quién lo entregó. Ninguno tiene Deshacer: la pantalla pide elegir el método y confirmar la entrega.
 - Transferencia: referencia única por pedido + CLABE ficticia. El Banco Simulado llama a `POST /webhooks/banco` con **firma HMAC**. El backend concilia por referencia + monto.
 - Casos borde obligatorios: monto distinto, referencia inexistente, webhook duplicado (idempotencia), pago tardío de pedido expirado.
+- **Un solo pago a la vez:** quien registre un pago bloquea antes el pedido (`for update`), como `cobrar_pedido_caja` ([D66](decisiones.md)). El webhook del banco (US-25) también: si no, un cobro en caja y una transferencia al mismo tiempo podrían cobrar de más.
 
 ## Atención por un empleado
 

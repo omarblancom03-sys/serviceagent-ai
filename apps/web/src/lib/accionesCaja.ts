@@ -101,6 +101,35 @@ export function cancelarPaso(estado: EstadoAccionesCaja, folio: number): EstadoA
   return { ...estado, pasos: sin(estado.pasos, folio) };
 }
 
+/**
+ * Cerrar el aviso de error de un pedido (revisión del #68). Hace falta porque un error puede
+ * quedar en un pedido que ya no tiene botones (por ejemplo, 409 `ya_pagado` en uno en cola).
+ */
+export function cerrarError(estado: EstadoAccionesCaja, folio: number): EstadoAccionesCaja {
+  return { ...estado, errores: sin(estado.errores, folio) };
+}
+
+/**
+ * Borra los pasos que ya no aplican a como están los pedidos ahora (otra caja lo cobró, cocina lo
+ * regresó…) y los de pedidos que ya no vienen en la lista. Sin esto, `pasoVigente` solo los
+ * escondía: si cocina regresaba un pedido y lo volvía a terminar, "¿Entregar…?" reaparecía sola.
+ * Devuelve el mismo objeto si no hay nada que borrar, para no volver a pintar.
+ */
+export function podarPasos(
+  estado: EstadoAccionesCaja,
+  pedidos: readonly Pick<PedidoCaja, 'folio' | 'estado' | 'pagado'>[],
+): EstadoAccionesCaja {
+  const porFolio = new Map(pedidos.map((p) => [p.folio, p]));
+  let pasos = estado.pasos;
+  for (const folio of estado.pasos.keys()) {
+    const pedido = porFolio.get(folio);
+    const vigente = pedido ? pasoVigente(pedido, estado) : null;
+    if (vigente === null && estado.pasos.get(folio)?.tipo !== 'guardando')
+      pasos = sin(pasos, folio);
+  }
+  return pasos === estado.pasos ? estado : { ...estado, pasos };
+}
+
 /** Se mandó a la API: el pedido queda "Guardando…" y sin error. */
 export function empezarGuardado(estado: EstadoAccionesCaja, folio: number): EstadoAccionesCaja {
   return {
@@ -125,7 +154,8 @@ export function terminarGuardado(
 /**
  * Mensaje de un botón que falló, sin códigos técnicos. En un 409 se muestra el texto de la API
  * ("El pedido #1001 ya está pagado."), que ya viene en español y con el folio. Un 401 ya cierra la
- * sesión antes de llegar aquí.
+ * sesión antes de llegar aquí. Si la respuesta fue 2xx pero no cumple el contrato, el cambio sí se
+ * guardó y así se dice.
  */
 export function mensajeErrorAccionCaja(error: unknown): string {
   if (error instanceof ErrorApi) {
@@ -138,8 +168,14 @@ export function mensajeErrorAccionCaja(error: unknown): string {
     if (error.status === 404) return 'No encontramos ese pedido. Actualiza la lista.';
     if (error.status === 403) return 'Tu usuario no puede cobrar ni entregar pedidos.';
   }
+  // La API respondió 2xx pero con otra forma (contrato desfasado): el cambio sí se guardó. Decir
+  // "revisa la conexión" invitaría a cobrar otra vez (revisión del #68).
+  if (error instanceof Error && error.name === 'ZodError') return TEXTO_RESPUESTA_INESPERADA;
   return 'No se pudo guardar. Revisa la conexión e intenta de nuevo.';
 }
+
+export const TEXTO_RESPUESTA_INESPERADA =
+  'Se guardó, pero la respuesta llegó incompleta. Revisa en la lista cómo quedó el pedido.';
 
 /** Si la lista nueva no llega (sin red, pantalla cerrada), el botón no se queda en "Guardando…". */
 export const PLAZO_ESPERA_LISTA_MS = 10_000;
