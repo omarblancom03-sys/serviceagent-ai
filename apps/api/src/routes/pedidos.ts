@@ -43,7 +43,7 @@ export const cotizarPedidoRoute = createRoute({
   summary: 'Cotiza un pedido (custom function `cotizar_pedido` del agente)',
   description:
     FIRMA_RETELL +
-    'No guarda nada. Resuelve los nombres tal como los dijo el cliente y calcula el total con ' +
+    'No guarda el pedido. Resuelve los nombres tal como los dijo el cliente y calcula el total con ' +
     'precios de la base, en centavos. Si algo no existe, es ambiguo o no se puede, responde 200 ' +
     'con `ok: false` y todas las aclaraciones juntas; nunca cotiza una parte del pedido. Una ' +
     'llamada sin platillos ni extras (`{}`) no es un error: responde 200 con `ok: false`, ' +
@@ -51,7 +51,9 @@ export const cotizarPedidoRoute = createRoute({
     'mandó pegada en `producto` con "con", solo si la coincidencia es única (D67). ' +
     'Un `ambiguo` trae `sugerida` si el PO marcó una opción para lo que dijo el cliente, y un ' +
     '`no_existe` de producto trae `parecido`, el platillo más parecido según la búsqueda ' +
-    'semántica o `null`; sin el binding `AI`, o si Workers AI falla, no lo trae (D72).',
+    'semántica o `null`; sin el binding `AI`, o si Workers AI falla, no lo trae (D72). Para ' +
+    'calcular `parecido` puede actualizar el índice de embeddings del menú (`embedding_platillo`) y ' +
+    'la respuesta tarda un poco más cuando hay un `no_existe`.',
   security: [{ FirmaRetell: [] }],
   middleware: [requiereFirmaRetell()] as const,
   request: { body: { content: json(CotizarPedidoPeticionSchema), required: true } },

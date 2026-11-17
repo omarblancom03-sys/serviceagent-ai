@@ -15,6 +15,10 @@
       ]
     }
   ],
-  "debe": ["Pregunta si se refiere a la Hamburguesa Granero y espera la respuesta."],
-  "noDebe": ["Cotizar la Hamburguesa Granero sin que el cliente diga que sí.", "Decir un precio."]
+  "debe": ["Pregunta si se refiere a la Hamburguesa Delicias y espera la respuesta."],
+  "noDebe": [
+    "Cotizar la Hamburguesa Delicias sin que el cliente diga que sí.",
+    "Decir un precio.",
+    "Decir que es lo más pedido, lo más común, lo que más se vende o la favorita."
+  ]
 }

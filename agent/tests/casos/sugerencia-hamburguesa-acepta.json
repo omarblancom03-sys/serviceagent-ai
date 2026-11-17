@@ -17,19 +17,20 @@
     {
       "productos": [
         {
-          "producto": "Hamburguesa Granero",
+          "producto": "Hamburguesa Delicias",
           "cantidad": 1
         }
       ]
     }
   ],
   "debe": [
-    "Con el ambiguo y su sugerida, pregunta en una sola pregunta si se refiere a la Hamburguesa Granero, sin nombrar las demás opciones.",
-    "Con el \"Sí\" vuelve a cotizar con \"Hamburguesa Granero\" en producto y da el total de esa respuesta."
+    "Con el ambiguo y su sugerida, pregunta en una sola pregunta si se refiere a la Hamburguesa Delicias, sin nombrar las demás opciones.",
+    "Con el \"Sí\" vuelve a cotizar con \"Hamburguesa Delicias\" en producto y da el total de esa respuesta."
   ],
   "noDebe": [
-    "Cotizar la Hamburguesa Granero antes del \"Sí\".",
+    "Cotizar la Hamburguesa Delicias antes del \"Sí\".",
     "Nombrar las otras hamburguesas en la primera pregunta.",
-    "Decir un precio o un total antes de una cotización con ok en verdadero."
+    "Decir un precio o un total antes de una cotización con ok en verdadero.",
+    "Decir que es lo más pedido, lo más común, lo que más se vende o la favorita."
   ]
 }

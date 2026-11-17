@@ -59,13 +59,13 @@ const aclaraciones = (respuesta: RespuestaCotizarPedido): Aclaracion[] =>
 
 /** La lista que aprobó el PO el 2026-11-14. */
 const LISTA_DEL_PO: [string, string][] = [
-  ['hamburguesa', 'Hamburguesa Granero'],
+  ['hamburguesa', 'Hamburguesa Delicias'],
   ['papas', 'Papas francesas'],
   ['tacos', 'Tacos de Arrachera'],
   ['taquiza', 'Taquiza Granero'],
   ['fajitas', 'Fajitas de arrachera'],
   ['filete', 'Filete de pescado empanizado'],
-  ['caldo', 'Caldo de camarón'],
+  ['caldo', 'Caldo Granero'],
   ['ensalada', 'Ensalada Granero'],
   ['costillas', 'Costillas BBQ 450 gr'],
   ['camarones', 'Camarones al Ajillo'],
@@ -113,8 +113,8 @@ describe('seed 06_sugerencias_ambiguo.sql', () => {
 
 describe('sugerida en un ambiguo (criterio 1)', () => {
   it.each([
-    ['una hamburguesa', 'Hamburguesa Granero'],
-    ['hamburguesas', 'Hamburguesa Granero'],
+    ['una hamburguesa', 'Hamburguesa Delicias'],
+    ['hamburguesas', 'Hamburguesa Delicias'],
     ['unas papas para llevar', 'Papas francesas'],
     ['papa', 'Papas francesas'],
     ['orden de tacos', 'Tacos de Arrachera'],
@@ -159,10 +159,10 @@ describe('sugerida en un ambiguo (criterio 1)', () => {
     ).not.toHaveProperty('sugerida');
 
     const filas = structuredClone(seed.filas);
-    const granero = filas.platillos.find((p) => p.nombre === 'Hamburguesa Granero');
-    if (granero) granero.activo = false;
-    const sinGranero = armarCatalogo(armarMenu(filas), seed.sinonimos, sugerencias);
-    expect(resolverPlatillo(sinGranero, 'hamburguesa')).not.toHaveProperty('sugerida');
+    const delicias = filas.platillos.find((p) => p.nombre === 'Hamburguesa Delicias');
+    if (delicias) delicias.activo = false;
+    const sinDelicias = armarCatalogo(armarMenu(filas), seed.sinonimos, sugerencias);
+    expect(resolverPlatillo(sinDelicias, 'hamburguesa')).not.toHaveProperty('sugerida');
   });
 
   it('si dos frases quedan con la misma llave, vale la primera', () => {
@@ -183,8 +183,8 @@ describe('sugerida en un ambiguo (criterio 1)', () => {
       expect.objectContaining({
         tipo: 'ambiguo',
         producto: 'una hamburguesa',
-        sugerida: 'Hamburguesa Granero',
-        opciones: expect.arrayContaining(['Hamburguesa Granero', 'Hamburguesa Hawaiana']),
+        sugerida: 'Hamburguesa Delicias',
+        opciones: expect.arrayContaining(['Hamburguesa Delicias', 'Hamburguesa Hawaiana']),
       }),
     ]);
   });
@@ -223,6 +223,26 @@ describe('parecido en un no_existe (criterio 2)', () => {
     ]);
     expect(llamadas).toEqual([['lasaña', 'sushi']]);
     expect(RespuestaCotizarPedidoSchema.safeParse(respuesta).success).toBe(true);
+  });
+
+  // Revisión de Martín al #74: desde D67 el esquema exige `pedidoVacio`; agregar el parecido no
+  // puede perderlo.
+  it('con parecido, la respuesta conserva pedidoVacio y pasa el esquema de cotizar', async () => {
+    const { buscar } = buscadorFalso({ lasaña: 'Pizerola de Sirloin' });
+    const respuesta = RespuestaCotizarPedidoSchema.parse(
+      await obtenerCotizacion(repo(), args('lasaña'), buscar),
+    );
+    expect(respuesta).toMatchObject({ ok: false, pedidoVacio: false });
+    expect(aclaraciones(respuesta)[0]).toMatchObject({ parecido: 'Pizerola de Sirloin' });
+  });
+
+  it('un pedido vacío sigue siendo pedidoVacio y no busca parecidos', async () => {
+    const { buscar, llamadas } = buscadorFalso({});
+    const respuesta = RespuestaCotizarPedidoSchema.parse(
+      await obtenerCotizacion(repo(), CotizarPedidoArgsSchema.parse({}), buscar),
+    );
+    expect(respuesta).toEqual({ ok: false, pedidoVacio: true, aclaraciones: [] });
+    expect(llamadas).toEqual([]);
   });
 
   it('busca una sola vez cada texto aunque se repita', async () => {

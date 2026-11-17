@@ -27,5 +27,9 @@
     "Pregunta si se refiere a las Costillas BBQ 450 gr, sin precio.",
     "Con el sí la cotiza y da el precio de esa respuesta."
   ],
-  "noDebe": ["Dar un precio antes de la segunda cotización.", "Dar precios de otras costillas."]
+  "noDebe": [
+    "Dar un precio antes de la segunda cotización.",
+    "Dar precios de otras costillas.",
+    "Decir que es lo más pedido, lo más común, lo que más se vende o la favorita."
+  ]
 }

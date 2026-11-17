@@ -24,7 +24,7 @@
     {
       "productos": [
         {
-          "producto": "Hamburguesa Granero",
+          "producto": "Hamburguesa Delicias",
           "cantidad": 1
         }
       ]
@@ -32,10 +32,11 @@
   ],
   "debe": [
     "Cada mensaje habla de una sola aclaración: la sugerida de la hamburguesa o el parecido de la pizza, en el orden de la lista.",
-    "Con las dos resueltas (la Hamburguesa Granero sí, la pizza no) cotiza solo la Hamburguesa Granero y da su total. argsEsperados fija la primera y la última llamada."
+    "Con las dos resueltas (la Hamburguesa Delicias sí, la pizza no) cotiza solo la Hamburguesa Delicias y da su total. argsEsperados fija la primera y la última llamada."
   ],
   "noDebe": [
     "Preguntar las dos aclaraciones en el mismo mensaje.",
-    "Nombrar platillos que no vengan en la respuesta de cotizar_pedido."
+    "Nombrar platillos que no vengan en la respuesta de cotizar_pedido.",
+    "Decir que es lo más pedido, lo más común, lo que más se vende o la favorita."
   ]
 }

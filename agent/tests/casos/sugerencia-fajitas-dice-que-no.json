@@ -29,6 +29,7 @@
   ],
   "noDebe": [
     "Cotizar las Fajitas de arrachera.",
-    "Nombrar platillos que no vengan en la respuesta de cotizar_pedido."
+    "Nombrar platillos que no vengan en la respuesta de cotizar_pedido.",
+    "Decir que es lo más pedido, lo más común, lo que más se vende o la favorita."
   ]
 }

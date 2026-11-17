@@ -12,6 +12,7 @@
     "test": "vitest run",
     "hash-pin": "node --env-file-if-exists=.dev.vars --experimental-strip-types --no-warnings scripts/hashPin.ts",
     "evaluar-busqueda": "node --experimental-strip-types --no-warnings scripts/evaluarBusqueda.ts",
+    "evaluar-parecidos": "node --env-file-if-exists=.dev.vars --experimental-strip-types --no-warnings scripts/evaluarParecidos.ts",
     "evaluar-info": "node --experimental-strip-types --no-warnings scripts/evaluarInfo.ts",
     "probar-candado": "node --env-file-if-exists=.dev.vars --experimental-strip-types --no-warnings scripts/probarCandado.ts",
     "probar-candado-cobro": "node --env-file-if-exists=.dev.vars --experimental-strip-types --no-warnings scripts/probarCandadoCobro.ts"

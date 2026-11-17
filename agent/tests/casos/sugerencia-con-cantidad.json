@@ -27,5 +27,9 @@
     "Pregunta si se refiere a la Cerveza nacional 355 ml.",
     "Con el sí vuelve a cotizar con cantidad 3 y da el total de esa respuesta."
   ],
-  "noDebe": ["Cambiar la cantidad.", "Calcular el total por su cuenta."]
+  "noDebe": [
+    "Cambiar la cantidad.",
+    "Calcular el total por su cuenta.",
+    "Decir que es lo más pedido, lo más común, lo que más se vende o la favorita."
+  ]
 }

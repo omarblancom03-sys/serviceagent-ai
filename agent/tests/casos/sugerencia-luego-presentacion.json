@@ -39,6 +39,7 @@
   ],
   "noDebe": [
     "Elegir la presentación por el cliente.",
-    "Decir un precio o un total antes de una cotización con ok en verdadero."
+    "Decir un precio o un total antes de una cotización con ok en verdadero.",
+    "Decir que es lo más pedido, lo más común, lo que más se vende o la favorita."
   ]
 }
