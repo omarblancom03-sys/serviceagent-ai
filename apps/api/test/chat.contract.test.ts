@@ -274,12 +274,19 @@ describe('Documentación del chat', () => {
 
     expect(res.status).toBe(200);
     const doc = (await res.json()) as {
-      paths: Record<string, { post?: { responses: Record<string, unknown> } }>;
+      paths: Record<
+        string,
+        { post?: { responses: Record<string, unknown>; requestBody?: { required?: boolean } } }
+      >;
     };
     expect(Object.keys(doc.paths['/chat/conversaciones']?.post?.responses ?? {})).toEqual([
       '201',
+      '400',
       '503',
     ]);
+    const cuerpoIniciar = doc.paths['/chat/conversaciones']?.post?.requestBody;
+    expect(cuerpoIniciar?.required).toBe(true);
+    expect(JSON.stringify(cuerpoIniciar)).toContain('tokenTurnstile');
     expect(
       Object.keys(doc.paths['/chat/conversaciones/{id}/mensajes']?.post?.responses ?? {}),
     ).toEqual(['200', '400', '404', '409', '429', '503']);

@@ -13,6 +13,8 @@ export interface Bindings {
   RETELL_AGENT_ID?: string;
   /** Conversaciones nuevas al día en todo el sistema, de 1 a 100. Opcional: por defecto 3 (D38). */
   CHAT_TOPE_DIARIO?: string;
+  /** Llave secreta del widget de Turnstile del chat. Sin ella, abrir conversación responde 503 (D68). */
+  TURNSTILE_SECRET_KEY?: string;
   /** Duración del token: `8h`, `30m`, `900s`. Por defecto `8h`. */
   JWT_EXPIRES_IN?: string;
   /**
