@@ -4,6 +4,11 @@ import {
   type RespuestaEnviarMensaje,
   type RespuestaIniciarConversacion,
 } from '@serviceagent/shared';
+import {
+  esPreguntaDeConfirmacion,
+  esSoloLaPreguntaDeConfirmacion,
+  textoNormalizado,
+} from './confirmacion';
 
 /**
  * Chat web (US-09-P1): la API abre la conversación y cuenta los mensajes del cliente en
@@ -50,6 +55,8 @@ export interface MensajeRetell {
   id: string | null;
   texto: string | null;
   creadoEnMs: number | null;
+  /** Nombre de la herramienta, en los mensajes `tool_call_invocation`. Nunca llega al cliente. */
+  nombre?: string;
 }
 
 /**
@@ -121,11 +128,61 @@ function valorLimpio(valor: string | undefined): string | null {
 // Mensajes
 
 /**
+ * Quita la pregunta de confirmación repetida dentro de una misma respuesta de Retell (US-08-P2-T4,
+ * D69). A veces el modelo pregunta "¿Confirmo tu pedido?" y, en ese mismo turno, llama a
+ * `crear_pedido`; el backend no crea nada (`faltaConfirmacion`, D48) y el modelo vuelve a hacer la
+ * pregunta, así que el cliente la vería dos veces seguidas. Aquí se deja solo la primera.
+ *
+ * Una pregunta posterior solo se esconde si no le dice nada nuevo al cliente: es la frase sola
+ * ("¿Confirmo tu pedido?") o el mismo texto, ya normalizado, de una que ya se mostró. Si trae otro
+ * contenido ("Perdón, a nombre de Ana Pérez… ¿Confirmo tu pedido?") se muestra: D48 toma el "sí"
+ * para la última pregunta, y el cliente tiene que haber visto ese resumen.
+ *
+ * Tampoco se esconde si entre las dos se volvió a llamar a `cotizar_pedido`: el pedido pudo cambiar
+ * y esa pregunta es de otra cotización (la misma regla con que D48 invalida un "sí"). Una llamada
+ * sin nombre se trata igual, como posible cotización: ante la duda, se muestra. Lo mismo si entre
+ * las dos hay otro mensaje del agente con texto ("Perdón, es a nombre de Ana Pérez."): la pregunta
+ * que sigue se muestra, para que lo último que vea el cliente sea la pregunta. El texto se compara
+ * solo con la última pregunta mostrada: volver a una anterior ("Ana López" → "Ana Pérez" → "Ana
+ * López") se muestra, porque es distinta de la que el cliente acaba de ver.
+ * Solo se quitan preguntas de confirmación (`esPreguntaDeConfirmacion`); cualquier otro mensaje
+ * del agente pasa. En Retell la conversación sigue completa: el "sí" del cliente llega después de
+ * la última pregunta y `crear_pedido` lo acepta igual.
+ */
+export function sinConfirmacionRepetida(mensajes: MensajeRetell[]): MensajeRetell[] {
+  // Última pregunta mostrada desde la última (posible) cotización, normalizada. Solo se compara
+  // con esa: si el agente vuelve a una pregunta anterior, dice algo distinto de lo último que vio
+  // el cliente y D48 tomaría el "sí" para ella.
+  let ultima: string | null = null;
+  return mensajes.filter((m) => {
+    if (
+      m.rol === 'tool_call_invocation' &&
+      (m.nombre === undefined || m.nombre === 'cotizar_pedido')
+    ) {
+      ultima = null;
+    }
+    if (m.rol !== 'agent' || m.texto === null) return true;
+    if (!esPreguntaDeConfirmacion(m.texto)) {
+      // Otro mensaje del agente con texto: la pregunta siguiente ya no es repetida.
+      if (m.texto.trim() !== '') ultima = null;
+      return true;
+    }
+    const texto = textoNormalizado(m.texto);
+    const repetida =
+      ultima !== null && (esSoloLaPreguntaDeConfirmacion(m.texto) || ultima === texto);
+    if (repetida) return false;
+    ultima = texto;
+    return true;
+  });
+}
+
+/**
  * Solo pasan los mensajes con `role` `agent` y texto: nunca herramientas, transiciones ni
- * datos de Retell. Si Retell no trae el id o la hora, se generan aquí.
+ * datos de Retell. Si Retell no trae el id o la hora, se generan aquí. La pregunta de confirmación
+ * repetida en la misma respuesta sale una sola vez (D69).
  */
 export function aMensajesAgente(mensajes: MensajeRetell[], ahora: Date): MensajeAgente[] {
-  return mensajes
+  return sinConfirmacionRepetida(mensajes)
     .filter((m) => m.rol === 'agent' && m.texto !== null && m.texto.trim() !== '')
     .map((m) => ({
       id: m.id ?? crypto.randomUUID(),

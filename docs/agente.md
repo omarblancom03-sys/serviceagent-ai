@@ -13,7 +13,7 @@ Retell llama a nuestra API. **Toda petición de Retell se verifica con la firma 
 | `cotizar_pedido`        | `POST /pedidos/cotizar`         | Valida productos y calcula total (sin guardar); sin platillos responde `pedidoVacio` (D67)        |
 | `crear_pedido`          | `POST /pedidos`                 | Crea el pedido tras confirmación explícita (D48, D55)                                             |
 | `modificar_pedido`      | `PATCH /pedidos/:folio`         | Cambios antes de preparación                                                                      |
-| `cancelar_pedido`       | `POST /pedidos/cancelar`        | Folio y teléfono que coincidan, antes de `preparando`, sin pagos y tras el sí (D71, D73)          |
+| `cancelar_pedido`       | `POST /pedidos/cancelar`        | Folio y teléfono que coincidan, antes de `preparando`, sin pagos y tras el sí (D71, D73, D74)     |
 | `estado_pedido`         | `POST /agente/estado`           | Requiere folio **y** teléfono que coincidan                                                       |
 | `tiempo_estimado`       | `GET /tiempo-estimado`          | Antes de confirmar                                                                                |
 | `transferir_a_empleado` | `POST /agente/escalar`          | Crea alerta en caja/admin, una pendiente por conversación; sin `chat.chat_id` no la crea (D59)    |
@@ -53,6 +53,8 @@ Lógica en `apps/api/src/services/chat.ts`; Retell se llama con `fetch` directo 
 2. `abrir_conversacion_chat` con el tope diario ([D38](decisiones.md)). Si ya se llegó: 503 con "Servicio no disponible por el momento.", sin llamar a Retell.
 3. `create-chat` con `agent_version: "latest_published"`, la versión publicada más reciente ([D52](decisiones.md)); timeout 10 s. Si falla por cualquier causa, o el chat no queda `ongoing`, o no se puede guardar su `chat_id`: 503. Si Retell claramente no creó el chat (400, 401, 402, 422, 429 o error de conexión antes de recibir respuesta), la conversación se descarta con `descartar_apertura_chat` y **no gasta tope** ([D64](decisiones.md)); en los demás casos (timeout, 5xx, respuesta ilegible) se termina y su lugar queda gastado.
 4. 201 con los mensajes `agent` que traiga `message_with_tool_calls` (o vacío), 0 usados y límite 30.
+
+Al cliente solo le llegan los mensajes `agent` con texto; si en una misma respuesta el agente repite la pregunta de confirmación (preguntó, llamó a `crear_pedido` sin el "sí" y volvió a preguntar), pasa solo la primera ([D69](decisiones.md)). Una pregunta con otro contenido que la última mostrada, o con una cotización u otro mensaje del agente entre las dos, sí se muestra.
 
 **Enviar** (`POST /chat/conversaciones/{id}/mensajes`):
 
