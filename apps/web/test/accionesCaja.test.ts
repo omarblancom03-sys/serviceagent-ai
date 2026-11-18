@@ -1,19 +1,23 @@
-import type { EstadoPedido, PedidoCaja } from '@serviceagent/shared';
+import { RespuestaCobroCajaSchema, type EstadoPedido, type PedidoCaja } from '@serviceagent/shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   abrirCobro,
   cancelarPaso,
+  cerrarError,
   crearCandadoCaja,
   crearEsperaDeLista,
   empezarGuardado,
   estadoAccionesCajaInicial,
+  mandarAccionCaja,
   mensajeErrorAccionCaja,
   muestraEntregar,
   pasoVigente,
   pedirEntrega,
+  podarPasos,
   puedeCobrar,
   puedeEntregar,
   terminarGuardado,
+  TEXTO_RESPUESTA_INESPERADA,
 } from '../src/lib/accionesCaja';
 import { ErrorApi } from '../src/lib/api';
 
@@ -171,6 +175,101 @@ describe('mensajeErrorAccionCaja (US-21)', () => {
     expect(mensajeErrorAccionCaja(new TypeError('Failed to fetch'))).toBe(
       'No se pudo guardar. Revisa la conexión e intenta de nuevo.',
     );
+  });
+});
+
+describe('revisión de Saúl al #68 (US-21-T1)', () => {
+  it('cerrarError quita el aviso de ese pedido y deja los demás', () => {
+    let estado = terminarGuardado(
+      empezarGuardado(estadoAccionesCajaInicial(), 1001),
+      1001,
+      'Ya pagado',
+    );
+    estado = terminarGuardado(empezarGuardado(estado, 1002), 1002, 'Otro error');
+    const despues = cerrarError(estado, 1001);
+    expect(despues.errores.has(1001)).toBe(false);
+    expect(despues.errores.get(1002)).toBe('Otro error');
+  });
+
+  it('podarPasos borra la confirmación de entrega si cocina regresó el pedido', () => {
+    const estado = pedirEntrega(estadoAccionesCajaInicial(), 1001);
+    const regresado = podarPasos(estado, [pedido('preparando', true)]);
+    expect(regresado.pasos.has(1001)).toBe(false);
+    // Cuando lo vuelve a terminar, ya no reaparece "¿Entregar…?".
+    expect(pasoVigente(pedido('listo', true), regresado)).toBeNull();
+  });
+
+  it('podarPasos borra el paso de cobro si otra caja ya lo cobró', () => {
+    const estado = abrirCobro(estadoAccionesCajaInicial(), 1001);
+    expect(podarPasos(estado, [pedido('en_cola', true)]).pasos.has(1001)).toBe(false);
+  });
+
+  it('podarPasos borra los pasos de pedidos que ya no vienen en la lista', () => {
+    const estado = pedirEntrega(estadoAccionesCajaInicial(), 1001);
+    expect(podarPasos(estado, []).pasos.has(1001)).toBe(false);
+  });
+
+  it('podarPasos no toca lo que se está guardando ni los pasos que siguen valiendo', () => {
+    let estado = empezarGuardado(estadoAccionesCajaInicial(), 1001);
+    estado = abrirCobro(estado, 1002);
+    const despues = podarPasos(estado, [
+      pedido('en_cola', true, 1001),
+      pedido('en_cola', false, 1002),
+    ]);
+    expect(despues).toBe(estado);
+  });
+
+  it('si la respuesta llegó 2xx pero no cumple el contrato, dice que sí se guardó', () => {
+    const errorZod = Object.assign(new Error('contrato'), { name: 'ZodError' });
+    expect(mensajeErrorAccionCaja(errorZod)).toBe(TEXTO_RESPUESTA_INESPERADA);
+    expect(TEXTO_RESPUESTA_INESPERADA).toContain('Se guardó');
+    expect(TEXTO_RESPUESTA_INESPERADA).not.toContain('conexión');
+  });
+
+  it('un error que llega después de cerrar el anterior sí se ve', () => {
+    let estado = terminarGuardado(
+      empezarGuardado(estadoAccionesCajaInicial(), 1001),
+      1001,
+      'Primer error',
+    );
+    estado = cerrarError(estado, 1001);
+    estado = terminarGuardado(empezarGuardado(estado, 1001), 1001, 'Segundo error');
+    expect(estado.errores.get(1001)).toBe('Segundo error');
+  });
+
+  it('una lista vieja no borra un paso recién abierto', () => {
+    // La lista se pidió antes de tocar Cobrar y trae el pedido igual: el paso sigue valiendo.
+    const estado = abrirCobro(estadoAccionesCajaInicial(), 1001);
+    const despues = podarPasos(estado, [pedido('listo', false)]);
+    expect(despues).toBe(estado);
+    expect(pasoVigente(pedido('listo', false), despues)).toEqual({ tipo: 'eligiendo_metodo' });
+  });
+
+  it('un 2xx que no cumple el contrato también recarga la lista, y avisa que sí se guardó', async () => {
+    let estado = abrirCobro(estadoAccionesCajaInicial(), 1001);
+    const actualizar = (cambio: (previo: typeof estado) => typeof estado) => {
+      estado = cambio(estado);
+    };
+    const orden: string[] = [];
+    const candado = crearCandadoCaja();
+    await mandarAccionCaja(
+      1001,
+      async () => {
+        orden.push('pedir');
+        // Lo que hace pedirApi con una respuesta 2xx de otra forma: el esquema la rechaza.
+        RespuestaCobroCajaSchema.parse({ ok: true });
+      },
+      async () => {
+        orden.push('recargar');
+        expect(estado.pasos.get(1001)).toEqual({ tipo: 'guardando' });
+      },
+      candado,
+      actualizar,
+    );
+    expect(orden).toEqual(['pedir', 'recargar']);
+    expect(estado.pasos.has(1001)).toBe(false);
+    expect(estado.errores.get(1001)).toBe(TEXTO_RESPUESTA_INESPERADA);
+    expect(candado.tomar(1001)).toBe(true);
   });
 });
 

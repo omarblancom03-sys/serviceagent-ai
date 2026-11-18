@@ -51,19 +51,21 @@ export function Caja() {
     await siguiente;
   }, [espera]);
   const acciones = useAccionesCaja(pedirConSesion, recargarLista);
+  const { alLlegarLista } = acciones;
 
   const cargarUnaVez = useCallback(async () => {
     const numero = espera.alEmpezar();
     try {
       const respuesta = await pedirConSesion('/caja/pedidos', RespuestaPedidosCajaSchema);
       setPedidos(respuesta.pedidos);
+      alLlegarLista(respuesta.pedidos);
       setError(null);
     } catch (causa) {
       setError(mensajeErrorCaja(causa));
     } finally {
       espera.alTerminar(numero);
     }
-  }, [pedirConSesion, espera]);
+  }, [pedirConSesion, espera, alLlegarLista]);
 
   useEffect(() => {
     // Cuándo pedir la lista (agrupar señales, una petición a la vez, ponerse al día): lib/cocina.ts.
@@ -224,6 +226,7 @@ function TarjetaPedido({ pedido, acciones }: { pedido: PedidoCaja; acciones: Acc
         alPedirEntrega={() => acciones.pedirEntrega(folio)}
         alEntregar={() => void acciones.entregar(folio)}
         alCancelar={() => acciones.cancelar(folio)}
+        alCerrarError={() => acciones.cerrarError(folio)}
       />
     </li>
   );

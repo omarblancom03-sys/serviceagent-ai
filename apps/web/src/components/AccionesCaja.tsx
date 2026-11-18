@@ -1,5 +1,5 @@
 import { METODOS_COBRO_CAJA, type MetodoCobroCaja, type PedidoCaja } from '@serviceagent/shared';
-import { Banknote, CreditCard, PackageCheck } from 'lucide-react';
+import { Banknote, CreditCard, PackageCheck, X } from 'lucide-react';
 import {
   NOMBRE_METODO_COBRO,
   TEXTO_FALTA_COBRAR,
@@ -31,6 +31,7 @@ export function AccionesCaja({
   alPedirEntrega,
   alEntregar,
   alCancelar,
+  alCerrarError,
 }: {
   pedido: PedidoCaja;
   paso: PasoCaja | null;
@@ -40,6 +41,7 @@ export function AccionesCaja({
   alPedirEntrega: () => void;
   alEntregar: () => void;
   alCancelar: () => void;
+  alCerrarError: () => void;
 }) {
   const cobrable = puedeCobrar(pedido);
   const conEntrega = muestraEntregar(pedido);
@@ -135,9 +137,18 @@ export function AccionesCaja({
         </p>
       )}
       {error && (
-        <p role="alert" className="rounded-xl bg-red-50 p-3 font-semibold text-red-800">
-          {error}
-        </p>
+        <div className="flex items-start justify-between gap-2 rounded-xl bg-red-50 p-3 font-semibold text-red-800">
+          <p role="alert">{error}</p>
+          <button
+            type="button"
+            onClick={alCerrarError}
+            aria-label={`Cerrar aviso del pedido ${pedido.folioTexto}`}
+            className="flex min-h-10 shrink-0 items-center gap-1 rounded-lg px-2 text-red-800"
+          >
+            <X aria-hidden="true" className="size-4" />
+            Cerrar
+          </button>
+        </div>
       )}
     </div>
   );

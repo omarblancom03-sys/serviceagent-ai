@@ -1,15 +1,18 @@
 import { createRoute, type OpenAPIHono } from '@hono/zod-openapi';
 import {
+  CancelarPedidoPeticionSchema,
   CotizarPedidoPeticionSchema,
   CrearPedidoPeticionSchema,
   ErrorPedidoSchema,
   PedirDatosWhatsappPeticionSchema,
+  RespuestaCancelarPedidoSchema,
   RespuestaCotizarConPagoSchema,
   RespuestaCrearPedidoSchema,
   RespuestaPedirDatosWhatsappSchema,
 } from '@serviceagent/shared';
 import type { AppEnv, Bindings } from '../lib/env';
 import { requiereFirmaRetell } from '../lib/firmaRetell';
+import { cancelarPedido, type CancelacionesRepo } from '../services/cancelacion';
 import { mensajesDeLaConversacion } from '../services/confirmacion';
 import { obtenerCotizacion } from '../services/cotizacion';
 import { metodosDisponibles, pedirDatosWhatsapp } from '../services/pago';
@@ -20,6 +23,7 @@ import type { DependenciasMenu } from './menu';
 /** Cotizar y crear leen el mismo menú que `GET /menu`: usan el mismo repo. */
 export type DependenciasPedidos = DependenciasMenu & {
   crearRepoPedidos: (env: Bindings) => PedidosRepo;
+  crearRepoCancelaciones: (env: Bindings) => CancelacionesRepo;
 };
 
 const tags = ['Pedidos'];
@@ -116,7 +120,70 @@ export const pedirDatosWhatsappRoute = createRoute({
   },
 });
 
+export const cancelarPedidoRoute = createRoute({
+  method: 'post',
+  path: '/pedidos/cancelar',
+  tags,
+  summary: 'Cancela un pedido a nombre del cliente (custom function `cancelar_pedido`)',
+  description:
+    FIRMA_RETELL +
+    'Cancela el pedido solo si el folio es de ese teléfono, todavía no entra a preparación ' +
+    '(`confirmado`, `esperando_pago` o `en_cola`) y no tiene pagos; guarda el motivo en el ' +
+    'historial (D71). Antes, en `chat.message_with_tool_calls` el cliente tiene que haber ' +
+    'respondido que sí a la última pregunta "¿Cancelo tu pedido…?" del agente; si no, ' +
+    '`faltaConfirmacion: true` sin tocar la base (D73). La pregunta tiene que nombrar el mismo ' +
+    'folio que se va a cancelar: un sí a "¿Cancelo tu pedido #1001?" no cancela el #1002 (D74). ' +
+    'La regla del pedido la cumple la base con la fila ' +
+    'bloqueada. Responde 200 con un cuerpo ' +
+    'que el agente puede leer (400 si el cuerpo está mal formado, 401 sin firma y 500 si falla ' +
+    'la base): `ok: true` (también si ya estaba cancelado, con ' +
+    '`yaEstabaCancelado`), u `ok: false` con lo que falta corregir (folio, teléfono, un motivo ' +
+    'de más de 200 caracteres o la confirmación) o con el `rechazo`: `no_encontrado` (no existe o es de otro ' +
+    'teléfono: la misma respuesta), `en_preparacion`, `con_pago` o `cerrado`. La pantalla de ' +
+    'cocina se entera por la señal de Realtime (D47).',
+  security: [{ FirmaRetell: [] }],
+  middleware: [requiereFirmaRetell()] as const,
+  request: { body: { content: json(CancelarPedidoPeticionSchema), required: true } },
+  responses: {
+    200: {
+      content: json(RespuestaCancelarPedidoSchema),
+      description: 'Pedido cancelado, o por qué no se canceló',
+    },
+    ...respuestasDeError('la cancelación'),
+  },
+});
+
 export function registrarPedidos(app: OpenAPIHono<AppEnv>, deps: DependenciasPedidos) {
+  app.openapi(
+    cancelarPedidoRoute,
+    async (c) => {
+      // Sin el "sí" a "¿Cancelo tu pedido…?" en la conversación no se cancela (D73).
+      const { args, chat } = c.req.valid('json');
+      const mensajes = mensajesDeLaConversacion(chat);
+      if (mensajes.length === 0) {
+        const llaves = chat !== null && typeof chat === 'object' ? Object.keys(chat) : [];
+        console.warn('POST /pedidos/cancelar sin mensajes en la conversación', { llaves });
+      }
+      try {
+        return c.json(
+          await cancelarPedido(deps.crearRepoCancelaciones(c.env), args, mensajes),
+          200,
+        );
+      } catch (error) {
+        console.error('POST /pedidos/cancelar', error);
+        return c.json(
+          { error: 'No se pudo cancelar el pedido. Intenta de nuevo en un momento.' },
+          500,
+        );
+      }
+    },
+    (resultado, c) => {
+      if (!resultado.success) {
+        return c.json(errorDeFormato('cancelar_pedido', resultado.error.issues), 400);
+      }
+    },
+  );
+
   app.openapi(
     cotizarPedidoRoute,
     async (c) => {
