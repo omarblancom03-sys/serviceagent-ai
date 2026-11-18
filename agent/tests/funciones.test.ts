@@ -5,6 +5,7 @@ import path from 'node:path';
 import { z } from 'zod';
 import {
   BuscarMenuArgsSchema,
+  CancelarPedidoArgsSchema,
   CotizarPedidoArgsSchema,
   CrearPedidoArgsSchema,
   ExtraPedidoSchema,
@@ -116,6 +117,11 @@ const funciones: { nombre: string; url: string; niveles: (raiz: Nodo) => Nivel[]
     nombre: 'info_restaurante',
     url: '/agente/info-restaurante',
     niveles: (raiz) => [{ nombre: 'args', nodo: raiz, contrato: InfoRestauranteArgsSchema }],
+  },
+  {
+    nombre: 'cancelar_pedido',
+    url: '/pedidos/cancelar',
+    niveles: (raiz) => [{ nombre: 'args', nodo: raiz, contrato: CancelarPedidoArgsSchema }],
   },
 ];
 

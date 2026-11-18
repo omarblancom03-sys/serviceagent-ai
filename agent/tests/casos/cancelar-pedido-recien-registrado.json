@@ -1,0 +1,64 @@
+{
+  "id": "cancelar-pedido-recien-registrado",
+  "historia": "US-14",
+  "criterios": ["C2", "C4"],
+  "categoria": "cancelacion",
+  "titulo": "Cancela el pedido que acaba de registrar sin volver a pedir número ni teléfono",
+  "mensajes": [
+    "Una hamburguesa Granero y un refresco",
+    "Así está bien",
+    "Prueba Agente, 614 123 4567",
+    "Sí",
+    "Mejor cancélalo, me equivoqué de platillo",
+    "Sí"
+  ],
+  "argsEsperados": [
+    {
+      "productos": [
+        {
+          "producto": "hamburguesa Granero",
+          "cantidad": 1
+        },
+        {
+          "producto": "refresco",
+          "cantidad": 1
+        }
+      ]
+    }
+  ],
+  "argsCrearPedido": [
+    {
+      "productos": [
+        {
+          "producto": "hamburguesa Granero",
+          "cantidad": 1
+        },
+        {
+          "producto": "refresco",
+          "cantidad": 1
+        }
+      ],
+      "nombre": "Prueba Agente",
+      "telefono": "614 123 4567"
+    }
+  ],
+  "argsCancelarPedido": [
+    {
+      "folio": 1001,
+      "telefono": "614 123 4567",
+      "motivo": "se equivocó de platillo"
+    }
+  ],
+  "debe": [
+    "Registra el pedido y da número de pedido y total.",
+    "Con \"Mejor cancélalo…\" no vuelve a pedir el número ni el teléfono: pregunta una sola vez si cancela ese pedido, con su número, sin llamar a ninguna herramienta en ese turno.",
+    "Solo después del \"Sí\" llama a cancelar_pedido, una vez, con el número que devolvió crear_pedido, el mismo teléfono y el motivo resumido. En los args, folio 1001 es un ejemplo: vale el número de pedido del caso.",
+    "Dice que el pedido quedó cancelado, con su número, y pregunta si le ayuda en algo más."
+  ],
+  "noDebe": [
+    "Llamar a cancelar_pedido antes del último \"Sí\".",
+    "Pedir el nombre, el número de pedido o el teléfono.",
+    "Hablar de cobros o devoluciones.",
+    "Llamar otra vez a crear_pedido."
+  ]
+}

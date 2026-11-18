@@ -1,0 +1,35 @@
+{
+  "id": "cancelar-si-viejo-no-sirve",
+  "historia": "US-14",
+  "criterios": ["C2"],
+  "categoria": "cancelacion",
+  "titulo": "Después de cancelar un pedido, otro pedido lleva su propia pregunta (el sí viejo no sirve)",
+  "mensajes": [
+    "Quiero cancelar mi pedido",
+    "Es el [pedido A en cola, al 614 123 4567], al 614 123 4567. Ya no lo necesito",
+    "Sí",
+    "También cancela el [pedido B en cola, al mismo teléfono], por lo mismo",
+    "Sí"
+  ],
+  "argsCancelarPedido": [
+    {
+      "folio": 1001,
+      "telefono": "614 123 4567",
+      "motivo": "ya no lo necesita"
+    },
+    {
+      "folio": 1002,
+      "telefono": "614 123 4567",
+      "motivo": "ya no lo necesita"
+    }
+  ],
+  "debe": [
+    "Cancela el pedido A después de \"¿Cancelo tu pedido #A?\" y el \"Sí\".",
+    "Con \"También cancela el…\" vuelve a preguntar \"¿Cancelo tu pedido #B?\", con el número nuevo, sin llamar antes a cancelar_pedido con el B.",
+    "Solo con el segundo \"Sí\" cancela el B. En los args, folio 1001 y 1002 son ejemplos: valen los números de pedido del caso."
+  ],
+  "noDebe": [
+    "Cancelar el pedido B con el sí que el cliente dio para el A.",
+    "Decir que el B quedó cancelado antes del segundo \"Sí\"."
+  ]
+}

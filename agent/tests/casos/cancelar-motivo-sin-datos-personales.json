@@ -1,0 +1,26 @@
+{
+  "id": "cancelar-motivo-sin-datos-personales",
+  "historia": "US-14",
+  "criterios": ["C4"],
+  "categoria": "cancelacion",
+  "titulo": "El motivo se resume sin el nombre ni el teléfono que el cliente mencionó",
+  "mensajes": [
+    "Quiero cancelar mi pedido",
+    "Es el [pedido en cola, al 614 123 4567], al 614 123 4567. Lo iba a recoger mi primo Juan Pérez, su cel es 614 555 1234, y ya no va a poder",
+    "Sí"
+  ],
+  "argsCancelarPedido": [
+    {
+      "folio": 1001,
+      "telefono": "614 123 4567",
+      "motivo": "quien lo iba a recoger ya no puede"
+    }
+  ],
+  "debe": [
+    "Con el \"Sí\" llama a cancelar_pedido con un motivo resumido que no trae nombres ni teléfonos. En los args, folio 1001 es un ejemplo: vale el número de pedido del caso."
+  ],
+  "noDebe": [
+    "Mandar en motivo el nombre \"Juan Pérez\" o el teléfono 614 555 1234.",
+    "Pedir datos del primo."
+  ]
+}

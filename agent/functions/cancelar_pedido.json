@@ -1,0 +1,20 @@
+{
+  "type": "object",
+  "description": "El pedido ya registrado que el cliente quiere cancelar y por qué.",
+  "additionalProperties": false,
+  "required": ["motivo"],
+  "properties": {
+    "folio": {
+      "type": "number",
+      "description": "Número de pedido, solo el número, sin \"#\" ni otras palabras: si el cliente dice \"el #1025\", manda 1025. Si el pedido lo registraste en esta conversación, es el de la respuesta de crear_pedido."
+    },
+    "telefono": {
+      "type": "string",
+      "description": "Teléfono con el que se registró el pedido, tal como lo dijo el cliente: \"614 123 4567\". No lo corrijas ni lo completes: el backend lo revisa."
+    },
+    "motivo": {
+      "type": "string",
+      "description": "Por qué cancela, resumido en pocas palabras y sin datos personales (ni nombres, ni teléfonos): \"se equivocó de platillo\". Si el cliente no quiere decirlo, manda \"El cliente no dio motivo\". Máximo 200 caracteres."
+    }
+  }
+}

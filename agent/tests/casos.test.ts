@@ -5,6 +5,7 @@ import path from 'node:path';
 import { z } from 'zod';
 import {
   BuscarMenuArgsSchema,
+  CancelarPedidoArgsSchema,
   CotizarPedidoArgsSchema,
   CrearPedidoArgsSchema,
   InfoRestauranteArgsSchema,
@@ -34,6 +35,7 @@ const esquemaCaso = z.strictObject({
     'pedido',
     'busqueda',
     'informacion',
+    'cancelacion',
   ]),
   titulo: textoNoVacio,
   mensajes: z.array(textoNoVacio).min(1),
@@ -48,6 +50,8 @@ const esquemaCaso = z.strictObject({
   argsCrearPedido: z.array(z.record(z.string(), z.unknown())).min(1).optional(),
   // Args de cada llamada esperada a info_restaurante; se validan contra su contrato.
   argsInfoRestaurante: z.array(z.record(z.string(), z.unknown())).min(1).optional(),
+  // Args de cada llamada esperada a cancelar_pedido; se validan contra su contrato.
+  argsCancelarPedido: z.array(z.record(z.string(), z.unknown())).min(1).optional(),
   debe: z.array(textoNoVacio).min(1),
   noDebe: z.array(textoNoVacio),
 });
@@ -225,6 +229,44 @@ describe('cobertura de US-17', () => {
   );
 });
 
+describe('cobertura de US-14', () => {
+  const casos = archivosCasos.map(leerCaso);
+  const casosUs14 = casos.filter((caso) => caso.historia === 'US-14');
+  const casosCancelar = casosUs14.filter((caso) => caso.categoria === 'cancelacion');
+
+  // C1: cambiar el pedido antes de confirmarlo (un caso de pedido). C2 a C4: cancelar con
+  // cancelar_pedido, el rechazo en preparación y el motivo. C5 (cocina en tiempo real) es de la API.
+  it('el criterio C1 tiene al menos un caso de pedido', () => {
+    expect(
+      casosUs14.filter((caso) => caso.categoria === 'pedido' && caso.criterios.includes('C1'))
+        .length,
+    ).toBeGreaterThan(0);
+  });
+
+  it.each(['C2', 'C3', 'C4'])(
+    'el criterio %s tiene al menos un caso de cancelación',
+    (criterio) => {
+      expect(
+        casosCancelar.filter((caso) => caso.criterios.includes(criterio)).length,
+      ).toBeGreaterThan(0);
+    },
+  );
+
+  it('algún caso cancela (trae argsCancelarPedido)', () => {
+    expect(casosCancelar.some((caso) => caso.argsCancelarPedido)).toBe(true);
+  });
+
+  it.each(casos.filter((caso) => caso.argsCancelarPedido))(
+    '$id cumple el contrato de cancelar_pedido',
+    (caso) => {
+      for (const args of caso.argsCancelarPedido ?? []) {
+        const resultado = CancelarPedidoArgsSchema.safeParse(args);
+        expect(resultado.error?.issues ?? []).toEqual([]);
+      }
+    },
+  );
+});
+
 describe('cobertura de US-19', () => {
   // C4: ante una manipulación a media orden se mantiene en su papel y regresa al pedido. Los
   // casos de manipulación sin pedido de por medio son de US-06. C3 es de la API y la web.
@@ -253,6 +295,16 @@ describe('prompt (agent/prompt.md)', () => {
   // FRASE_PREGUNTA_CONFIRMACION de apps/api/src/services/confirmacion.ts. Si cambia, cambian los dos.
   it('pide la confirmación con la frase fija que busca el backend', () => {
     expect(prompt).toContain('¿Confirmo tu pedido?');
+  });
+
+  // Para cancelar, el backend busca "¿Cancelo tu pedido…?" (FRASE_PREGUNTA_CANCELACION, D73).
+  it('pregunta antes de cancelar con la frase fija que busca el backend', () => {
+    expect(prompt).toContain('¿Cancelo tu pedido');
+  });
+
+  // El backend lee el número de la pregunta y lo compara con el folio (D74).
+  it('el ejemplo de la pregunta de cancelación lleva el número justo después de la frase', () => {
+    expect(prompt).toMatch(/¿Cancelo tu pedido #\d+\?/);
   });
 
   // docs/negocio.md -> Dinero: el modelo nunca calcula ni inventa precios.
@@ -319,6 +371,7 @@ describe('configuracion (agent/retell.json)', () => {
     ['el saludo fijo (begin_message)', llm.begin_message ?? ''],
     ['la descripcion de cotizar_pedido', descripcion('cotizar_pedido')],
     ['la descripcion de crear_pedido', descripcion('crear_pedido')],
+    ['la descripcion de cancelar_pedido', descripcion('cancelar_pedido')],
   ])('%s no contiene montos', (_nombre, texto) => {
     expect(texto).toBeDefined();
     expect(texto).not.toMatch(/\$\s*\d/);

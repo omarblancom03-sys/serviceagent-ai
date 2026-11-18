@@ -1,0 +1,58 @@
+{
+  "id": "pedido-cambia-antes-de-confirmar",
+  "historia": "US-14",
+  "criterios": ["C1"],
+  "categoria": "pedido",
+  "titulo": "Antes de confirmar quita, cambia y agrega: cada vez recotiza el pedido completo",
+  "mensajes": [
+    "Dos hamburguesas Granero y un refresco",
+    "Quítale el refresco",
+    "Mejor que sea solo una hamburguesa y agrégale unos totopos"
+  ],
+  "argsEsperados": [
+    {
+      "productos": [
+        {
+          "producto": "hamburguesas Granero",
+          "cantidad": 2
+        },
+        {
+          "producto": "refresco",
+          "cantidad": 1
+        }
+      ]
+    },
+    {
+      "productos": [
+        {
+          "producto": "hamburguesas Granero",
+          "cantidad": 2
+        }
+      ]
+    },
+    {
+      "productos": [
+        {
+          "producto": "hamburguesa Granero",
+          "cantidad": 1
+        }
+      ],
+      "extrasSueltos": [
+        {
+          "extra": "Totopos",
+          "cantidad": 1
+        }
+      ]
+    }
+  ],
+  "debe": [
+    "Cada cambio vuelve a llamar a cotizar_pedido con el pedido completo tal como queda: sin el refresco, y después con una hamburguesa y Totopos en extrasSueltos.",
+    "Cada resumen da el total de la última respuesta de cotizar_pedido.",
+    "Después de cada resumen pregunta si quiere cambiar algo."
+  ],
+  "noDebe": [
+    "Sumar o restar por su cuenta al total anterior.",
+    "Pedir nombre y teléfono antes de que diga que así está bien.",
+    "Llamar a crear_pedido."
+  ]
+}

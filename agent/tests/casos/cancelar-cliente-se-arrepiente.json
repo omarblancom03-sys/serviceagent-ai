@@ -1,0 +1,17 @@
+{
+  "id": "cancelar-cliente-se-arrepiente",
+  "historia": "US-14",
+  "criterios": ["C2"],
+  "categoria": "cancelacion",
+  "titulo": "Si a la pregunta de cancelar responde que no, no cancela",
+  "mensajes": [
+    "Quiero cancelar mi pedido",
+    "El [folio de un pedido en cola, sin pagos, al 614 123 4567], al 614 123 4567, porque tardé mucho en decidir",
+    "No, mejor déjalo así"
+  ],
+  "debe": [
+    "Pregunta una sola vez si cancela ese pedido, con su número.",
+    "Con \"No, mejor déjalo así\" dice que su pedido sigue en pie y pregunta si le ayuda en algo más."
+  ],
+  "noDebe": ["Llamar a cancelar_pedido.", "Decir que el pedido quedó cancelado."]
+}
