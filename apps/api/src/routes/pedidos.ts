@@ -11,16 +11,22 @@ import {
 import { idDelChat, llavesDelChat } from '../lib/chatRetell';
 import type { AppEnv, Bindings } from '../lib/env';
 import { requiereFirmaRetell } from '../lib/firmaRetell';
+import { buscarParecidos, type Embedder, type EmbeddingsRepo } from '../services/busquedaMenu';
 import { cancelarPedido, type CancelacionesRepo } from '../services/cancelacion';
 import { mensajesDeLaConversacion } from '../services/confirmacion';
-import { obtenerCotizacion } from '../services/cotizacion';
+import { obtenerCotizacion, type BuscarParecidos } from '../services/cotizacion';
 import { crearPedido, type PedidosRepo } from '../services/pedido';
 import { errorDeFormato, FIRMA_RETELL, json } from './funcionesRetell';
 import type { DependenciasMenu } from './menu';
 
-/** Cotizar y crear leen el mismo menú que `GET /menu`: usan el mismo repo. */
+/**
+ * Cotizar y crear leen el mismo menú que `GET /menu`: usan el mismo repo. Cotizar usa además los
+ * embeddings de `buscar_menu` para el `parecido` de lo que no existe (D72).
+ */
 export type DependenciasPedidos = DependenciasMenu & {
   crearRepoPedidos: (env: Bindings) => PedidosRepo;
+  crearRepoEmbeddings: (env: Bindings) => EmbeddingsRepo;
+  crearEmbedder: (env: Bindings) => Embedder | null;
   crearRepoCancelaciones: (env: Bindings) => CancelacionesRepo;
 };
 
@@ -42,12 +48,17 @@ export const cotizarPedidoRoute = createRoute({
   summary: 'Cotiza un pedido (custom function `cotizar_pedido` del agente)',
   description:
     FIRMA_RETELL +
-    'No guarda nada. Resuelve los nombres tal como los dijo el cliente y calcula el total con ' +
+    'No guarda el pedido. Resuelve los nombres tal como los dijo el cliente y calcula el total con ' +
     'precios de la base, en centavos. Si algo no existe, es ambiguo o no se puede, responde 200 ' +
     'con `ok: false` y todas las aclaraciones juntas; nunca cotiza una parte del pedido. Una ' +
     'llamada sin platillos ni extras (`{}`) no es un error: responde 200 con `ok: false`, ' +
     '`pedidoVacio: true` y sin aclaraciones. Si no viene `variante`, resuelve la que el modelo ' +
-    'mandó pegada en `producto` con "con", solo si la coincidencia es única (D67).',
+    'mandó pegada en `producto` con "con", solo si la coincidencia es única (D67). ' +
+    'Un `ambiguo` trae `sugerida` si el PO marcó una opción para lo que dijo el cliente, y un ' +
+    '`no_existe` de producto trae `parecido`, el platillo más parecido según la búsqueda ' +
+    'semántica o `null`; sin el binding `AI`, o si Workers AI falla, no lo trae (D72). Para ' +
+    'calcular `parecido` puede actualizar el índice de embeddings del menú (`embedding_platillo`) y ' +
+    'la respuesta tarda un poco más cuando hay un `no_existe`.',
   security: [{ FirmaRetell: [] }],
   middleware: [requiereFirmaRetell()] as const,
   request: { body: { content: json(CotizarPedidoPeticionSchema), required: true } },
@@ -166,8 +177,13 @@ export function registrarPedidos(app: OpenAPIHono<AppEnv>, deps: DependenciasPed
     cotizarPedidoRoute,
     async (c) => {
       const { args } = c.req.valid('json');
+      const embedder = deps.crearEmbedder(c.env);
+      const buscar: BuscarParecidos | undefined = embedder
+        ? (menu, sinonimos, consultas) =>
+            buscarParecidos(menu, sinonimos, deps.crearRepoEmbeddings(c.env), embedder, consultas)
+        : undefined;
       try {
-        return c.json(await obtenerCotizacion(deps.crearRepoMenu(c.env), args), 200);
+        return c.json(await obtenerCotizacion(deps.crearRepoMenu(c.env), args, buscar), 200);
       } catch (error) {
         console.error('POST /pedidos/cotizar', error);
         return c.json(

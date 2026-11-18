@@ -215,13 +215,14 @@ describe('POST /webhooks/banco', () => {
     expect(ErrorBancoSchema.parse(json).error).toBe('El aviso no tiene el formato esperado.');
   });
 
-  it('el mensaje del banco para JSON mal formado no se usa en otras rutas de /webhooks', async () => {
+  // Con una ruta real que lee JSON: una que no existe responde 404 sin pasar por onError.
+  it('el mensaje del banco para JSON mal formado no se usa en otras rutas', async () => {
     const res = await crearApp().request(
-      '/webhooks/whatsapp',
-      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"mensaje":' },
+      '/auth/login',
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"pin":' },
       env,
     );
-    expect(res.status).not.toBe(200);
+    expect(res.status).toBe(400);
     expect(await res.text()).not.toContain('El aviso no tiene el formato esperado.');
   });
 
