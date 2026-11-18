@@ -254,8 +254,9 @@ function encimaDelUmbral(
 /**
  * Para `cotizar_pedido` (D72): el nombre del platillo más parecido a cada consulta, o `null` si
  * ninguno pasa el umbral. Usa el mismo índice, modelo y umbral que `buscarEnMenu`, sobre el menú que
- * cotizar ya leyó. Embebe todas las consultas en una sola llamada a Workers AI. Los errores se
- * propagan: quien la llama decide qué hacer sin el resultado.
+ * cotizar ya leyó. Embebe todas las consultas en una sola llamada a Workers AI, más las que haga
+ * `sincronizarIndice` si el menú cambió desde la última vez. Los errores se propagan: quien la llama
+ * decide qué hacer sin el resultado.
  */
 export async function buscarParecidos(
   menu: RespuestaMenu,
