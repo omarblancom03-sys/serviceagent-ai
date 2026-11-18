@@ -229,17 +229,21 @@ end $$;
 -- 34. Como service_role, igual que la API: crear la fila, sumar y cancelar de verdad. El SQL
 -- Editor corre como postgres: sin este caso, un permiso que le falte a service_role (insertar la
 -- fila, bloquearla, sumar) solo se notaría en la API (42501).
+-- Los folios se leen ANTES de cambiar de rol: las tablas temporales del ensayo son de quien las
+-- creó, y service_role no puede leerlas (ni debe necesitarlo: la API no las tiene).
 do $$
 declare
+  v_folio_inexistente integer := pg_temp.folio('X1');
+  v_folio_k integer := pg_temp.folio('K');
   v_no_encontrado text;
   v_cancelado text;
 begin
   set local role service_role;
   select c.resultado into v_no_encontrado
-  from public.cancelar_pedido_cliente(pg_temp.folio('X1'), '6141234567', 'Motivo.',
+  from public.cancelar_pedido_cliente(v_folio_inexistente, '6141234567', 'Motivo.',
     'ensayo_us14t2_6', 3) c;
   select c.resultado into v_cancelado
-  from public.cancelar_pedido_cliente(pg_temp.folio('K'), '6141234567', 'Motivo.',
+  from public.cancelar_pedido_cliente(v_folio_k, '6141234567', 'Motivo.',
     'ensayo_us14t2_6', 3) c;
   reset role;
   insert into ensayo_resultado values ('34. service_role: no encontrado, cancelar y contador',
