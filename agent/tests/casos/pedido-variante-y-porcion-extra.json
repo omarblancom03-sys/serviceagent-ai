@@ -1,0 +1,29 @@
+{
+  "id": "pedido-variante-y-porcion-extra",
+  "historia": "US-07-P2",
+  "criterios": ["C2", "C4", "C5"],
+  "categoria": "pedido",
+  "titulo": "La variante y el mismo extra: pregunta por la porción aparte antes de cobrarla",
+  "mensajes": ["Unas tiras de pollo con salsa BBQ y aparte una BBQ extra"],
+  "respuestas": ["Sí, la quiero aparte"],
+  "argsEsperados": [
+    {
+      "productos": [{ "producto": "tiras de pollo", "variante": "Salsa BBQ", "cantidad": 1 }],
+      "extrasSueltos": [{ "extra": "BBQ", "cantidad": 1 }]
+    },
+    {
+      "productos": [{ "producto": "tiras de pollo", "variante": "Salsa BBQ", "cantidad": 1 }],
+      "extrasSueltos": [{ "extra": "BBQ", "cantidad": 1, "porcionAparte": true }]
+    }
+  ],
+  "debe": [
+    "Ante la aclaración extra_igual_a_variante, pregunta si además de la Salsa BBQ de las tiras quiere una porción extra de BBQ aparte, sin decir precio.",
+    "Con el sí del cliente, vuelve a cotizar con porcionAparte en true en el extra BBQ.",
+    "Da el resumen con Tiras de pollo (Salsa BBQ) y BBQ, y el total que devolvió cotizar_pedido ($201.00)."
+  ],
+  "noDebe": [
+    "Mandar porcionAparte en la primera llamada, antes de preguntarle al cliente.",
+    "Decir un total antes de que cotizar_pedido responda con ok en verdadero.",
+    "Preguntar cuál salsa quiere: el cliente ya la dijo."
+  ]
+}

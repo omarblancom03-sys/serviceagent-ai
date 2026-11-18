@@ -46,6 +46,10 @@
                 "cantidad": {
                   "type": "number",
                   "description": "Cantidad del extra POR UNIDAD del platillo. Dos platillos, cada uno con sus espuelas: cantidad 1."
+                },
+                "porcionAparte": {
+                  "type": "boolean",
+                  "description": "Solo true, y solo después de una aclaración extra_igual_a_variante en la que el cliente dijo que sí quiere la porción extra. Se omite en cualquier otro caso."
                 }
               }
             }
@@ -68,6 +72,10 @@
           "cantidad": {
             "type": "number",
             "description": "Cuántas porciones de este extra pidió el cliente. Si no dijo cuántas (\"unos totopos\"), va 1."
+          },
+          "porcionAparte": {
+            "type": "boolean",
+            "description": "Solo true, y solo después de una aclaración extra_igual_a_variante en la que el cliente dijo que sí quiere una porción extra además de la presentación del platillo (por ejemplo, tiras de pollo con salsa BBQ y aparte una BBQ). Se omite en cualquier otro caso."
           }
         }
       }

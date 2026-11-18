@@ -49,6 +49,12 @@ import { armarMenu, type MenuRepo, type Sinonimo, type Sugerencia } from './menu
  * dijo el cliente, sin relleno, es una frase de `sugerencia_ambiguo` y su platillo está entre las
  * opciones; un `no_existe` de producto trae `parecido`, que busca `obtenerCotizacion` con
  * embeddings.
+ *
+ * Variante y extra que son lo mismo (D78, US-07-P2-T3). Con la variante ya resuelta, si un extra
+ * del platillo o un extra suelto es el mismo extra que nombra la variante ("Salsa BBQ" → BBQ, con
+ * la regla de `identificarExtra`, D31), no se cobra en silencio: se aclara con
+ * `extra_igual_a_variante` y el agente pregunta si quiere una porción extra además. Si sí, vuelve a
+ * cotizar con `porcionAparte` en ese extra y se cobra como siempre.
  */
 
 /** Máximo de opciones en una aclaración `ambiguo`, en el orden del menú. */
@@ -423,6 +429,28 @@ export function resolverIngredientes(
 
 type Aclarar = (aclaracion: Omit<Aclaracion, 'origen' | 'indice' | 'producto'>) => void;
 
+/**
+ * Extras que son la variante elegida de algún platillo del pedido (D78): id del extra → nombre
+ * oficial de la variante. Lo llena `cotizarProducto` y lo consultan los extras sueltos.
+ */
+type ExtrasDeVariante = Map<number, string>;
+
+/**
+ * Id del extra que es lo mismo que la variante ("Salsa BBQ" → BBQ), o `undefined` (D78). Solo
+ * cuenta un extra que se podría cobrar con ese platillo: uno suelto o uno ligado a él. La variante
+ * "Camarón" de los tacos capeados nombra a Espuelas (camarones), pero Espuelas no va con los tacos:
+ * ahí no hay doble cobro posible y pedirlas sigue dando `extra_no_permitido`.
+ */
+export function extraDeLaVariante(
+  catalogo: Catalogo,
+  platillo: Platillo,
+  variante: Variante,
+): number | undefined {
+  const id = identificarExtra(catalogo, variante.nombre);
+  const cobrables = [...catalogo.extrasSueltos, ...platillo.extrasPermitidos];
+  return cobrables.some((e) => e.id === id) ? id : undefined;
+}
+
 const montos = (precioUnitarioCentavos: number, subtotalCentavos: number) => ({
   precioUnitarioCentavos,
   precioUnitarioTexto: formatearPesos(precioUnitarioCentavos),
@@ -436,6 +464,7 @@ function cotizarProducto(
   pedido: ProductoPedido,
   indice: number,
   aclarar: Aclarar,
+  extrasDeVariante: ExtrasDeVariante,
 ): RenglonPlatillo | null {
   let completo = true;
   const aclararYMarcar: Aclarar = (aclaracion) => {
@@ -471,13 +500,28 @@ function cotizarProducto(
     });
   }
 
+  // El extra que es la variante elegida (D78): lo revisan los extras de abajo y los sueltos.
+  const elegida = variante.tipo === 'encontrada' ? variante.variante : undefined;
+  const idExtraVariante = elegida ? extraDeLaVariante(catalogo, platillo, elegida) : undefined;
+  if (elegida && idExtraVariante !== undefined)
+    extrasDeVariante.set(idExtraVariante, elegida.nombre);
+
   const { quitados, noRemovibles } = resolverIngredientes(platillo, pedido.sinIngredientes ?? []);
   for (const ingrediente of noRemovibles) {
     aclararYMarcar({ tipo: 'ingrediente_no_removible', detalle: ingrediente });
   }
 
   const extras: ExtraAplicado[] = [];
-  for (const { extra: texto, cantidad } of pedido.extras ?? []) {
+  for (const { extra: texto, cantidad, porcionAparte } of pedido.extras ?? []) {
+    if (
+      elegida &&
+      idExtraVariante !== undefined &&
+      porcionAparte !== true &&
+      identificarExtra(catalogo, texto) === idExtraVariante
+    ) {
+      aclararYMarcar({ tipo: 'extra_igual_a_variante', detalle: elegida.nombre });
+      continue;
+    }
     const extra = resolverExtra(catalogo, platillo, texto);
     if (!extra) aclararYMarcar({ tipo: 'extra_no_permitido', detalle: texto });
     const detalle = validarCantidad(cantidad, detalleCantidadExtra(texto));
@@ -501,8 +545,7 @@ function cotizarProducto(
     });
   }
 
-  if (!completo || variante.tipo !== 'encontrada') return null;
-  const { variante: elegida } = variante;
+  if (!completo || !elegida) return null;
   const precioExtras = extras.reduce((suma, e) => suma + e.precioUnitarioCentavos * e.cantidad, 0);
   return {
     tipo: 'platillo',
@@ -535,24 +578,34 @@ export function cotizarPedido(catalogo: Catalogo, args: CotizarPedidoArgs): Resp
   const aclaraciones: Aclaracion[] = [];
   const renglones: RenglonCotizacion[] = [];
 
+  const extrasDeVariante: ExtrasDeVariante = new Map();
+
   args.productos.forEach((pedido, indice) => {
-    const renglon = cotizarProducto(catalogo, pedido, indice, (aclaracion) =>
-      aclaraciones.push({ ...aclaracion, origen: 'producto', indice, producto: pedido.producto }),
+    const renglon = cotizarProducto(
+      catalogo,
+      pedido,
+      indice,
+      (aclaracion) =>
+        aclaraciones.push({ ...aclaracion, origen: 'producto', indice, producto: pedido.producto }),
+      extrasDeVariante,
     );
     if (renglon) renglones.push(renglon);
   });
 
-  args.extrasSueltos.forEach(({ extra: texto, cantidad }, indice) => {
+  args.extrasSueltos.forEach(({ extra: texto, cantidad, porcionAparte }, indice) => {
     const aclarar: Aclarar = (aclaracion) =>
       aclaraciones.push({ ...aclaracion, origen: 'extraSuelto', indice, producto: texto });
     const id = identificarExtra(catalogo, texto);
     const extra = catalogo.extrasSueltos.find((e) => e.id === id);
+    // Es la variante de un platillo del pedido y el cliente no confirmó la porción aparte (D78).
+    const variante = extra && porcionAparte !== true ? extrasDeVariante.get(extra.id) : undefined;
+    if (variante !== undefined) aclarar({ tipo: 'extra_igual_a_variante', detalle: variante });
     // Espuelas solo va con sus cortes (D19); un extra que no está en el menú no existe.
     if (!extra && id !== undefined) aclarar({ tipo: 'extra_no_permitido', detalle: texto });
     else if (!extra) aclarar({ tipo: 'no_existe' });
     const detalle = validarCantidad(cantidad);
     if (detalle) aclarar({ tipo: 'cantidad_invalida', detalle });
-    if (extra && !detalle) {
+    if (extra && !detalle && variante === undefined) {
       renglones.push({
         tipo: 'extra',
         indice,
