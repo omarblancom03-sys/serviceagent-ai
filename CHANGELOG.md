@@ -61,6 +61,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). *
 
 ### Corregido
 
+- US-08-P2-T4: test con la conversación real de /pedir del pedido de prueba #1182 (de Retell, con teléfono e ids ficticios): la pregunta de confirmación se ve una sola vez, también en una variante derivada en la que el modelo la repite (D69).
 - US-08-P2-T3: el detector de confirmación es más estricto en casos raros: "mi pedido listo" sin signos no confirma, sin "¿" cuenta solo si la última oración es la frase sola y no viene justo después de otra pregunta ("Tu pedido: 1 Totopos. Confirmo tu pedido?" ahora sí cuenta; "¿Algo más? Confirmo tu pedido?", no) y un mensaje ilegible justo después de la pregunta no cuenta como respuesta (D48).
 - US-08-P2-T1: `POST /pedidos` lee la conversación de `chat`, que es donde la manda Retell en un agente de chat (comprobado en un chat real); antes solo leía `call` y ningún pedido de chat se habría podido crear. `call` ya no se lee: voz queda pendiente para el Sprint 10 (D48).
 - US-10-T1: si `VITE_SUPABASE_URL` no tiene forma de URL, `/cocina` y `/caja` ya no se quedan en blanco: funcionan con el refresco de 30 s. Los docs aclaran que la llave pública puede ser la anon o la publishable, nunca la secreta.
