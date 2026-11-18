@@ -28,6 +28,7 @@ Fuera de alcance: delivery a domicilio.
 ## Menú
 
 - El agente busca platillos con las palabras del cliente con `buscar_menu` (búsqueda semántica, [D50](decisiones.md)); los precios que devuelve salen de la base en ese momento, igual que en cotizar.
+- **Cuando el cliente no fue claro o pide algo que no hay** ([D72](decisiones.md)): si dice solo una palabra que junta varios platillos ("una hamburguesa"), cotizar trae la opción que el PO marcó para esa palabra (`sugerida`, lista en `supabase/seed/06_sugerencias_ambiguo.sql`, datos simulados). Si pide algo que no está en el menú, trae el platillo más parecido (`parecido`). Las dos son preguntas: nada entra al pedido sin que el cliente lo confirme.
 - El menú solo muestra lo **activo**: una categoría, un platillo, una variante o un extra con `activo = false` no aparece.
 - Un platillo sin ninguna variante activa no aparece, y una categoría sin platillos visibles tampoco.
 - Inactivo no es lo mismo que agotado: lo inactivo se oculta, lo agotado sigue visible con `disponible = false` (hoy siempre `true` hasta que exista inventario, [D20](decisiones.md)).

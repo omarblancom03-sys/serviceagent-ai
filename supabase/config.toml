@@ -12,5 +12,6 @@ sql_paths = [
   "./seed/03_tiempos_preparacion_menu.sql",
   "./seed/04_ingrediente_removible.sql",
   "./seed/05_info_restaurante.sql",
+  "./seed/06_sugerencias_ambiguo.sql",
   "./seed/empleados.sql",
 ]
