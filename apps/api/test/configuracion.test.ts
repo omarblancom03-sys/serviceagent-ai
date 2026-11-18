@@ -106,6 +106,7 @@ describe('crearRepoPedidos: modo de pago (US-22)', () => {
     huella: 'a'.repeat(64),
     totalCentavos: 14900,
     renglones: [],
+    metodoPago: 'transferencia' as const,
   };
   const clienteRpc = (fila: unknown) =>
     ({ rpc: () => Promise.resolve({ data: [fila], error: null }) }) as unknown as SupabaseClient;
@@ -118,6 +119,9 @@ describe('crearRepoPedidos: modo de pago (US-22)', () => {
         estado_actual: 'esperando_pago',
         ya_existia: false,
         modo_pago: 'transferencia',
+        metodo_pago: 'transferencia',
+        referencia_pago: 'GRN-1005-K7',
+        clabe_transferencia: '999180157000000005',
       }),
     ).guardarPedido(pedido, 10);
     expect(guardado).toEqual({
@@ -125,6 +129,9 @@ describe('crearRepoPedidos: modo de pago (US-22)', () => {
       totalCentavos: 14900,
       estado: 'esperando_pago',
       modoPago: 'transferencia',
+      metodoPago: 'transferencia',
+      referenciaPago: 'GRN-1005-K7',
+      clabeTransferencia: '999180157000000005',
       yaExistia: false,
     });
   });

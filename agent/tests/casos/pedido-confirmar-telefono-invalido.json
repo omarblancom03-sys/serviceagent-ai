@@ -7,7 +7,7 @@
   "mensajes": [
     "Una hamburguesa Granero y un refresco",
     "Así está bien",
-    "Prueba Agente, 12345",
+    "Prueba Agente, 12345, con tarjeta",
     "Sí",
     "614 123 4567"
   ],
@@ -38,7 +38,8 @@
         }
       ],
       "nombre": "Prueba Agente",
-      "telefono": "12345"
+      "telefono": "12345",
+      "metodoPago": "tarjeta"
     },
     {
       "productos": [
@@ -52,7 +53,8 @@
         }
       ],
       "nombre": "Prueba Agente",
-      "telefono": "614 123 4567"
+      "telefono": "614 123 4567",
+      "metodoPago": "tarjeta"
     }
   ],
   "debe": [

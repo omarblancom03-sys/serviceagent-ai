@@ -3,7 +3,7 @@
   "historia": "US-08-P2",
   "criterios": ["C5"],
   "categoria": "pedido",
-  "titulo": "Con el restaurante en pago por transferencia no dice que se paga en caja",
+  "titulo": "Con el restaurante en pago por transferencia no dice que se paga en caja ni dicta datos sin que el cliente esté listo",
   "mensajes": [
     "Una hamburguesa Granero y un refresco",
     "Es todo",
@@ -42,11 +42,12 @@
   ],
   "debe": [
     "Se corre con el modo de pago en transferencia (/admin) y al terminar se regresa a pago al recoger.",
-    "crear_pedido responde modoPago \"transferencia\": da el número de pedido y el total tal como los devolvió.",
-    "No dice nada sobre cómo ni cuándo pagar."
+    "Al pedir nombre y teléfono dice que el pago es por transferencia y no pregunta el método.",
+    "crear_pedido responde datosTransferencia: da el número de pedido y el total tal como los devolvió, dice que se prepara cuando llegue la transferencia y pregunta si está listo para anotar los datos o si los quiere por WhatsApp."
   ],
   "noDebe": [
     "Decir que puede pagar en caja, en efectivo o con tarjeta.",
+    "Dictar la CLABE o la referencia antes de que el cliente diga que está listo.",
     "Inventar datos de transferencia o una cuenta.",
     "Llamar a crear_pedido más de una vez."
   ]

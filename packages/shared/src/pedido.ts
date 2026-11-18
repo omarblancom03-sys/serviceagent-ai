@@ -17,7 +17,7 @@
 import { z } from 'zod';
 // Los IDs de pedido usan la misma regla que los del menú (integer de 32 bits,
 // hasta MAX_ID) en lugar de copiarla.
-import { ModoPagoSchema } from './configuracion';
+import { MetodoPagoSchema, ModoPagoSchema } from './configuracion';
 import { CentavosSchema, IdSchema } from './menu';
 
 // ─── Constantes ─────────────────────────────────────────────────────────────
@@ -281,6 +281,19 @@ export const RespuestaCotizarPedidoSchema = z.discriminatedUnion('ok', [
   CotizacionConAclaracionesSchema,
 ]);
 
+/**
+ * Lo que responde `POST /pedidos/cotizar`: la cotización `ok` lleva además los métodos de pago que
+ * el agente puede ofrecer, según el modo del restaurante (US-23, D76). El agente no ofrece otros.
+ */
+export const CotizacionOkConPagoSchema = CotizacionOkSchema.extend({
+  metodosPago: z.array(MetodoPagoSchema).min(1),
+});
+
+export const RespuestaCotizarConPagoSchema = z.discriminatedUnion('ok', [
+  CotizacionOkConPagoSchema,
+  CotizacionConAclaracionesSchema,
+]);
+
 // ─── Crear pedido: POST /pedidos (US-08-P1) ─────────────────────────────────
 
 /** Estados del pedido (docs/negocio.md → Estados del pedido). */
@@ -321,11 +334,19 @@ export const TelefonoSchema = z.preprocess((valor) => {
 }, DatoClienteSchema);
 
 /**
- * Argumentos de `crear_pedido`: el mismo pedido que se cotizó, más nombre y
- * teléfono. Nunca trae precios ni total: el backend vuelve a cotizar.
+ * Argumentos de `crear_pedido`: el mismo pedido que se cotizó, más nombre,
+ * teléfono y método de pago. Nunca trae precios ni total: el backend vuelve a
+ * cotizar. `metodoPago` llega como texto ("efectivo", "Tarjeta"…): si no es uno
+ * de los métodos del modo vigente, el servicio lo aclara en `datosCliente`
+ * (US-23, D76). Con transferencia puede faltar: es el único método.
  */
 export const CrearPedidoArgsSchema = z
-  .strictObject({ ...camposDelPedido, nombre: DatoClienteSchema, telefono: TelefonoSchema })
+  .strictObject({
+    ...camposDelPedido,
+    nombre: DatoClienteSchema,
+    telefono: TelefonoSchema,
+    metodoPago: DatoClienteSchema,
+  })
   .refine(traeAlgo, { message: MENSAJE_PEDIDO_VACIO });
 
 /**
@@ -362,12 +383,25 @@ export const CrearPedidoPeticionSchema = z.object({
   args: CrearPedidoArgsSchema,
 });
 
-export const CAMPOS_CLIENTE = ['nombre', 'telefono'] as const;
+export const CAMPOS_CLIENTE = ['nombre', 'telefono', 'metodoPago'] as const;
 
 /** Un dato del cliente que falta o no cumple la regla; `detalle` la explica. */
 export const DatoClienteInvalidoSchema = z.object({
   campo: z.enum(CAMPOS_CLIENTE),
   detalle: z.string(),
+});
+
+/**
+ * Datos para que el cliente transfiera (US-23, D76). La CLABE es ficticia y sale de la configuración
+ * del restaurante; la referencia es única por pedido; el monto es el total del pedido guardado.
+ */
+export const DatosTransferenciaSchema = z.object({
+  clabe: z.string().regex(/^\d{18}$/),
+  /** Para dictarla en grupos: "999 180 15700000000 5". */
+  clabeTexto: z.string(),
+  referencia: z.string(),
+  montoCentavos: CentavosSchema,
+  montoTexto: MontoTextoSchema,
 });
 
 /**
@@ -385,6 +419,10 @@ export const PedidoCreadoSchema = z.object({
   estado: EstadoPedidoSchema,
   /** Con qué modo de pago se creó: el agente dice cómo pagar según este campo (D55). */
   modoPago: ModoPagoSchema,
+  /** Cómo va a pagar el cliente; `null` solo en un pedido que ya existía de antes de US-23. */
+  metodoPago: MetodoPagoSchema.nullable(),
+  /** Solo con transferencia: lo que el agente dicta cuando el cliente está listo (D76). */
+  datosTransferencia: DatosTransferenciaSchema.nullable(),
   yaExistia: z.boolean(),
   renglones: z.array(RenglonCotizacionSchema).min(1),
   totalCentavos: CentavosSchema,
@@ -414,6 +452,51 @@ export const RespuestaCrearPedidoSchema = z.discriminatedUnion('ok', [
   PedidoConAclaracionesSchema,
 ]);
 
+// ─── Datos de pago por WhatsApp: POST /pedidos/datos-whatsapp (US-23) ──────
+
+/**
+ * Folio como lo manda el modelo: 1001, "1001" o "#1001". Lo que no deja un entero positivo llega
+ * como texto inválido y lo aclara el servicio, igual que el teléfono.
+ */
+export const FolioClienteSchema = z.preprocess(
+  (valor) => (typeof valor === 'string' ? valor.replace(/^\s*#?\s*/, '').trim() : valor),
+  opcional(z.union([z.number(), z.string().max(20)])),
+);
+
+/**
+ * Argumentos de `pedir_datos_whatsapp`: el cliente pide que le manden por WhatsApp los datos de
+ * la transferencia de su pedido. Se identifica con folio y teléfono (D76). El envío llega con US-28.
+ */
+export const PedirDatosWhatsappArgsSchema = z.strictObject({
+  folio: FolioClienteSchema,
+  telefono: TelefonoSchema,
+});
+
+export const PedirDatosWhatsappPeticionSchema = z.object({
+  name: z.literal('pedir_datos_whatsapp'),
+  chat: z.unknown().optional(),
+  args: PedirDatosWhatsappArgsSchema,
+});
+
+/**
+ * - `pedido`: quedó anotado; `ya_pedido`: ya estaba anotado (no se repite);
+ * - `no_aplica`: el pedido no es por transferencia o ya no espera el pago;
+ * - `no_encontrado`: no hay un pedido con ese folio y ese teléfono (no dice cuál falló);
+ * - `datos_invalidos`: falta el folio o el teléfono, o no cumplen la regla (`datosInvalidos`).
+ */
+export const RESULTADOS_DATOS_WHATSAPP = [
+  'pedido',
+  'ya_pedido',
+  'no_aplica',
+  'no_encontrado',
+  'datos_invalidos',
+] as const;
+
+export const RespuestaPedirDatosWhatsappSchema = z.object({
+  resultado: z.enum(RESULTADOS_DATOS_WHATSAPP),
+  datosInvalidos: z.array(z.object({ campo: z.enum(['folio', 'telefono']), detalle: z.string() })),
+});
+
 // ─── Errores ────────────────────────────────────────────────────────────────
 
 /**
@@ -441,6 +524,9 @@ export type CotizacionOk = z.infer<typeof CotizacionOkSchema>;
 export type Aclaracion = z.infer<typeof AclaracionSchema>;
 export type CotizacionConAclaraciones = z.infer<typeof CotizacionConAclaracionesSchema>;
 export type RespuestaCotizarPedido = z.infer<typeof RespuestaCotizarPedidoSchema>;
+export type CotizacionOkConPago = z.infer<typeof CotizacionOkConPagoSchema>;
+export type RespuestaCotizarConPago = z.infer<typeof RespuestaCotizarConPagoSchema>;
+export type DatosTransferencia = z.infer<typeof DatosTransferenciaSchema>;
 export type EstadoPedido = z.infer<typeof EstadoPedidoSchema>;
 export type CrearPedidoArgs = z.infer<typeof CrearPedidoArgsSchema>;
 export type CrearPedidoPeticion = z.infer<typeof CrearPedidoPeticionSchema>;
@@ -451,3 +537,6 @@ export type PedidoCreado = z.infer<typeof PedidoCreadoSchema>;
 export type PedidoConAclaraciones = z.infer<typeof PedidoConAclaracionesSchema>;
 export type RespuestaCrearPedido = z.infer<typeof RespuestaCrearPedidoSchema>;
 export type ErrorPedido = z.infer<typeof ErrorPedidoSchema>;
+export type PedirDatosWhatsappArgs = z.infer<typeof PedirDatosWhatsappArgsSchema>;
+export type ResultadoDatosWhatsapp = (typeof RESULTADOS_DATOS_WHATSAPP)[number];
+export type RespuestaPedirDatosWhatsapp = z.infer<typeof RespuestaPedirDatosWhatsappSchema>;

@@ -73,10 +73,10 @@ confirmado → (esperando_pago) → en_cola → preparando → listo → entrega
 
 ## Pagos
 
-- Métodos: transferencia (vía agente), efectivo y tarjeta (en caja).
+- Métodos: transferencia (vía agente), efectivo y tarjeta (en caja). El agente ofrece solo los del modo de pago vigente: con `al_recoger`, efectivo o tarjeta en caja; con `transferencia`, solo transferencia. El método que elige el cliente queda guardado en el pedido ([D76](decisiones.md)).
 - Cada pago es una fila de `pagos` (método, monto en centavos, quién lo cobró y hora). Un pedido está pagado cuando la suma de sus pagos cubre su total ([D54](decisiones.md)).
 - **Caja** ([D66](decisiones.md)): **Cobrar** registra un solo pago por lo que falta del total, en efectivo o con tarjeta, a nombre del empleado de la sesión; el monto lo calcula la base. Solo se cobra un pedido en `en_cola`, `preparando` o `listo` que no esté pagado, y nunca dos veces. **Entregado** pasa el pedido de `listo` a `entregado` solo si ya está pagado y guarda la hora y quién lo entregó. Ninguno tiene Deshacer: la pantalla pide elegir el método y confirmar la entrega.
-- Transferencia: referencia única por pedido + CLABE ficticia. El Banco Simulado llama a `POST /webhooks/banco` con **firma HMAC** ([D70](decisiones.md)). El backend concilia por referencia + monto (US-25; hoy el webhook solo recibe y valida el aviso).
+- Transferencia: referencia única por pedido (`GRN-<folio>-XX`, la genera la base al crear el pedido) + CLABE ficticia del restaurante (`configuracion_restaurante`). El agente los dicta con el monto cuando el cliente está listo; si los pide por WhatsApp, queda anotado en el pedido y el envío llega con US-28 ([D76](decisiones.md)). El Banco Simulado llama a `POST /webhooks/banco` con **firma HMAC** ([D70](decisiones.md)). El backend concilia por referencia + monto (US-25; hoy el webhook solo recibe y valida el aviso).
 - Casos borde obligatorios: monto distinto, referencia inexistente, webhook duplicado (idempotencia), pago tardío de pedido expirado.
 - **Un solo pago a la vez:** quien registre un pago bloquea antes el pedido (`for update`), como `cobrar_pedido_caja` ([D66](decisiones.md)). El webhook del banco (US-25) también: si no, un cobro en caja y una transferencia al mismo tiempo podrían cobrar de más.
 

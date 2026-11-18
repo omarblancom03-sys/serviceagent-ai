@@ -1,6 +1,6 @@
 {
   "type": "object",
-  "description": "Pedido que el cliente ya confirmó: el mismo de la última cotización con ok en verdadero, más su nombre y su teléfono. Nunca lleva precios ni totales.",
+  "description": "Pedido que el cliente ya confirmó: el mismo de la última cotización con ok en verdadero, más su nombre, su teléfono y cómo va a pagar. Nunca lleva precios ni totales.",
   "additionalProperties": false,
   "properties": {
     "productos": {
@@ -79,6 +79,10 @@
     "telefono": {
       "type": "string",
       "description": "Teléfono del cliente tal como lo dijo, con sus espacios o guiones: \"614 123 4567\". Obligatorio. No lo corrijas ni lo completes: el backend lo revisa."
+    },
+    "metodoPago": {
+      "type": "string",
+      "description": "Cómo dijo el cliente que va a pagar, solo con uno de los métodos que trajo la cotización en metodosPago: \"efectivo\", \"tarjeta\" o \"transferencia\". Se omite si la cotización solo trajo \"transferencia\". No lo elijas por el cliente."
     }
   }
 }

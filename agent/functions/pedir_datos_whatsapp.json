@@ -1,0 +1,15 @@
+{
+  "type": "object",
+  "description": "El cliente pide que le manden por WhatsApp los datos para transferir de su pedido.",
+  "additionalProperties": false,
+  "properties": {
+    "folio": {
+      "type": "string",
+      "description": "Número del pedido que devolvió crear_pedido (folioTexto), por ejemplo \"#1025\". Obligatorio."
+    },
+    "telefono": {
+      "type": "string",
+      "description": "Teléfono del pedido tal como lo dio el cliente: \"614 123 4567\". Obligatorio. No lo corrijas ni lo completes: el backend lo revisa."
+    }
+  }
+}

@@ -7,7 +7,7 @@
   "mensajes": [
     "Una hamburguesa Granero y un refresco",
     "Así está bien",
-    "Prueba Agente, 614 123 4567",
+    "Prueba Agente, 614 123 4567, en efectivo",
     "Mejor agrégale unos totopos",
     "Sí"
   ],
@@ -62,7 +62,8 @@
           "extra": "Totopos",
           "cantidad": 1
         }
-      ]
+      ],
+      "metodoPago": "efectivo"
     }
   ],
   "debe": [

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { ParamsFolioCocinaSchema } from './cocina';
+import { MetodoPagoSchema } from './configuracion';
 import { EstadoPedidoSchema } from './pedido';
 
 /*
@@ -7,10 +8,6 @@ import { EstadoPedidoSchema } from './pedido';
  * cobrar y entregar: total, si ya está pagado y con qué, y los últimos dígitos del teléfono para
  * reconocer al cliente sin mostrar el número completo. Sin platillos: eso es de cocina.
  */
-
-/** Métodos de pago (docs/negocio.md → Pagos): efectivo y tarjeta en caja, transferencia por el agente. */
-export const METODOS_PAGO = ['efectivo', 'tarjeta', 'transferencia'] as const;
-export const MetodoPagoSchema = z.enum(METODOS_PAGO);
 
 export const PedidoCajaSchema = z.object({
   folio: z.number().int().positive(),
@@ -108,7 +105,6 @@ export const ConflictoCajaSchema = z.object({
   estadoActual: EstadoPedidoSchema,
 });
 
-export type MetodoPago = z.infer<typeof MetodoPagoSchema>;
 export type PedidoCaja = z.infer<typeof PedidoCajaSchema>;
 export type RespuestaPedidosCaja = z.infer<typeof RespuestaPedidosCajaSchema>;
 export type ErrorCaja = z.infer<typeof ErrorCajaSchema>;
