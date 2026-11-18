@@ -1,0 +1,110 @@
+{
+  "nota": "Chat real de /pedir del 17-nov-2026 (pedido de prueba #1182 en dev), de GET /get-chat de Retell. Teléfono e ids cambiados por ficticios; horas corridas a una base fija con los mismos intervalos (US-08-P2-T4, D69).",
+  "message_with_tool_calls": [
+    {
+      "role": "user",
+      "message_id": "msg_1",
+      "content": "Quiero unas papas francesas para llevar",
+      "created_timestamp": 1791000000000
+    },
+    {
+      "role": "tool_call_invocation",
+      "message_id": "msg_2",
+      "created_timestamp": 1791000001261,
+      "tool_call_id": "call_1",
+      "name": "cotizar_pedido",
+      "arguments": "{\"productos\":[{\"cantidad\":1,\"extras\":[],\"producto\":\"papas francesas\",\"variante\":\"para llevar\"}]}",
+      "type": "custom"
+    },
+    {
+      "role": "tool_call_result",
+      "message_id": "msg_3",
+      "content": "{\"ok\":true,\"renglones\":[{\"tipo\":\"platillo\",\"indice\":0,\"idPlatillo\":7,\"nombre\":\"Papas francesas\",\"idVariante\":10,\"variante\":null,\"cantidad\":1,\"sinIngredientes\":[],\"extras\":[],\"extrasDisponibles\":[],\"precioUnitarioCentavos\":6900,\"precioUnitarioTexto\":\"$69.00\",\"subtotalCentavos\":6900,\"subtotalTexto\":\"$69.00\"}],\"totalCentavos\":6900,\"totalTexto\":\"$69.00\"}",
+      "created_timestamp": 1791000002044,
+      "tool_call_id": "call_1",
+      "successful": true
+    },
+    {
+      "role": "agent",
+      "message_id": "msg_4",
+      "content": "Una orden de Papas francesas para llevar, por $69.00. ¿Quieres cambiar algo?",
+      "created_timestamp": 1791000002631
+    },
+    {
+      "role": "user",
+      "message_id": "msg_5",
+      "content": "Así está bien",
+      "created_timestamp": 1791000018315
+    },
+    {
+      "role": "agent",
+      "message_id": "msg_6",
+      "content": "¿A nombre de quién lo registro y a qué teléfono?",
+      "created_timestamp": 1791000018877
+    },
+    {
+      "role": "user",
+      "message_id": "msg_7",
+      "content": "Prueba Claude, 614 555 0101",
+      "created_timestamp": 1791000058091
+    },
+    {
+      "role": "agent",
+      "message_id": "msg_8",
+      "content": "¿“Prueba Claude” es el nombre de quien recogerá el pedido?",
+      "created_timestamp": 1791000059755
+    },
+    {
+      "role": "tool_call_invocation",
+      "message_id": "msg_9",
+      "created_timestamp": 1791000059756,
+      "tool_call_id": "call_2",
+      "name": "cotizar_pedido",
+      "arguments": "{\"productos\":[{\"cantidad\":1,\"extras\":[],\"producto\":\"Papas francesas\",\"sinIngredientes\":[]}]}",
+      "type": "custom"
+    },
+    {
+      "role": "tool_call_result",
+      "message_id": "msg_10",
+      "content": "{\"ok\":true,\"renglones\":[{\"tipo\":\"platillo\",\"indice\":0,\"idPlatillo\":7,\"nombre\":\"Papas francesas\",\"idVariante\":10,\"variante\":null,\"cantidad\":1,\"sinIngredientes\":[],\"extras\":[],\"extrasDisponibles\":[],\"precioUnitarioCentavos\":6900,\"precioUnitarioTexto\":\"$69.00\",\"subtotalCentavos\":6900,\"subtotalTexto\":\"$69.00\"}],\"totalCentavos\":6900,\"totalTexto\":\"$69.00\"}",
+      "created_timestamp": 1791000060310,
+      "tool_call_id": "call_2",
+      "successful": true
+    },
+    {
+      "role": "agent",
+      "message_id": "msg_11",
+      "content": "Tu pedido: 1 Papas francesas, por $69.00, a nombre de Prueba Claude, al 614 555 0101. ¿Confirmo tu pedido?",
+      "created_timestamp": 1791000060971
+    },
+    {
+      "role": "user",
+      "message_id": "msg_12",
+      "content": "Sí",
+      "created_timestamp": 1791000085306
+    },
+    {
+      "role": "tool_call_invocation",
+      "message_id": "msg_13",
+      "created_timestamp": 1791000086822,
+      "tool_call_id": "call_3",
+      "name": "crear_pedido",
+      "arguments": "{\"nombre\":\"Prueba Claude\",\"productos\":[{\"cantidad\":1,\"extras\":[],\"producto\":\"Papas francesas\",\"sinIngredientes\":[]}],\"telefono\":\"614 555 0101\"}",
+      "type": "custom"
+    },
+    {
+      "role": "tool_call_result",
+      "message_id": "msg_14",
+      "content": "{\"ok\":true,\"folio\":1182,\"folioTexto\":\"#1182\",\"estado\":\"en_cola\",\"modoPago\":\"al_recoger\",\"yaExistia\":false,\"renglones\":[{\"tipo\":\"platillo\",\"indice\":0,\"idPlatillo\":7,\"nombre\":\"Papas francesas\",\"idVariante\":10,\"variante\":null,\"cantidad\":1,\"sinIngredientes\":[],\"extras\":[],\"extrasDisponibles\":[],\"precioUnitarioCentavos\":6900,\"precioUnitarioTexto\":\"$69.00\",\"subtotalCentavos\":6900,\"subtotalTexto\":\"$69.00\"}],\"totalCentavos\":6900,\"totalTexto\":\"$69.00\"}",
+      "created_timestamp": 1791000087479,
+      "tool_call_id": "call_3",
+      "successful": true
+    },
+    {
+      "role": "agent",
+      "message_id": "msg_15",
+      "content": "Tu pedido quedó registrado con el número #1182. El total es $69.00; puedes pagar en caja al recoger, en efectivo o con tarjeta.",
+      "created_timestamp": 1791000088137
+    }
+  ]
+}
