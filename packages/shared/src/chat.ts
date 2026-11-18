@@ -20,12 +20,16 @@ export const LIMITE_MENSAJES_CLIENTE = 30;
 /** Largo máximo del texto de un mensaje del cliente, ya sin espacios al inicio y al final. */
 export const MAX_CARACTERES_MENSAJE = 500;
 
+/** Largo máximo del token de Turnstile, según la documentación de Cloudflare (siteverify). */
+export const MAX_CARACTERES_TOKEN_TURNSTILE = 2048;
+
 export const CODIGOS_ERROR_CHAT = [
   'peticion_invalida',
   'conversacion_no_encontrada',
   'conversacion_terminada',
   'limite_alcanzado',
   'servicio_no_disponible',
+  'verificacion_fallida',
 ] as const;
 
 // Identificador de la conversación
@@ -45,6 +49,15 @@ export const ParamsConversacionSchema = z.object({
 export type ParamsConversacion = z.infer<typeof ParamsConversacionSchema>;
 
 // Peticiones
+
+/**
+ * Cuerpo de `POST /chat/conversaciones`: el token del widget de Turnstile, que la API valida
+ * antes de abrir la conversación (D68, D77). Sirve una sola vez y vence a los 300 s.
+ */
+export const IniciarConversacionPeticionSchema = z.strictObject({
+  tokenTurnstile: z.string().trim().min(1).max(MAX_CARACTERES_TOKEN_TURNSTILE),
+});
+export type IniciarConversacionPeticion = z.infer<typeof IniciarConversacionPeticionSchema>;
 
 /** Cuerpo de `POST /chat/conversaciones/{id}/mensajes`. El texto se recorta antes de medirlo. */
 export const EnviarMensajePeticionSchema = z.strictObject({
@@ -104,7 +117,9 @@ export type RespuestaEnviarMensaje = z.infer<typeof RespuestaEnviarMensajeSchema
  * - `conversacion_terminada` (409): el chat cerró; la web ofrece iniciar otro.
  * - `limite_alcanzado` (429): ya se enviaron `LIMITE_MENSAJES_CLIENTE` mensajes.
  * - `servicio_no_disponible` (503): Retell falló, tardó o no está configurado; al iniciar,
- *   también si se alcanzó el tope diario de conversaciones nuevas.
+ *   también si se alcanzó el tope diario o Turnstile no se pudo validar de nuestro lado.
+ * - `verificacion_fallida` (503, D77): al iniciar, Turnstile rechazó el token o no llegó; con
+ *   el texto del tope. La web pide un token nuevo y ofrece Reintentar.
  */
 export const ErrorChatSchema = z.object({
   error: z.string().min(1),

@@ -74,6 +74,13 @@ Conversaciones nuevas del chat al día en todo el sistema, contadas por día de 
   - **Máximo 100:** un número mayor, 0, decimales o texto vuelven al tope de **3** sin avisar. Cada conversación llena cuesta ≈ $0.031 de Retell ([D38](decisiones.md)): 20 son ≈ $0.62.
   - **Al terminar** se regresa con el mismo comando y `3`. Para confirmar que la variable existe: `pnpm exec wrangler secret list` (muestra solo los nombres, no el valor).
 
+### `TURNSTILE_SECRET_KEY` (Turnstile del chat web)
+
+Llave secreta del widget de Turnstile (modo Managed) con que `POST /chat/conversaciones` valida el token antes de abrir la conversación ([D68](decisiones.md), [D77](decisiones.md)). Obligatoria para el chat: si falta o está en blanco, responde 503 con "Servicio no disponible por el momento." sin abrir ni gastar tope. Va en pareja con `VITE_TURNSTILE_SITE_KEY` de la web: las dos son del mismo widget.
+
+- **Local:** en `apps/api/.dev.vars`, una llave de prueba de Cloudflare ([testing](https://developers.cloudflare.com/turnstile/troubleshooting/testing/)): `1x0000000000000000000000000000000AA` siempre pasa, `2x0000000000000000000000000000000AA` siempre falla y `3x0000000000000000000000000000000AA` responde "token ya usado". Solo aceptan el token falso que dan las llaves del sitio de prueba (`1x00000000000000000000AA` pasa, `2x00000000000000000000AB` falla, `3x00000000000000000000FF` pide la casilla); una llave real lo rechaza.
+- **Ambiente desplegado:** el PO crea el widget en Cloudflare (Turnstile → Add widget; hostname `serviceagent-web.pages.dev`, modo Managed) y carga la llave con `cd apps/api && pnpm exec wrangler secret put TURNSTILE_SECRET_KEY`. La llave del sitio va en la variable `VITE_TURNSTILE_SITE_KEY` de GitHub Actions **antes** de fusionar, porque la web se compila al fusionar.
+
 ### Workers AI (binding `AI`)
 
 La búsqueda semántica del menú calcula embeddings con Workers AI ([D50](decisiones.md)). No es un secreto ni una variable: es el binding `ai` de `apps/api/wrangler.jsonc` y se despliega con el Worker.
@@ -90,18 +97,19 @@ La búsqueda semántica del menú calcula embeddings con Workers AI ([D50](decis
 
 - Vite solo expone variables con prefijo `VITE_`, y **terminan en el navegador**. Nunca pongas secretos ahí.
 - Local: `apps/web/.env.local` y `apps/simuladores/.env.local` (por ejemplo, `VITE_API_URL=http://localhost:8787`).
-- En CI: `VITE_API_URL`, `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` se definen como **variables** (no secretos) del repo en GitHub y se usan al compilar en `deploy.yml`.
+- En CI: `VITE_API_URL`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` y `VITE_TURNSTILE_SITE_KEY` se definen como **variables** (no secretos) del repo en GitHub y se usan al compilar en `deploy.yml`.
 - `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` solo sirven para que `/cocina` y `/caja` escuchen la señal de Realtime (D47). En `VITE_SUPABASE_ANON_KEY` va una llave **pública**: la anon (formato anterior) o la publishable (`sb_publishable_…`, la que muestra hoy el dashboard de Supabase); las dos funcionan igual. **Nunca** la secret (`sb_secret_…`) ni la `service_role`. Es pública por diseño y no lee ninguna tabla (D15). Si faltan, o si la URL no tiene forma de URL (`createClient` truena y `crearClienteRealtime` devuelve `null`), la pantalla vive del refresco de 30 s. Con una URL bien formada pero equivocada o una llave mala no truena: el canal no conecta y la pantalla muestra "Sin conexión en vivo: se actualiza cada 30 s". En los dos casos funciona.
 
 ### GitHub Actions
 
-| Nombre                   | Tipo     | Para qué                                               |
-| ------------------------ | -------- | ------------------------------------------------------ |
-| `CLOUDFLARE_API_TOKEN`   | Secreto  | Desplegar el Worker y los proyectos de Pages           |
-| `CLOUDFLARE_ACCOUNT_ID`  | Secreto  | Cuenta de Cloudflare donde se despliega                |
-| `VITE_API_URL`           | Variable | URL pública de la API usada al compilar los frontends  |
-| `VITE_SUPABASE_URL`      | Variable | URL de Supabase para la señal de Realtime de `/cocina` |
-| `VITE_SUPABASE_ANON_KEY` | Variable | Llave pública (anon o publishable) para esa señal      |
+| Nombre                    | Tipo     | Para qué                                               |
+| ------------------------- | -------- | ------------------------------------------------------ |
+| `CLOUDFLARE_API_TOKEN`    | Secreto  | Desplegar el Worker y los proyectos de Pages           |
+| `CLOUDFLARE_ACCOUNT_ID`   | Secreto  | Cuenta de Cloudflare donde se despliega                |
+| `VITE_API_URL`            | Variable | URL pública de la API usada al compilar los frontends  |
+| `VITE_SUPABASE_URL`       | Variable | URL de Supabase para la señal de Realtime de `/cocina` |
+| `VITE_SUPABASE_ANON_KEY`  | Variable | Llave pública (anon o publishable) para esa señal      |
+| `VITE_TURNSTILE_SITE_KEY` | Variable | Llave del sitio del widget de Turnstile de `/pedir`    |
 
 Se configuran en Settings → Secrets and variables → Actions. Si los secretos no existen, el workflow de deploy **se salta con un aviso** en lugar de fallar. `CLOUDFLARE_ACCOUNT_ID` son 32 caracteres hexadecimales (Workers & Pages → columna derecha); si el valor no es ese, wrangler falla con `code: 7003`.
 
@@ -114,7 +122,7 @@ Se configuran en Settings → Secrets and variables → Actions. Si los secretos
 | Simuladores (Pages) | https://serviceagent-simuladores.pages.dev         |
 
 - Usa la **misma base de Supabase `serviceagent-dev`** que el desarrollo local: lo que se cree en local se ve en el desplegado y al revés.
-- El Worker tiene cargados `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `JWT_SECRET` (distinto al de local), `PIN_PEPPER` (el de desarrollo), `RETELL_API_KEY` y `CORS_ORIGINS`.
+- El Worker tiene cargados `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `JWT_SECRET` (distinto al de local), `PIN_PEPPER` (el de desarrollo), `RETELL_API_KEY`, `TURNSTILE_SECRET_KEY` (US-19-P1-T2) y `CORS_ORIGINS`.
 - `CORS_ORIGINS` es la lista, separada por comas, de orígenes exactos: `https://serviceagent-web.pages.dev`, sin `/` final. Las URLs de vista previa con prefijo (`<hash>.serviceagent-web.pages.dev`) no están incluidas, así que ahí el navegador bloquea las llamadas a la API.
 - Solo los PO (Omar y Martín, [D61](decisiones.md)) tienen acceso a Cloudflare y cargan los secretos del Worker. **Si una historia agrega una variable a la API:** va a `.env.example` en el mismo PR, se avisa al PO para que la cargue con `wrangler secret put` y el PR no se fusiona hasta que el PO confirme que la cargó ([D24](decisiones.md)). Un secreto se aplica al guardarlo, sin redesplegar.
 - Revisar qué secretos tiene el Worker (solo nombres): `cd apps/api && pnpm exec wrangler secret list`.
