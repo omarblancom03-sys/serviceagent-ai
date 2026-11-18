@@ -103,6 +103,9 @@ jobs:
           # *variable*; cuál va: docs/despliegue.md.
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+          # Llave del sitio del widget de Turnstile de /pedir (D68). Pública, por eso va como
+          # *variable*; sin ella el chat no abre conversaciones. Ver docs/despliegue.md.
+          VITE_TURNSTILE_SITE_KEY: ${{ vars.VITE_TURNSTILE_SITE_KEY }}
       - name: Crear proyecto de Pages si no existe
         run: |
           if pnpm exec wrangler pages project list | grep -qw "${{ matrix.proyecto }}"; then
