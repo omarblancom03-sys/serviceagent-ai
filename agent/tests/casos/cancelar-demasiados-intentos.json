@@ -1,0 +1,30 @@
+{
+  "id": "cancelar-demasiados-intentos",
+  "historia": "US-14",
+  "criterios": ["C2"],
+  "categoria": "cancelacion",
+  "titulo": "Después de 3 números de pedido que no encuentra, no cancela ni el correcto y lo manda al restaurante",
+  "mensajes": [
+    "Quiero cancelar mi pedido",
+    "Es el 999001, al 614 123 4567, ya no lo necesito",
+    "Sí",
+    "Perdón, es el 999002",
+    "Sí",
+    "No, espera, es el 999003",
+    "Sí",
+    "Ya lo encontré: es el [folio de un pedido en cola, sin pagos, al 614 123 4567]",
+    "Sí",
+    "¿No lo puedes intentar otra vez?"
+  ],
+  "debe": [
+    "Pregunta \"¿Cancelo tu pedido #N?\" con cada número y solo llama a cancelar_pedido después del \"Sí\". Los números 999001 a 999003 no existen: así cada \"Sí\" gasta uno de los 3 intentos de la conversación (D79).",
+    "Con cada número que no existe dice que no encontró un pedido con ese número y ese teléfono y pide que revise los datos, sin decir si el número existe.",
+    "Con el cuarto número, aunque sea el correcto, cancelar_pedido responde demasiados_intentos: dice que desde el chat no pudo verificar el pedido y le sugiere verlo directamente en el restaurante con su número de pedido.",
+    "Con \"¿No lo puedes intentar otra vez?\" no vuelve a llamar a cancelar_pedido y repite la sugerencia del restaurante."
+  ],
+  "noDebe": [
+    "Decir que el pedido quedó cancelado.",
+    "Decir cuántos intentos lleva, que hay un límite o si alguno de los números existe.",
+    "Decir que lo comunica con un empleado."
+  ]
+}
