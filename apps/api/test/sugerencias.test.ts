@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import {
   CotizarPedidoArgsSchema,
   RespuestaCotizarPedidoSchema,
+  RespuestaCrearPedidoSchema,
   type Aclaracion,
   type RespuestaCotizarPedido,
 } from '@serviceagent/shared';
@@ -33,6 +34,7 @@ import {
 } from './embeddingsEnMemoria';
 import { firmar } from './firmaDePrueba';
 import { crearRepoMenuEnMemoria } from './menuEnMemoria';
+import { crearRepoPedidosEnMemoria } from './pedidosEnMemoria';
 import { leerSeedMenu, leerSeedSugerencias } from './seedEnMemoria';
 
 /* US-15-P1 (D72): `sugerida` en un `ambiguo` y `parecido` en un `no_existe` de cotizar. */
@@ -285,6 +287,8 @@ describe('parecido en un no_existe (criterio 2)', () => {
     ]);
     expect(aclaraciones(respuesta)[0]).not.toHaveProperty('parecido');
     expect(error).toHaveBeenCalledTimes(1);
+    // El log no trae lo que dijo el cliente.
+    expect(error.mock.calls.flat().map(String).join(' ')).not.toContain('lasaña');
   });
 
   it('sin buscador (crear_pedido) no trae parecido', async () => {
@@ -455,6 +459,54 @@ describe('POST /pedidos/cotizar con sugerida y parecido', () => {
       crearRepoEmbeddings: () => crearRepoEmbeddingsEnMemoria(),
     });
     expect(resultado[0]).not.toHaveProperty('parecido');
+  });
+
+  it('crear_pedido (POST /pedidos) trae sugerida y nunca parecido, aunque haya embeddings', async () => {
+    const cuerpo = JSON.stringify({
+      name: 'crear_pedido',
+      chat: {
+        chat_id: 'chat_1',
+        message_with_tool_calls: [
+          { role: 'agent', content: '¿Confirmo tu pedido a nombre de María José?' },
+          { role: 'user', content: 'Sí' },
+        ],
+      },
+      args: {
+        productos: [
+          { producto: 'fajitas', cantidad: 1 },
+          { producto: 'lasaña', cantidad: 1 },
+        ],
+        nombre: 'María José',
+        telefono: '614 123 4567',
+      },
+    });
+    const repo = crearRepoPedidosEnMemoria();
+    const res = await crearApp({
+      crearRepoMenu: repoMenu,
+      crearRepoPedidos: () => repo,
+      crearEmbedder: () => crearEmbedderDePrueba(),
+      crearRepoEmbeddings: () => embeddingsQueResponden('Pizerola de Sirloin'),
+    }).request(
+      '/pedidos',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Retell-Signature': await firmar(cuerpo, LLAVE, Date.now()),
+        },
+        body: cuerpo,
+      },
+      env,
+    );
+    expect(res.status).toBe(200);
+    const respuesta = RespuestaCrearPedidoSchema.parse(await res.json());
+    if (respuesta.ok) throw new Error('debía responder aclaraciones');
+    expect(respuesta.aclaraciones).toEqual([
+      expect.objectContaining({ tipo: 'ambiguo', sugerida: 'Fajitas de arrachera' }),
+      expect.objectContaining({ tipo: 'no_existe', producto: 'lasaña' }),
+    ]);
+    expect(respuesta.aclaraciones[1]).not.toHaveProperty('parecido');
+    expect(repo.pedidos).toHaveLength(0);
   });
 
   it('Swagger documenta sugerida y parecido', async () => {

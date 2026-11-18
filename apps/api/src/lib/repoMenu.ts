@@ -160,6 +160,8 @@ export function crearRepoMenu(cliente: SupabaseClient): MenuRepo {
         'id_platillo, frase, activo',
         FilaSugerenciaSchema,
       );
+      // Orden fijo: si dos frases chocan al normalizar ("Papas" y "papas"), gana siempre la misma.
+      sugerencias.sort((a, b) => a.frase.localeCompare(b.frase) || a.id_platillo - b.id_platillo);
       return sugerencias.map((s) => ({
         idPlatillo: s.id_platillo,
         frase: s.frase,
