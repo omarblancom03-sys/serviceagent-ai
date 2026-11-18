@@ -7,6 +7,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { crearApp } from '../src/index';
+import type { ResultadoTurnstile } from '../src/lib/turnstile';
 import type { FallaRetell } from '../src/services/chat';
 import {
   crearChatRepoEnMemoria,
@@ -18,6 +19,8 @@ import { crearRepoEnMemoria } from './repoEnMemoria';
 
 const LLAVE = 'LLAVE_RETELL_DE_PRUEBA_NO_DEBE_SALIR';
 const TEXTO = 'TEXTO_DEL_CLIENTE_NO_DEBE_SALIR';
+const SECRETO_TURNSTILE = 'SECRETO_TURNSTILE_NO_DEBE_SALIR';
+const TOKEN = 'TOKEN_TURNSTILE_NO_DEBE_SALIR';
 
 const env = {
   SUPABASE_URL: 'http://no-se-usa-en-tests',
@@ -26,6 +29,7 @@ const env = {
   PIN_PEPPER: 'pepper-de-prueba-con-al-menos-32-caracteres',
   RETELL_API_KEY: LLAVE,
   RETELL_AGENT_ID: 'agent_de_prueba',
+  TURNSTILE_SECRET_KEY: SECRETO_TURNSTILE,
 };
 
 /** Versiones estrictas: si la API agrega un campo de Retell a la respuesta, fallan. */
@@ -42,18 +46,30 @@ const ErrorEstricto = z.strictObject(ErrorChatSchema.shape);
 let enMemoria: ReturnType<typeof crearChatRepoEnMemoria>;
 let falso: ReturnType<typeof crearRetellFalso>;
 let llavesRecibidas: string[];
+/** Turnstile falso: responde `turnstile.resultado` y anota cada verificación. */
+let turnstile: {
+  resultado: ResultadoTurnstile;
+  llamadas: { secreto: string; token: string; ip: string | null }[];
+};
 let app: ReturnType<typeof crearApp>;
 
 beforeEach(() => {
   enMemoria = crearChatRepoEnMemoria();
   falso = crearRetellFalso();
   llavesRecibidas = [];
+  turnstile = { resultado: 'valido', llamadas: [] };
   app = crearApp({
     crearRepoChat: () => enMemoria.repo,
     crearClienteRetell: (llave) => {
       llavesRecibidas.push(llave);
       return falso.retell;
     },
+    crearVerificadorTurnstile: (secreto) => ({
+      verificar: async (token, ip) => {
+        turnstile.llamadas.push({ secreto, token, ip });
+        return turnstile.resultado;
+      },
+    }),
   });
 });
 
@@ -88,7 +104,25 @@ async function pedir(ruta: string, init: RequestInit, entorno: Record<string, st
 }
 
 const iniciar = (entorno?: Record<string, string>) =>
-  pedir('/chat/conversaciones', { method: 'POST' }, entorno);
+  iniciarCon({ tokenTurnstile: TOKEN }, entorno);
+
+/** `cuerpo` `undefined` imita a una web anterior a Turnstile: sin cuerpo ni Content-Type. */
+const iniciarCon = (
+  cuerpo: unknown,
+  entorno?: Record<string, string>,
+  encabezados: Record<string, string> = {},
+) =>
+  pedir(
+    '/chat/conversaciones',
+    cuerpo === undefined
+      ? { method: 'POST', headers: encabezados }
+      : {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...encabezados },
+          body: typeof cuerpo === 'string' ? cuerpo : JSON.stringify(cuerpo),
+        },
+    entorno,
+  );
 
 const enviar = (id: string, cuerpo: unknown, entorno?: Record<string, string>) =>
   pedir(
@@ -115,8 +149,12 @@ afterEach(() => {
   for (const cuerpo of cuerpos) {
     expect(cuerpo).not.toContain(LLAVE);
     expect(cuerpo).not.toContain('CHAT_SECRETO');
+    expect(cuerpo).not.toContain(SECRETO_TURNSTILE);
+    expect(cuerpo).not.toContain(TOKEN);
   }
   const logs = textoDeLogs();
+  expect(logs).not.toContain(SECRETO_TURNSTILE);
+  expect(logs).not.toContain(TOKEN);
   expect(logs).not.toContain(LLAVE);
   expect(logs).not.toContain(TEXTO);
   expect(logs).not.toContain('CHAT_SECRETO');
@@ -180,6 +218,7 @@ describe('POST /chat/conversaciones', () => {
       expect(ErrorEstricto.parse(cuerpo).codigo).toBe('servicio_no_disponible');
       expect(enMemoria.llamadas.abrir).toBe(0);
       expect(falso.llamadas.crearChat).toEqual([]);
+      expect(turnstile.llamadas).toEqual([]);
     },
   );
 
@@ -313,6 +352,117 @@ describe('POST /chat/conversaciones', () => {
 
     expect((await iniciar()).status).toBe(503);
     expect(falso.llamadas.crearChat).toEqual([]);
+  });
+});
+
+describe('POST /chat/conversaciones: Turnstile (D68, D77)', () => {
+  const TEXTO_TOPE = 'Servicio no disponible por el momento.';
+
+  /** Ningún rechazo de Turnstile abre la conversación, gasta tope ni llama a Retell. */
+  function sinAbrir() {
+    expect(enMemoria.llamadas.abrir).toBe(0);
+    expect(enMemoria.filas.size).toBe(0);
+    expect(falso.llamadas.crearChat).toEqual([]);
+  }
+
+  it('valida el token con la llave y la IP del cliente antes de abrir', async () => {
+    const ip = { 'CF-Connecting-IP': '203.0.113.7' };
+    const { status } = await iniciarCon({ tokenTurnstile: ` ${TOKEN} ` }, env, ip);
+
+    expect(status).toBe(201);
+    expect(turnstile.llamadas).toEqual([
+      { secreto: SECRETO_TURNSTILE, token: TOKEN, ip: '203.0.113.7' },
+    ]);
+    expect(enMemoria.llamadas.abrir).toBe(1);
+  });
+
+  it('sin encabezado de IP valida igual, sin IP', async () => {
+    expect((await iniciar()).status).toBe(201);
+    expect(turnstile.llamadas[0]?.ip).toBeNull();
+  });
+
+  it('token rechazado: 503 verificacion_fallida con el texto del tope, sin abrir', async () => {
+    turnstile.resultado = 'token_rechazado';
+
+    const { status, cuerpo } = await iniciar();
+
+    expect(status).toBe(503);
+    expect(ErrorEstricto.parse(cuerpo)).toEqual({
+      error: TEXTO_TOPE,
+      codigo: 'verificacion_fallida',
+    });
+    sinAbrir();
+  });
+
+  it('siteverify no responde: 503 servicio_no_disponible con el texto del tope, sin abrir', async () => {
+    turnstile.resultado = 'no_disponible';
+
+    const { status, cuerpo } = await iniciar();
+
+    expect(status).toBe(503);
+    expect(ErrorEstricto.parse(cuerpo)).toEqual({
+      error: TEXTO_TOPE,
+      codigo: 'servicio_no_disponible',
+    });
+    sinAbrir();
+  });
+
+  it.each([
+    ['vacía', { ...env, TURNSTILE_SECRET_KEY: ' ' }],
+    ['ausente', (({ TURNSTILE_SECRET_KEY: _, ...resto }) => resto)(env)],
+  ])(
+    'sin TURNSTILE_SECRET_KEY (%s): 503 con el texto del tope, sin validar ni abrir',
+    async (_, entorno) => {
+      const { status, cuerpo } = await iniciar(entorno);
+
+      expect(status).toBe(503);
+      expect(ErrorEstricto.parse(cuerpo)).toEqual({
+        error: TEXTO_TOPE,
+        codigo: 'servicio_no_disponible',
+      });
+      expect(turnstile.llamadas).toEqual([]);
+      sinAbrir();
+    },
+  );
+
+  it.each([
+    ['sin cuerpo (web anterior a Turnstile)', undefined],
+    ['un cuerpo vacío', {}],
+    ['un token vacío', { tokenTurnstile: '' }],
+    ['un token de solo espacios', { tokenTurnstile: '   ' }],
+    ['un token de más de 2048 caracteres', { tokenTurnstile: 'a'.repeat(2049) }],
+    ['un token numérico', { tokenTurnstile: 5 }],
+    ['una llave desconocida', { tokenTurnstile: TOKEN, extra: 1 }],
+  ])('%s: 503 verificacion_fallida, sin validar ni abrir', async (_, cuerpo) => {
+    const { status, cuerpo: respuesta } = await iniciarCon(cuerpo);
+
+    expect(status).toBe(503);
+    expect(ErrorEstricto.parse(respuesta).codigo).toBe('verificacion_fallida');
+    expect(turnstile.llamadas).toEqual([]);
+    sinAbrir();
+  });
+
+  it('un JSON mal formado: 400 peticion_invalida, como en el resto del chat', async () => {
+    const { status, cuerpo } = await iniciarCon('{"tokenTurnstile": ');
+
+    expect(status).toBe(400);
+    expect(ErrorEstricto.parse(cuerpo).codigo).toBe('peticion_invalida');
+    sinAbrir();
+  });
+
+  it('muchos tokens rechazados no gastan el tope: después se abren las 3 del día', async () => {
+    turnstile.resultado = 'token_rechazado';
+    for (let i = 0; i < 5; i++) expect((await iniciar()).status).toBe(503);
+    turnstile.resultado = 'no_disponible';
+    for (let i = 0; i < 5; i++) expect((await iniciar()).status).toBe(503);
+    turnstile.resultado = 'valido';
+
+    for (let i = 0; i < 3; i++) expect((await iniciar()).status).toBe(201);
+    const tope = await iniciar();
+    expect(ErrorEstricto.parse(tope.cuerpo)).toEqual({
+      error: TEXTO_TOPE,
+      codigo: 'servicio_no_disponible',
+    });
   });
 });
 

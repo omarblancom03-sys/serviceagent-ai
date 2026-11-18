@@ -26,7 +26,7 @@ La web no usa el widget de Retell: habla con nuestra API, que habla con Retell. 
 
 | Endpoint                                  | Respuesta                                                                                                                              |
 | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `POST /chat/conversaciones`               | 201: `conversacionId`, `mensajes` (lo que el agente escribió al abrir; puede venir vacío), `mensajesUsados` (0) y `limiteMensajes`     |
+| `POST /chat/conversaciones`               | Cuerpo `{ tokenTurnstile }`. 201: `conversacionId`, `mensajes` (del agente; puede ir vacío), `mensajesUsados` (0), `limiteMensajes`    |
 | `POST /chat/conversaciones/{id}/mensajes` | Cuerpo `{ texto }` (se recorta; 1 a 500 caracteres). 200: `mensajes` (solo los nuevos del agente), `mensajesUsados` y `limiteMensajes` |
 
 - Cada mensaje trae solo `id`, `texto` y `creadoEn` (ISO 8601 UTC). La API solo devuelve el texto de los mensajes de Retell con `role` `agent`: nunca invocaciones ni resultados de herramientas, transiciones ni datos técnicos.
@@ -41,7 +41,8 @@ Errores: `{ error, codigo }`, con `error` en español para el cliente y sin deta
 | `conversacion_no_encontrada` | 404  | Id bien formado que no existe                                                                                                                                                                                               |
 | `conversacion_terminada`     | 409  | El chat cerró (por inactividad o porque terminó); la web ofrece iniciar otro                                                                                                                                                |
 | `limite_alcanzado`           | 429  | Ya se enviaron los mensajes permitidos; hay que iniciar otra conversación                                                                                                                                                   |
-| `servicio_no_disponible`     | 503  | Retell falló, tardó, no tiene saldo, llegó al límite de la cuenta o falta la llave; al iniciar, también si se alcanzó el tope diario de conversaciones nuevas. El texto del error puede variar según la causa; el código no |
+| `servicio_no_disponible`     | 503  | Retell falló, tardó, no tiene saldo, llegó al límite de la cuenta o falta la llave; al iniciar, también con el tope diario o con Turnstile sin validar de nuestro lado. El texto puede cambiar según la causa; el código no |
+| `verificacion_fallida`       | 503  | Al iniciar: Turnstile rechazó el token (no válido, vencido o ya usado) o no llegó. Mismo texto que el tope; la web pide un token nuevo y ofrece Reintentar (D77)                                                            |
 
 ### Cómo funciona el proxy
 
@@ -49,10 +50,12 @@ Lógica en `apps/api/src/services/chat.ts`; Retell se llama con `fetch` directo 
 
 **Iniciar** (`POST /chat/conversaciones`):
 
-1. Si falta `RETELL_API_KEY` o `RETELL_AGENT_ID`: 503 **antes** de abrir la conversación, así que no gasta tope.
-2. `abrir_conversacion_chat` con el tope diario ([D38](decisiones.md)). Si ya se llegó: 503 con "Servicio no disponible por el momento.", sin llamar a Retell.
-3. `create-chat` con `agent_version: "latest_published"`, la versión publicada más reciente ([D52](decisiones.md)); timeout 10 s. Si falla por cualquier causa, o el chat no queda `ongoing`, o no se puede guardar su `chat_id`: 503. Si Retell claramente no creó el chat (400, 401, 402, 422, 429 o error de conexión antes de recibir respuesta), la conversación se descarta con `descartar_apertura_chat` y **no gasta tope** ([D64](decisiones.md)); en los demás casos (timeout, 5xx, respuesta ilegible) se termina y su lugar queda gastado.
-4. 201 con los mensajes `agent` que traiga `message_with_tool_calls` (o vacío), 0 usados y límite 30.
+1. Sin cuerpo, sin token o con otra forma: 503 `verificacion_fallida`. JSON mal formado: 400.
+2. Si falta `RETELL_API_KEY` o `RETELL_AGENT_ID`: 503 **antes** de abrir la conversación, así que no gasta tope.
+3. Turnstile (modo Managed, [D68](decisiones.md) y [D77](decisiones.md); `lib/turnstile.ts`): sin `TURNSTILE_SECRET_KEY`, 503 `servicio_no_disponible` con el texto del tope. Si no, siteverify (timeout 10 s) con el token y la IP (`CF-Connecting-IP`, no se guarda): token rechazado, 503 `verificacion_fallida`; llave mala, 5xx, sin conexión o timeout, 503 `servicio_no_disponible` con el texto del tope. Ninguno abre ni gasta tope.
+4. `abrir_conversacion_chat` con el tope diario ([D38](decisiones.md)). Si ya se llegó: 503 con "Servicio no disponible por el momento.", sin llamar a Retell.
+5. `create-chat` con `agent_version: "latest_published"`, la versión publicada más reciente ([D52](decisiones.md)); timeout 10 s. Si falla por cualquier causa, o el chat no queda `ongoing`, o no se puede guardar su `chat_id`: 503. Si Retell claramente no creó el chat (400, 401, 402, 422, 429 o error de conexión antes de recibir respuesta), la conversación se descarta con `descartar_apertura_chat` y **no gasta tope** ([D64](decisiones.md)); en los demás casos (timeout, 5xx, respuesta ilegible) se termina y su lugar queda gastado.
+6. 201 con los mensajes `agent` que traiga `message_with_tool_calls` (o vacío), 0 usados y límite 30.
 
 Al cliente solo le llegan los mensajes `agent` con texto; si en una misma respuesta el agente repite la pregunta de confirmación (preguntó, llamó a `crear_pedido` sin el "sí" y volvió a preguntar), pasa solo la primera ([D69](decisiones.md)). Una pregunta con otro contenido que la última mostrada, o con una cotización u otro mensaje del agente entre las dos, sí se muestra.
 

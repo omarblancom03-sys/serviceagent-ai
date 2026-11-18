@@ -7,6 +7,7 @@ import {
 } from '@serviceagent/shared';
 import { ErrorApi } from './api';
 import { normalizarTexto } from './menuAdmin';
+import { ErrorTurnstile } from './turnstile';
 
 /**
  * Lógica pura del chat de `/pedir` (US-09-P2): estado, reducer, validación del texto y qué
@@ -182,7 +183,8 @@ export type PasoChat = 'crear' | 'enviar';
  * El tope diario (D38) y una falla de Retell dan el mismo 503 `servicio_no_disponible`; la API
  * los distingue solo por el texto de `error` (apps/api/src/routes/chat.ts). Además, el tope
  * solo puede ocurrir al crear la conversación. Si la API cambia ese texto, cae al 503 genérico
- * con Reintentar, que solo vuelve a dar 503. Un código propio en el contrato lo resolvería.
+ * con Reintentar, que solo vuelve a dar 503. Con el mismo texto llega Turnstile sin validar de
+ * nuestro lado (D68); un token rechazado trae su propio código, `verificacion_fallida` (D77).
  */
 function esTopeDiario(paso: PasoChat, error: ErrorApi, texto: string): boolean {
   return (
@@ -202,18 +204,31 @@ export function clasificarErrorChat(
     fase: 'error',
     aviso: { mensaje: MENSAJE_NO_DISPONIBLE, accion: 'reintentar' },
   };
+  const tope: FallaChat = {
+    fase: 'tope_diario',
+    aviso: { mensaje: MENSAJE_TOPE_DIARIO, accion: 'ninguna' },
+  };
+  // Turnstile no pasó (D77): el texto del tope, pero Reintentar pide un token nuevo.
+  const verificacion: FallaChat = {
+    fase: 'error',
+    aviso: { mensaje: MENSAJE_TOPE_DIARIO, accion: 'reintentar' },
+  };
+  // Sin token: sin llave del sitio reintentar no ayuda; si el widget falló, sí.
+  if (error instanceof ErrorTurnstile) return error.motivo === 'sin_llave' ? tope : verificacion;
   // Sin conexión (fetch lanza TypeError) o respuesta que no cumple el contrato (ZodError).
   if (!(error instanceof ErrorApi)) return noDisponible;
 
   const cuerpo = ErrorChatSchema.safeParse(error.cuerpo);
   const codigo = cuerpo.success ? cuerpo.data.codigo : null;
 
+  if (codigo === 'verificacion_fallida' && paso === 'crear') return verificacion;
+
   if (
     cuerpo.success &&
     codigo === 'servicio_no_disponible' &&
     esTopeDiario(paso, error, cuerpo.data.error)
   ) {
-    return { fase: 'tope_diario', aviso: { mensaje: MENSAJE_TOPE_DIARIO, accion: 'ninguna' } };
+    return tope;
   }
   if (codigo === 'conversacion_terminada' || codigo === 'conversacion_no_encontrada') {
     return { fase: 'terminada', aviso: { mensaje: MENSAJE_TERMINADA, accion: 'iniciar_otra' } };

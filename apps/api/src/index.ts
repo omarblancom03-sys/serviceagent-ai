@@ -18,6 +18,7 @@ import { crearRepoEmpleados } from './lib/repoEmpleados';
 import { crearRepoMenu } from './lib/repoMenu';
 import { crearRepoPedidos } from './lib/repoPedidos';
 import { crearClienteSupabase } from './lib/supabase';
+import { crearVerificadorTurnstile } from './lib/turnstile';
 import { registrarAgente, type DependenciasAgente } from './routes/agente';
 import { registrarAlertas, type DependenciasAlertas } from './routes/alertas';
 import { registrarAuth, type DependenciasAuth } from './routes/auth';
@@ -52,6 +53,7 @@ const dependenciasReales: Dependencias = {
   crearRepoCaja: (env) => crearRepoCaja(crearClienteSupabase(env)),
   crearRepoConfiguracion: (env) => crearRepoConfiguracion(crearClienteSupabase(env)),
   crearClienteRetell: (llave) => crearClienteRetell(llave),
+  crearVerificadorTurnstile: (secreto) => crearVerificadorTurnstile(secreto),
   crearRepoEmbeddings: (env) => crearRepoEmbeddings(crearClienteSupabase(env)),
   crearEmbedder: (env) => (env.AI ? crearEmbedderWorkersAi(env.AI) : null),
   crearRepoAlertas: (env) => crearRepoAlertas(crearClienteSupabase(env)),

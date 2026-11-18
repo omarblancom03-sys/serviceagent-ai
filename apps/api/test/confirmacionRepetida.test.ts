@@ -19,6 +19,14 @@ const RESUMEN =
   'Tu pedido: 1 Hamburguesa Granero, por $149.00, a nombre de Ana López, al 614 123 4567. ¿Confirmo tu pedido?';
 const SOLO_PREGUNTA = '¿Confirmo tu pedido?';
 
+/** Abrir el chat pide un token de Turnstile (D77); aquí el verificador siempre lo acepta. */
+const TURNSTILE_VALIDO = () => ({ verificar: async () => 'valido' as const });
+const ABRIR = {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ tokenTurnstile: 'token' }),
+};
+
 let siguiente = 0;
 const agente = (texto: string): MensajeRetell => ({
   rol: 'agent',
@@ -193,7 +201,11 @@ describe('sinConfirmacionRepetida (D69)', () => {
 });
 
 describe('POST /chat/conversaciones/{id}/mensajes: pregunta de confirmación repetida (D69)', () => {
-  const env = { RETELL_API_KEY: 'llave', RETELL_AGENT_ID: 'agent_1' } as Bindings;
+  const env = {
+    RETELL_API_KEY: 'llave',
+    RETELL_AGENT_ID: 'agent_1',
+    TURNSTILE_SECRET_KEY: 'secreto',
+  } as Bindings;
 
   it('responde la pregunta una sola vez y nada de las herramientas', async () => {
     const enMemoria = crearChatRepoEnMemoria();
@@ -201,8 +213,9 @@ describe('POST /chat/conversaciones/{id}/mensajes: pregunta de confirmación rep
     const app = crearApp({
       crearRepoChat: () => enMemoria.repo,
       crearClienteRetell: () => falso.retell,
+      crearVerificadorTurnstile: TURNSTILE_VALIDO,
     });
-    const abierta = await app.request('/chat/conversaciones', { method: 'POST' }, env);
+    const abierta = await app.request('/chat/conversaciones', ABRIR, env);
     const { conversacionId } = (await abierta.json()) as { conversacionId: string };
     falso.respuestas.enviarMensaje = () => ({
       ok: true,
@@ -234,7 +247,11 @@ describe('POST /chat/conversaciones/{id}/mensajes: pregunta de confirmación rep
 });
 
 describe('POST /chat/conversaciones: pregunta de confirmación repetida al abrir (D69)', () => {
-  const env = { RETELL_API_KEY: 'llave', RETELL_AGENT_ID: 'agent_1' } as Bindings;
+  const env = {
+    RETELL_API_KEY: 'llave',
+    RETELL_AGENT_ID: 'agent_1',
+    TURNSTILE_SECRET_KEY: 'secreto',
+  } as Bindings;
 
   it('el filtro también se aplica a los mensajes de create-chat', async () => {
     const falso = crearRetellFalso();
@@ -254,9 +271,10 @@ describe('POST /chat/conversaciones: pregunta de confirmación repetida al abrir
     const app = crearApp({
       crearRepoChat: () => crearChatRepoEnMemoria().repo,
       crearClienteRetell: () => falso.retell,
+      crearVerificadorTurnstile: TURNSTILE_VALIDO,
     });
 
-    const res = await app.request('/chat/conversaciones', { method: 'POST' }, env);
+    const res = await app.request('/chat/conversaciones', ABRIR, env);
 
     expect(res.status).toBe(201);
     const cuerpo = RespuestaIniciarConversacionSchema.parse(await res.json());
