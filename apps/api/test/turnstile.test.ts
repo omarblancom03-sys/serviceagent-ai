@@ -120,6 +120,48 @@ describe('Turnstile: no disponible (un token nuevo no lo arregla)', () => {
     expect(JSON.stringify(escritos)).toContain(`"status":${status}`);
   });
 
+  it('400 con invalid-input-secret: registra el estado y el código', async () => {
+    const { verificador } = verificadorCon(() =>
+      json({ success: false, 'error-codes': ['invalid-input-secret'] }, 400),
+    );
+
+    expect(await verificador.verificar(TOKEN, '203.0.113.7')).toBe('no_disponible');
+    const logs = JSON.stringify(escritos);
+    expect(logs).toContain('"status":400');
+    expect(logs).toContain('invalid-input-secret');
+    expect(logs).not.toContain('siteverify no respondió');
+  });
+
+  it('400 con un cuerpo que no es JSON: registra solo el estado', async () => {
+    const { verificador } = verificadorCon(() =>
+      Promise.resolve(new Response('<html>', { status: 400 })),
+    );
+
+    expect(await verificador.verificar(TOKEN, '203.0.113.7')).toBe('no_disponible');
+    const logs = JSON.stringify(escritos);
+    expect(logs).toContain('"status":400');
+    expect(logs).toContain('siteverify no respondió');
+    expect(logs).not.toContain('errores');
+  });
+
+  it('500 con JSON sin error-codes: registra solo el estado', async () => {
+    const { verificador } = verificadorCon(() => json({ success: false }, 500));
+
+    expect(await verificador.verificar(TOKEN, '203.0.113.7')).toBe('no_disponible');
+    const logs = JSON.stringify(escritos);
+    expect(logs).toContain('"status":500');
+    expect(logs).not.toContain('errores');
+  });
+
+  it('400 con un código desconocido: lo anota como "otro", sin copiarlo', async () => {
+    const { verificador } = verificadorCon(() =>
+      json({ success: false, 'error-codes': [`${TOKEN}-inyectado`] }, 400),
+    );
+
+    expect(await verificador.verificar(TOKEN, '203.0.113.7')).toBe('no_disponible');
+    expect(JSON.stringify(escritos)).toContain('otro');
+  });
+
   it('un cuerpo que no es JSON', async () => {
     const { verificador } = verificadorCon(() => Promise.resolve(new Response('<html>')));
 

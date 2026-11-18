@@ -77,7 +77,7 @@ export function crearVerificadorTurnstile(
         } catch {
           return noDisponible(control.signal.aborted ? 'timeout' : 'sin_conexion');
         }
-        if (!res.ok) return noDisponible('estado', res.status);
+        if (!res.ok) return await noDisponiblePorEstado(res);
 
         let cuerpo: unknown;
         try {
@@ -89,9 +89,7 @@ export function crearVerificadorTurnstile(
         if (!leido.success) return noDisponible('ilegible');
         if (leido.data.success) return 'valido';
 
-        const errores = (leido.data['error-codes'] ?? []).map((e) =>
-          typeof e === 'string' && ERRORES_CONOCIDOS.has(e) ? e : 'otro',
-        );
+        const errores = nombrarErrores(leido.data['error-codes'] ?? []);
         const delToken = errores.length > 0 && errores.every((e) => ERRORES_DEL_TOKEN.has(e));
         console.warn('chat: Turnstile rechazó la verificación', { errores });
         return delToken ? 'token_rechazado' : 'no_disponible';
@@ -100,6 +98,34 @@ export function crearVerificadorTurnstile(
       }
     },
   };
+}
+
+/** Nombra los error-codes sin copiar texto de Cloudflare: uno desconocido queda como `otro`. */
+function nombrarErrores(codigos: unknown[]): string[] {
+  return codigos.map((e) => (typeof e === 'string' && ERRORES_CONOCIDOS.has(e) ? e : 'otro'));
+}
+
+const CuerpoConErroresSchema = z.object({ 'error-codes': z.array(z.unknown()).min(1) });
+
+/**
+ * Estado distinto de 200: siempre `no_disponible` (D77), pero si el cuerpo trae error-codes
+ * (p. ej. `invalid-input-secret` con 400) se registran para distinguir una llave mala de un
+ * siteverify caído. Sin JSON o sin error-codes, solo se registra el estado.
+ */
+async function noDisponiblePorEstado(res: Response): Promise<ResultadoTurnstile> {
+  let cuerpo: unknown;
+  try {
+    cuerpo = await res.json();
+  } catch {
+    return noDisponible('estado', res.status);
+  }
+  const leido = CuerpoConErroresSchema.safeParse(cuerpo);
+  if (!leido.success) return noDisponible('estado', res.status);
+  console.warn('chat: Turnstile rechazó la verificación', {
+    status: res.status,
+    errores: nombrarErrores(leido.data['error-codes']),
+  });
+  return 'no_disponible';
 }
 
 function noDisponible(falla: string, status?: number): ResultadoTurnstile {
