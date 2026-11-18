@@ -22,7 +22,7 @@ export const webhookBancoRoute = createRoute({
     `Solo para el banco: exige \`${ENCABEZADO_FIRMA_BANCO}\` (HMAC del cuerpo con ` +
     '`BANCO_WEBHOOK_SECRET`). La firma se revisa antes que el cuerpo. Hoy solo recibe y valida el ' +
     'aviso (US-24, D70): no toca ningún pedido. La conciliación por referencia y monto, y el ' +
-    'aviso repetido (`idTransferencia`), llegan en US-25 y US-26.',
+    'aviso repetido (`idTransferencia`), llegan en US-25 (D70).',
   security: [{ FirmaBanco: [] }],
   middleware: [requiereFirmaBanco()] as const,
   request: { body: { content: json(AvisoTransferenciaSchema), required: true } },

@@ -88,8 +88,9 @@ export function crearApp(reemplazos: Partial<Dependencias> = {}) {
   registrarWebhooks(app);
   registrarBancoSimulado(app);
 
-  // Igual que el manejador por defecto de Hono, salvo una cosa: en /chat/*, /cocina/* y /caja/* el 400 de
-  // un cuerpo que no es JSON válido (Hono lo responde en texto) sale con el formato de su contrato.
+  // Igual que el manejador por defecto de Hono, salvo una cosa: en /chat/*, /cocina/*, /caja/*,
+  // /webhooks/banco y /banco-simulado/* el 400 de un cuerpo que no es JSON válido (Hono lo responde
+  // en texto) sale con el formato de su contrato.
   app.onError((error, c) => {
     if (error instanceof HTTPException && error.status === 400) {
       if (c.req.path.startsWith('/chat/')) return c.json(ERROR_PETICION_INVALIDA, 400);
