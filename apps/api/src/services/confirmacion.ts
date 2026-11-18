@@ -280,6 +280,19 @@ export function textoNormalizado(texto: string): string {
   return palabrasDe(texto).join(' ');
 }
 
+// El mensaje entero es la pregunta de cancelación con su número: "¿Cancelo tu pedido #1001?" (D80).
+const SOLO_PREGUNTA_CANCELACION = new RegExp(
+  `^(?:te )?${palabrasDe(FRASE_PREGUNTA_CANCELACION).join(' ')} (?:con )?(?:numero |folio )?[0-9]{1,10}$`,
+);
+
+/**
+ * El mensaje es solo "¿Cancelo tu pedido #N?", sin nada antes ni después (D80). Sin número no
+ * cuenta: esa pregunta no le sirve a D74.
+ */
+export function esSoloLaPreguntaDeCancelacion(texto: string): boolean {
+  return esPreguntaDeCancelacion(texto) && SOLO_PREGUNTA_CANCELACION.test(textoNormalizado(texto));
+}
+
 /** El mensaje es solo la pregunta fija, sin resumen ni nada más: "¿Confirmo tu pedido?" (D69). */
 export function esSoloLaPreguntaDeConfirmacion(texto: string): boolean {
   // La misma regla con que D48 reconoce la pregunta exacta: así D48 y D69 no se separan.
