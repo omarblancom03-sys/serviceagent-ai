@@ -15,13 +15,16 @@ export const MAX_CARACTERES_MOTIVO_CANCELACION = MAX_CARACTERES_MOTIVO;
 /**
  * Por qué no se canceló. `no_encontrado`: el folio no existe o no es de ese teléfono (la misma
  * respuesta en los dos casos). `en_preparacion`: cocina ya lo empezó o ya está listo.
- * `con_pago`: ya tiene un pago. `cerrado`: ya se entregó o expiró.
+ * `con_pago`: ya tiene un pago. `cerrado`: ya se entregó o expiró. `demasiados_intentos`: la
+ * conversación ya juntó el máximo de folios no encontrados, o no trae `chat.chat_id`; no se buscó
+ * el pedido y no se dice si el folio existe (D79).
  */
 export const RECHAZOS_CANCELACION = [
   'no_encontrado',
   'en_preparacion',
   'con_pago',
   'cerrado',
+  'demasiados_intentos',
 ] as const;
 export const RechazoCancelacionSchema = z.enum(RECHAZOS_CANCELACION);
 
@@ -38,8 +41,9 @@ export const CancelarPedidoArgsSchema = z.strictObject({
 });
 
 /**
- * Sobre que manda Retell en un agente de chat. De `chat` solo se lee la conversación, para revisar
- * que el cliente dijo que sí a "¿Cancelo tu pedido…?" (D73).
+ * Sobre que manda Retell en un agente de chat. De `chat` se lee la conversación, para revisar que
+ * el cliente dijo que sí a "¿Cancelo tu pedido…?" (D73), y `chat_id`, para contar los folios no
+ * encontrados de esa conversación (D79).
  */
 export const CancelarPedidoPeticionSchema = z.object({
   name: z.literal('cancelar_pedido'),

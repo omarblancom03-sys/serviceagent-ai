@@ -15,7 +15,17 @@ import { DETALLE_FALTA_TELEFONO, DETALLE_TELEFONO, normalizarTelefono } from './
  * coinciden y el pedido todavía no entra a preparación ni tiene pagos, queda cancelado con su
  * motivo. La regla la cumple la base en una sola función con la fila bloqueada (D14): aquí solo se
  * revisa lo que mandó el agente y se traduce el resultado a algo que el agente pueda decir.
+ *
+ * Los folios no encontrados se cuentan por conversación (`chat.chat_id`, D79): al llegar a
+ * `MAX_FOLIOS_NO_ENCONTRADOS` la base deja de buscar, para que nadie pruebe folios consecutivos
+ * con un teléfono conocido.
  */
+
+/**
+ * Cuántos `no_encontrado` (folio inexistente o de otro teléfono) se responden en una conversación;
+ * a partir de ahí, `demasiados_intentos` sin buscar el pedido (D79).
+ */
+export const MAX_FOLIOS_NO_ENCONTRADOS = 3;
 
 export const DETALLE_MOTIVO_CANCELACION_LARGO =
   `El motivo debe tener como máximo ${MAX_CARACTERES_MOTIVO_CANCELACION} caracteres: ` +
@@ -32,12 +42,15 @@ export const DETALLE_RECHAZO: Record<RechazoCancelacion, string> = {
     'El pedido ya tiene un pago y no se puede cancelar desde el chat.' +
     ' Sugiérele verlo directamente en el restaurante con su número de pedido.',
   cerrado: 'El pedido ya se entregó o ya venció: no hay nada que cancelar.',
+  demasiados_intentos:
+    'No se pudo verificar el pedido desde este chat.' +
+    ' Sugiérele verlo directamente en el restaurante con su número de pedido.',
 };
 
 /** Lo que responde la función SQL `cancelar_pedido_cliente`. */
 export type ResultadoCancelar =
   | { resultado: 'cancelado' | 'ya_cancelado' }
-  | { resultado: 'no_encontrado' }
+  | { resultado: 'no_encontrado' | 'demasiados_intentos' }
   | { resultado: 'con_pago' | 'no_cancelable'; estadoActual: EstadoPedido };
 
 /** Interfaz de datos. La implementa `lib/repoCancelaciones.ts` (Supabase) o un repo en memoria. */
@@ -45,12 +58,16 @@ export interface CancelacionesRepo {
   /**
    * Cancela el pedido si el folio es de ese teléfono, no ha entrado a preparación y no tiene
    * pagos; guarda el motivo en el historial. Todo en una función SQL con la fila bloqueada: si
-   * cocina pulsa Empezar al mismo tiempo, gana el que llegue primero (D14).
+   * cocina pulsa Empezar al mismo tiempo, gana el que llegue primero (D14). Antes de buscar, si la
+   * conversación `idChat` ya juntó `maxNoEncontrados` folios no encontrados, responde
+   * `demasiados_intentos`; si no lo encuentra, le suma uno (D79).
    */
   cancelarPedido(datos: {
     folio: number;
     telefono: string;
     motivo: string;
+    idChat: string;
+    maxNoEncontrados: number;
   }): Promise<ResultadoCancelar>;
 }
 
@@ -72,13 +89,15 @@ function rechazar(rechazo: RechazoCancelacion, estadoActual: EstadoPedido | null
 /**
  * Revisa lo que mandó el agente y, si todo sirve y el cliente dijo que sí a "¿Cancelo tu pedido #N?"
  * en `mensajes`, con N igual al folio (D73 y D74), cancela. Lo que haya que volver a pedir (folio, teléfono, motivo largo, la
- * confirmación) sale junto en una respuesta, sin tocar la base. Los errores del repo se propagan
- * (la ruta responde 500).
+ * confirmación) sale junto en una respuesta, sin tocar la base. Sin `idChat` no hay con qué contar
+ * los folios no encontrados: responde `demasiados_intentos` sin tocar la base (D79). Los errores
+ * del repo se propagan (la ruta responde 500).
  */
 export async function cancelarPedido(
   repo: CancelacionesRepo,
   args: CancelarPedidoArgs,
   mensajes: readonly MensajeConversacion[],
+  idChat: string | null,
 ): Promise<RespuestaCancelarPedido> {
   const datosCliente: DatoClienteInvalido[] = [];
   const telefono = args.telefono === undefined ? null : normalizarTelefono(args.telefono);
@@ -111,8 +130,16 @@ export async function cancelarPedido(
     };
   }
 
+  if (idChat === null) return rechazar('demasiados_intentos', null);
+
   const { folio } = args;
-  const cancelacion = await repo.cancelarPedido({ folio, telefono, motivo: args.motivo });
+  const cancelacion = await repo.cancelarPedido({
+    folio,
+    telefono,
+    motivo: args.motivo,
+    idChat,
+    maxNoEncontrados: MAX_FOLIOS_NO_ENCONTRADOS,
+  });
   switch (cancelacion.resultado) {
     case 'cancelado':
     case 'ya_cancelado':
@@ -124,7 +151,8 @@ export async function cancelarPedido(
         yaEstabaCancelado: cancelacion.resultado === 'ya_cancelado',
       };
     case 'no_encontrado':
-      return rechazar('no_encontrado', null);
+    case 'demasiados_intentos':
+      return rechazar(cancelacion.resultado, null);
     case 'con_pago':
       return rechazar('con_pago', cancelacion.estadoActual);
     case 'no_cancelable': {
