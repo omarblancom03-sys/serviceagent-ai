@@ -1,10 +1,12 @@
 -- Ensayo manual de US-14-P1: cancelar_pedido_cliente y la columna motivo del historial
--- (migrations/20261113100000_cancelar_pedido.sql, D71).
+-- (migrations/20261113100000_cancelar_pedido.sql, D71). Desde US-14-T2 llama a la firma con el id
+-- del chat y un límite alto (1000), para que el límite de folios (D79) no cambie estos casos: ese
+-- límite se prueba en limite_folios_cancelacion.sql.
 --
 -- Para qué: probar la función contra una base real, en tu proyecto personal de Supabase o en el
 -- ensayo del PO antes del db push a serviceagent-dev. No lo corren las migraciones ni el seed.
 -- Cómo: pega el archivo completo en el SQL Editor (o psql) y córrelo de una vez. Necesita las
--- migraciones hasta US-14-P1; no necesita ningún seed.
+-- migraciones hasta US-14-T2; no necesita ningún seed.
 -- Resultado: la tabla final debe traer ok = true en todas las filas; si alguna falla, el bloque
 -- de cierre lanza un error con los casos que fallaron.
 --
@@ -59,7 +61,8 @@ as $$
     (select c.resultado || ', ' || coalesce(c.estado_actual, 'null') || case
        when c.cancelado_en is null then ', sin hora' else ', con hora' end
      from public.cancelar_pedido_cliente(
-       (select e.folio from ensayo_pedido e where e.letra = p_letra), p_telefono, p_motivo) c),
+       (select e.folio from ensayo_pedido e where e.letra = p_letra), p_telefono, p_motivo,
+       'ensayo_us14p1', 1000) c),
     '(sin filas)');
 $$;
 
@@ -163,7 +166,7 @@ insert into ensayo_resultado
 select '17. Folio que no existe', 'no_encontrado, null, sin hora',
   (select c.resultado || ', ' || coalesce(c.estado_actual, 'null') || case
      when c.cancelado_en is null then ', sin hora' else ', con hora' end
-   from public.cancelar_pedido_cliente(2147483647, '6141234567', 'Motivo.') c);
+   from public.cancelar_pedido_cliente(2147483647, '6141234567', 'Motivo.', 'ensayo_us14p1', 1000) c);
 insert into ensayo_resultado
 select '18. El de otro teléfono no cambia', 'en_cola, 1 filas', pg_temp.texto_pedido('J');
 
@@ -175,7 +178,8 @@ declare
 begin
   begin
     perform * from public.cancelar_pedido_cliente(
-      (select e.folio from ensayo_pedido e where e.letra = 'L'), '6141234567', repeat('a', 201));
+      (select e.folio from ensayo_pedido e where e.letra = 'L'), '6141234567', repeat('a', 201),
+      'ensayo_us14p1', 1000);
   exception when check_violation then
     v_obtenido := 'check_violation';
   end;
@@ -184,7 +188,7 @@ begin
   v_obtenido := 'se guardó';
   begin
     perform * from public.cancelar_pedido_cliente(
-      (select e.folio from ensayo_pedido e where e.letra = 'M'), '6141234567', '   ');
+      (select e.folio from ensayo_pedido e where e.letra = 'M'), '6141234567', '   ', 'ensayo_us14p1', 1000);
   exception when check_violation then
     v_obtenido := 'check_violation';
   end;
@@ -219,19 +223,19 @@ end $$;
 insert into ensayo_resultado
 select '24. service_role ejecuta', 'true',
   has_function_privilege(
-    'service_role', 'public.cancelar_pedido_cliente(integer, text, text)', 'execute')::text;
+    'service_role', 'public.cancelar_pedido_cliente(integer, text, text, text, integer)', 'execute')::text;
 insert into ensayo_resultado
 select '25. anon no ejecuta', 'false',
   has_function_privilege(
-    'anon', 'public.cancelar_pedido_cliente(integer, text, text)', 'execute')::text;
+    'anon', 'public.cancelar_pedido_cliente(integer, text, text, text, integer)', 'execute')::text;
 insert into ensayo_resultado
 select '26. authenticated no ejecuta', 'false',
   has_function_privilege(
-    'authenticated', 'public.cancelar_pedido_cliente(integer, text, text)', 'execute')::text;
+    'authenticated', 'public.cancelar_pedido_cliente(integer, text, text, text, integer)', 'execute')::text;
 insert into ensayo_resultado
 select '27. public no ejecuta', 'false',
   has_function_privilege(
-    'public', 'public.cancelar_pedido_cliente(integer, text, text)', 'execute')::text;
+    'public', 'public.cancelar_pedido_cliente(integer, text, text, text, integer)', 'execute')::text;
 
 -- 28. Como service_role, igual que la API: cancelar de verdad, no solo tener el permiso de
 -- ejecutar. El SQL Editor corre como postgres: sin este caso, un permiso que le falte a
@@ -243,7 +247,8 @@ declare
 begin
   set local role service_role;
   select c.resultado || ', ' || coalesce(c.estado_actual, 'null') into v_cancelar
-  from public.cancelar_pedido_cliente(v_folio, '6141234567', 'Lo pidió por error.') c;
+  from public.cancelar_pedido_cliente(v_folio, '6141234567', 'Lo pidió por error.',
+    'ensayo_us14p1', 1000) c;
   reset role;
   insert into ensayo_resultado
   values ('28. service_role: cancelar', 'cancelado, cancelado', v_cancelar);
