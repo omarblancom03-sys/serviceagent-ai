@@ -8,6 +8,7 @@ import {
   RespuestaCotizarPedidoSchema,
   RespuestaCrearPedidoSchema,
 } from '@serviceagent/shared';
+import { idDelChat, llavesDelChat } from '../lib/chatRetell';
 import type { AppEnv, Bindings } from '../lib/env';
 import { requiereFirmaRetell } from '../lib/firmaRetell';
 import { buscarParecidos, type Embedder, type EmbeddingsRepo } from '../services/busquedaMenu';
@@ -119,7 +120,9 @@ export const cancelarPedidoRoute = createRoute({
     'la base): `ok: true` (también si ya estaba cancelado, con ' +
     '`yaEstabaCancelado`), u `ok: false` con lo que falta corregir (folio, teléfono, un motivo ' +
     'de más de 200 caracteres o la confirmación) o con el `rechazo`: `no_encontrado` (no existe o es de otro ' +
-    'teléfono: la misma respuesta), `en_preparacion`, `con_pago` o `cerrado`. La pantalla de ' +
+    'teléfono: la misma respuesta), `en_preparacion`, `con_pago`, `cerrado` o ' +
+    '`demasiados_intentos`: la conversación (`chat.chat_id`) ya juntó 3 folios no encontrados, ' +
+    'o no trae `chat_id`; no se busca el pedido ni se dice si existe (D79). La pantalla de ' +
     'cocina se entera por la señal de Realtime (D47).',
   security: [{ FirmaRetell: [] }],
   middleware: [requiereFirmaRetell()] as const,
@@ -139,14 +142,20 @@ export function registrarPedidos(app: OpenAPIHono<AppEnv>, deps: DependenciasPed
     async (c) => {
       // Sin el "sí" a "¿Cancelo tu pedido…?" en la conversación no se cancela (D73).
       const { args, chat } = c.req.valid('json');
+      // Los folios no encontrados se cuentan por conversación (D79).
       const mensajes = mensajesDeLaConversacion(chat);
+      const idChat = idDelChat(chat);
       if (mensajes.length === 0) {
-        const llaves = chat !== null && typeof chat === 'object' ? Object.keys(chat) : [];
-        console.warn('POST /pedidos/cancelar sin mensajes en la conversación', { llaves });
+        console.warn('POST /pedidos/cancelar sin mensajes en la conversación', {
+          llaves: llavesDelChat(chat),
+        });
+      }
+      if (idChat === null) {
+        console.warn('POST /pedidos/cancelar sin chat.chat_id', { llaves: llavesDelChat(chat) });
       }
       try {
         return c.json(
-          await cancelarPedido(deps.crearRepoCancelaciones(c.env), args, mensajes),
+          await cancelarPedido(deps.crearRepoCancelaciones(c.env), args, mensajes, idChat),
           200,
         );
       } catch (error) {

@@ -13,6 +13,7 @@ import {
   cancelarPedido,
   DETALLE_MOTIVO_CANCELACION_LARGO,
   DETALLE_RECHAZO,
+  MAX_FOLIOS_NO_ENCONTRADOS,
   type CancelacionesRepo,
 } from '../src/services/cancelacion';
 import { DETALLE_FALTA_TELEFONO, DETALLE_TELEFONO } from '../src/services/pedido';
@@ -337,23 +338,39 @@ describe('repoCancelaciones sobre Supabase', () => {
     } as unknown as SupabaseClient;
     return { repo: crearRepoCancelaciones(cliente), llamadas };
   }
-  const datos = { folio: 1001, telefono: TELEFONO, motivo: MOTIVO };
+  const datos = {
+    folio: 1001,
+    telefono: TELEFONO,
+    motivo: MOTIVO,
+    idChat: 'chat_1',
+    maxNoEncontrados: 3,
+  };
   const fila = (resultado: string, estado: string | null) => ({
     data: [{ resultado, estado_actual: estado, cancelado_en: null }],
     error: null,
   });
 
-  it('llama a cancelar_pedido_cliente con folio, teléfono y motivo', async () => {
+  it('llama a cancelar_pedido_cliente con folio, teléfono, motivo, chat y límite', async () => {
     const { repo, llamadas } = clienteFalso(fila('cancelado', 'cancelado'));
     expect(await repo.cancelarPedido(datos)).toEqual({ resultado: 'cancelado' });
     expect(llamadas).toEqual([
-      ['cancelar_pedido_cliente', { p_folio: 1001, p_telefono: TELEFONO, p_motivo: MOTIVO }],
+      [
+        'cancelar_pedido_cliente',
+        {
+          p_folio: 1001,
+          p_telefono: TELEFONO,
+          p_motivo: MOTIVO,
+          p_chat_id: 'chat_1',
+          p_max_no_encontrados: 3,
+        },
+      ],
     ]);
   });
 
   it.each([
     [fila('ya_cancelado', 'cancelado'), { resultado: 'ya_cancelado' }],
     [fila('no_encontrado', null), { resultado: 'no_encontrado' }],
+    [fila('demasiados_intentos', null), { resultado: 'demasiados_intentos' }],
     [fila('con_pago', 'en_cola'), { resultado: 'con_pago', estadoActual: 'en_cola' }],
     [
       fila('no_cancelable', 'preparando'),
@@ -556,7 +573,16 @@ describe('cancelarPedido (servicio)', () => {
         { role: 'agent', content: '¿Cancelo tu pedido #1001?' },
         { role: 'user', content: 'Sí, cancélalo' },
       ],
+      'chat_1',
     );
-    expect(recibidos).toEqual([{ folio: 1001, telefono: TELEFONO, motivo: MOTIVO }]);
+    expect(recibidos).toEqual([
+      {
+        folio: 1001,
+        telefono: TELEFONO,
+        motivo: MOTIVO,
+        idChat: 'chat_1',
+        maxNoEncontrados: MAX_FOLIOS_NO_ENCONTRADOS,
+      },
+    ]);
   });
 });

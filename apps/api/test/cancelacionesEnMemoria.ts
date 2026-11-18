@@ -29,30 +29,41 @@ const CANCELABLES: readonly EstadoPedido[] = ['confirmado', 'esperando_pago', 'e
 
 /**
  * Repo en memoria con las mismas reglas que la función SQL `cancelar_pedido_cliente`, en el mismo
- * orden: el folio tiene que ser de ese teléfono; ya cancelado no cambia nada; fuera de
+ * orden: si la conversación ya juntó `maxNoEncontrados` folios no encontrados, `demasiados_intentos`
+ * sin buscar (D79); el folio tiene que ser de ese teléfono, y si no lo es suma uno a la conversación; ya cancelado no cambia nada; fuera de
  * `confirmado`, `esperando_pago` y `en_cola` no se cancela; con un pago tampoco. Al cancelar
  * cambia el estado y agrega la fila del historial con el motivo. Prueba la API, no el SQL (ese se
- * prueba con `supabase/ensayos/cancelar_pedido.sql`). `pedidos` y `llamadas` quedan expuestos para
- * que el test los revise.
+ * prueba con `supabase/ensayos/cancelar_pedido.sql`). `pedidos`, `llamadas` y `noEncontrados` (por id
+ * del chat) quedan expuestos para que el test los revise.
  */
 export function crearRepoCancelacionesEnMemoria(
   pedidos: PedidoCancelableEnMemoria[] = [],
-): CancelacionesRepo & { pedidos: PedidoCancelableEnMemoria[]; llamadas: number } {
+): CancelacionesRepo & {
+  pedidos: PedidoCancelableEnMemoria[];
+  llamadas: number;
+  noEncontrados: Map<string, number>;
+} {
   const repo = {
     pedidos,
     llamadas: 0,
+    noEncontrados: new Map<string, number>(),
     cancelarPedido({
       folio,
       telefono,
       motivo,
-    }: {
-      folio: number;
-      telefono: string;
-      motivo: string;
-    }): Promise<ResultadoCancelar> {
+      idChat,
+      maxNoEncontrados,
+    }: Parameters<CancelacionesRepo['cancelarPedido']>[0]): Promise<ResultadoCancelar> {
       repo.llamadas += 1;
+      const noEncontrados = repo.noEncontrados.get(idChat) ?? 0;
+      if (noEncontrados >= maxNoEncontrados) {
+        return Promise.resolve({ resultado: 'demasiados_intentos' });
+      }
       const pedido = pedidos.find((p) => p.folio === folio && p.telefono === telefono);
-      if (!pedido) return Promise.resolve({ resultado: 'no_encontrado' });
+      if (!pedido) {
+        repo.noEncontrados.set(idChat, noEncontrados + 1);
+        return Promise.resolve({ resultado: 'no_encontrado' });
+      }
       if (pedido.estado === 'cancelado') return Promise.resolve({ resultado: 'ya_cancelado' });
       if (!CANCELABLES.includes(pedido.estado)) {
         return Promise.resolve({ resultado: 'no_cancelable', estadoActual: pedido.estado });
