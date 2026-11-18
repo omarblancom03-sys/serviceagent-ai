@@ -11,7 +11,7 @@ import { crearPedido } from '../src/services/pedido';
 import { crearApp } from '../src/index';
 import { crearRepoMenuEnMemoria } from './menuEnMemoria';
 import { crearRepoPedidosEnMemoria } from './pedidosEnMemoria';
-import { leerSeedMenu } from './seedEnMemoria';
+import { leerSeedMenu, leerSeedSugerencias } from './seedEnMemoria';
 
 /*
  * US-07-P2-T3 (D78), con el menú real del seed: la variante elegida y un extra que son lo mismo
@@ -121,6 +121,35 @@ describe('variante y extra suelto que son lo mismo (D78)', () => {
         extrasSueltos: [{ extra: 'totopos', cantidad: 1 }, bbq()],
       }),
     ).toEqual([{ ...IGUAL_SUELTO, indice: 1 }]);
+  });
+});
+
+describe('convive con las ayudas de D72 en la misma respuesta', () => {
+  it('un ambiguo con sugerida y el extra igual a la variante salen juntos', () => {
+    const conSugerencias = armarCatalogo(
+      armarMenu(seed.filas),
+      seed.sinonimos,
+      leerSeedSugerencias(seed.filas),
+    );
+    const respuesta = RespuestaCotizarPedidoSchema.parse(
+      cotizarPedido(
+        conSugerencias,
+        CotizarPedidoArgsSchema.parse({
+          productos: [tiras('Salsa BBQ'), { producto: 'hamburguesa', cantidad: 1 }],
+          extrasSueltos: [bbq()],
+        }),
+      ),
+    );
+    expect(respuesta.ok).toBe(false);
+    expect(respuesta.ok ? [] : respuesta.aclaraciones).toEqual([
+      expect.objectContaining({
+        tipo: 'ambiguo',
+        origen: 'producto',
+        indice: 1,
+        sugerida: 'Hamburguesa Delicias',
+      }),
+      IGUAL_SUELTO,
+    ]);
   });
 });
 

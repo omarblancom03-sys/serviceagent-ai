@@ -14,9 +14,15 @@ import {
   type RespuestaMenu,
   type Variante,
 } from '@serviceagent/shared';
-import { normalizarSuave, palabras, sinModoDeEntrega, sinPrefijoDePedido } from '../lib/normalizar';
+import {
+  normalizarSinRelleno,
+  normalizarSuave,
+  palabras,
+  sinModoDeEntrega,
+  sinPrefijoDePedido,
+} from '../lib/normalizar';
 import { formatearPesos } from '../lib/pesos';
-import { armarMenu, type MenuRepo, type Sinonimo } from './menu';
+import { armarMenu, type MenuRepo, type Sinonimo, type Sugerencia } from './menu';
 
 /*
  * Cotización de un pedido (US-07-P1). Funciones puras: reciben el menú ya armado por `armarMenu`
@@ -38,6 +44,11 @@ import { armarMenu, type MenuRepo, type Sinonimo } from './menu';
  *   "con"; vale si la izquierda es exacto un platillo y la derecha, una sola de sus variantes.
  * Si el modelo manda la variante como extra suelto ("BBQ" en `extrasSueltos`), NO se adivina: el
  * platillo responde `falta_variante` y el extra se cotiza como extra (decisión del PO, D67).
+ *
+ * Ayudas para el agente (D72), que nunca resuelven solas: un `ambiguo` trae `sugerida` si lo que
+ * dijo el cliente, sin relleno, es una frase de `sugerencia_ambiguo` y su platillo está entre las
+ * opciones; un `no_existe` de producto trae `parecido`, que busca `obtenerCotizacion` con
+ * embeddings.
  *
  * Variante y extra que son lo mismo (D78, US-07-P2-T3). Con la variante ya resuelta, si un extra
  * del platillo o un extra suelto es el mismo extra que nombra la variante ("Salsa BBQ" → BBQ, con
@@ -62,11 +73,13 @@ export interface Catalogo {
   extrasSueltos: Extra[];
   /** Extras ligados a algún platillo visible (hoy solo Espuelas), sin repetir. */
   extrasLigados: ExtraPermitido[];
+  /** Frase sin relleno → id del platillo sugerido (D72). Solo activas y de platillos visibles. */
+  sugerencias: Map<string, number>;
 }
 
 export type ResultadoPlatillo =
   | { tipo: 'encontrado'; platillo: Platillo }
-  | { tipo: 'ambiguo'; opciones: string[] }
+  | { tipo: 'ambiguo'; opciones: string[]; sugerida?: string }
   | { tipo: 'no_existe' };
 
 /**
@@ -84,8 +97,15 @@ function agregar(indice: Map<string, number[]>, llave: string, id: number) {
   if (!ids.includes(id)) indice.set(llave, [...ids, id]);
 }
 
-/** Arma los índices de búsqueda una vez por petición. Ignora sinónimos inactivos o de platillos no visibles. */
-export function armarCatalogo(menu: RespuestaMenu, sinonimos: Sinonimo[]): Catalogo {
+/**
+ * Arma los índices de búsqueda una vez por petición. Ignora sinónimos y sugerencias inactivos o de
+ * platillos no visibles. Si dos sugerencias quedan con la misma llave, vale la primera.
+ */
+export function armarCatalogo(
+  menu: RespuestaMenu,
+  sinonimos: Sinonimo[],
+  sugerencias: Sugerencia[] = [],
+): Catalogo {
   const platillos = menu.categorias.flatMap((c) => c.platillos).sort((a, b) => a.id - b.id);
   const visibles = new Set(platillos.map((p) => p.id));
 
@@ -105,7 +125,19 @@ export function armarCatalogo(menu: RespuestaMenu, sinonimos: Sinonimo[]): Catal
     extrasLigados: [
       ...new Map(platillos.flatMap((p) => p.extrasPermitidos).map((e) => [e.id, e])).values(),
     ],
+    sugerencias: new Map(),
   };
+  for (const s of sugerencias) {
+    const llave = normalizarSinRelleno(s.frase);
+    if (
+      s.activo &&
+      visibles.has(s.idPlatillo) &&
+      llave !== '' &&
+      !catalogo.sugerencias.has(llave)
+    ) {
+      catalogo.sugerencias.set(llave, s.idPlatillo);
+    }
+  }
   for (const { idPlatillo, texto } of textos) {
     const llaveSuave = normalizarSuave(texto);
     const sinRelleno = palabras(texto);
@@ -141,12 +173,27 @@ export function resolverPlatillo(catalogo: Catalogo, dicho: string): ResultadoPl
   if (exactos) {
     const [unico] = exactos;
     if (exactos.length === 1 && unico) return { tipo: 'encontrado', platillo: unico };
-    return { tipo: 'ambiguo', opciones: nombresDe(exactos) };
+    return ambiguo(catalogo, buscadas, exactos);
   }
 
   const candidatos = buscarPorPalabras(catalogo, buscadas);
   if (candidatos.length === 0) return { tipo: 'no_existe' };
-  return { tipo: 'ambiguo', opciones: nombresDe(candidatos) };
+  return ambiguo(catalogo, buscadas, candidatos);
+}
+
+/**
+ * `ambiguo` con las opciones y, si lo dicho (sin relleno) tiene sugerencia y su platillo está entre
+ * las opciones que ve el agente, `sugerida` (D72). "una hamburguesa" sí; "hamburguesa sencilla" no.
+ */
+function ambiguo(catalogo: Catalogo, buscadas: string[], platillos: Platillo[]): ResultadoPlatillo {
+  const opciones = platillos.slice(0, MAX_OPCIONES);
+  const id = catalogo.sugerencias.get(buscadas.join(' '));
+  const sugerida = opciones.find((p) => p.id === id)?.nombre;
+  return {
+    tipo: 'ambiguo',
+    opciones: opciones.map((p) => p.nombre),
+    ...(sugerida === undefined ? {} : { sugerida }),
+  };
 }
 
 /**
@@ -160,8 +207,6 @@ export function buscarPorPalabras(catalogo: Catalogo, buscadas: string[]): Plati
     ),
   );
 }
-
-const nombresDe = (platillos: Platillo[]) => platillos.slice(0, MAX_OPCIONES).map((p) => p.nombre);
 
 /*
  * Cálculo de la cotización. Reglas:
@@ -430,7 +475,8 @@ function cotizarProducto(
   const { encontrado, variantePegada } = resolverProducto(catalogo, pedido);
   if (encontrado.tipo === 'no_existe') aclararYMarcar({ tipo: 'no_existe' });
   if (encontrado.tipo === 'ambiguo') {
-    aclararYMarcar({ tipo: 'ambiguo', opciones: encontrado.opciones });
+    const { opciones, sugerida } = encontrado;
+    aclararYMarcar({ tipo: 'ambiguo', opciones, ...(sugerida === undefined ? {} : { sugerida }) });
   }
 
   const detalleCantidad = validarCantidad(pedido.cantidad);
@@ -576,11 +622,74 @@ export function cotizarPedido(catalogo: Catalogo, args: CotizarPedidoArgs): Resp
   return { ok: true, renglones, totalCentavos, totalTexto: formatearPesos(totalCentavos) };
 }
 
-/** Lee el menú y los sinónimos en paralelo y cotiza. Los errores del repo se propagan (→ 500). */
+/**
+ * Busca el platillo más parecido a cada texto (D72): un nombre o `null` por consulta, en el mismo
+ * orden. La implementa `buscarParecidos` de `busquedaMenu.ts`.
+ */
+export type BuscarParecidos = (
+  menu: RespuestaMenu,
+  sinonimos: Sinonimo[],
+  consultas: string[],
+) => Promise<(string | null)[]>;
+
+/**
+ * Agrega `parecido` a cada `no_existe` de un producto. Un texto sin palabras ("???") queda en `null`
+ * sin buscar. Si la búsqueda falla, la cotización sale igual, sin `parecido`: la ayuda no debe
+ * tumbar la respuesta.
+ */
+async function agregarParecidos(
+  respuesta: RespuestaCotizarPedido,
+  menu: RespuestaMenu,
+  sinonimos: Sinonimo[],
+  buscar: BuscarParecidos,
+): Promise<RespuestaCotizarPedido> {
+  if (respuesta.ok) return respuesta;
+  const sinExistir = (a: Aclaracion) => a.tipo === 'no_existe' && a.origen === 'producto';
+  const consultas = [
+    ...new Set(
+      respuesta.aclaraciones
+        .filter((a) => sinExistir(a) && palabras(a.producto).length > 0)
+        .map((a) => a.producto),
+    ),
+  ];
+  if (!respuesta.aclaraciones.some(sinExistir)) return respuesta;
+
+  let encontrados: (string | null)[] = [];
+  if (consultas.length > 0) {
+    try {
+      encontrados = await buscar(menu, sinonimos, consultas);
+    } catch (error) {
+      console.error('cotizar_pedido: no se pudo buscar el platillo más parecido', error);
+      return respuesta;
+    }
+  }
+  const parecidoDe = new Map(consultas.map((texto, i) => [texto, encontrados[i] ?? null]));
+  return {
+    ...respuesta,
+    aclaraciones: respuesta.aclaraciones.map((a) =>
+      sinExistir(a) ? { ...a, parecido: parecidoDe.get(a.producto) ?? null } : a,
+    ),
+  };
+}
+
+/**
+ * Lee el menú, los sinónimos y las sugerencias en paralelo y cotiza. Con `buscarParecidos` (solo
+ * `cotizar_pedido`), agrega el más parecido a lo que no existe. Los errores del repo se propagan
+ * (→ 500).
+ */
 export async function obtenerCotizacion(
   repo: MenuRepo,
   args: CotizarPedidoArgs,
+  buscarParecidos?: BuscarParecidos,
 ): Promise<RespuestaCotizarPedido> {
-  const [filas, sinonimos] = await Promise.all([repo.leerTodo(), repo.leerSinonimos()]);
-  return cotizarPedido(armarCatalogo(armarMenu(filas), sinonimos), args);
+  const [filas, sinonimos, sugerencias] = await Promise.all([
+    repo.leerTodo(),
+    repo.leerSinonimos(),
+    repo.leerSugerencias(),
+  ]);
+  const menu = armarMenu(filas);
+  const respuesta = cotizarPedido(armarCatalogo(menu, sinonimos, sugerencias), args);
+  return buscarParecidos
+    ? agregarParecidos(respuesta, menu, sinonimos, buscarParecidos)
+    : respuesta;
 }
