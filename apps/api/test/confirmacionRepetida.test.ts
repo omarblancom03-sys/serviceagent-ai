@@ -108,11 +108,23 @@ describe('sinConfirmacionRepetida (D69)', () => {
     ]);
   });
 
-  it('después de una pregunta distinta, repetir cualquiera de las dos sí se quita', () => {
+  it('después de una pregunta distinta, repetir la última o la frase sola sí se quita', () => {
     const corregida = RESUMEN.replace('Ana López', 'Ana Pérez');
     expect(
-      textos([agente(RESUMEN), agente(corregida), agente(RESUMEN), agente(SOLO_PREGUNTA)]),
+      textos([agente(RESUMEN), agente(corregida), agente(corregida), agente(SOLO_PREGUNTA)]),
     ).toEqual([RESUMEN, corregida]);
+  });
+
+  // Revisión de Jorge al #71: la pregunta se compara solo con la última mostrada. Si el agente
+  // regresa a una anterior, el cliente tiene que verla: D48 toma el "sí" para esa.
+  it('volver a una pregunta anterior sí pasa: es distinta de la última que vio el cliente', () => {
+    const corregida = RESUMEN.replace('Ana López', 'Ana Pérez');
+    expect(
+      textos([agente(RESUMEN), agente(corregida), llamada('crear_pedido'), agente(RESUMEN)]),
+    ).toEqual([RESUMEN, corregida, RESUMEN]);
+    expect(
+      textos([agente(RESUMEN), agente(corregida), agente(RESUMEN), agente(SOLO_PREGUNTA)]),
+    ).toEqual([RESUMEN, corregida, RESUMEN]);
   });
 
   it('si la primera fue la frase sola y después llega el resumen, pasan las dos', () => {

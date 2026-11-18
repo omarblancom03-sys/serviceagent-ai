@@ -142,33 +142,36 @@ function valorLimpio(valor: string | undefined): string | null {
  * y esa pregunta es de otra cotización (la misma regla con que D48 invalida un "sí"). Una llamada
  * sin nombre se trata igual, como posible cotización: ante la duda, se muestra. Lo mismo si entre
  * las dos hay otro mensaje del agente con texto ("Perdón, es a nombre de Ana Pérez."): la pregunta
- * que sigue se muestra, para que lo último que vea el cliente sea la pregunta.
+ * que sigue se muestra, para que lo último que vea el cliente sea la pregunta. El texto se compara
+ * solo con la última pregunta mostrada: volver a una anterior ("Ana López" → "Ana Pérez" → "Ana
+ * López") se muestra, porque es distinta de la que el cliente acaba de ver.
  * Solo se quitan preguntas de confirmación (`esPreguntaDeConfirmacion`); cualquier otro mensaje
  * del agente pasa. En Retell la conversación sigue completa: el "sí" del cliente llega después de
  * la última pregunta y `crear_pedido` lo acepta igual.
  */
 export function sinConfirmacionRepetida(mensajes: MensajeRetell[]): MensajeRetell[] {
-  // Preguntas ya mostradas desde la última (posible) cotización, normalizadas.
-  let mostradas: string[] = [];
+  // Última pregunta mostrada desde la última (posible) cotización, normalizada. Solo se compara
+  // con esa: si el agente vuelve a una pregunta anterior, dice algo distinto de lo último que vio
+  // el cliente y D48 tomaría el "sí" para ella.
+  let ultima: string | null = null;
   return mensajes.filter((m) => {
     if (
       m.rol === 'tool_call_invocation' &&
       (m.nombre === undefined || m.nombre === 'cotizar_pedido')
     ) {
-      mostradas = [];
+      ultima = null;
     }
     if (m.rol !== 'agent' || m.texto === null) return true;
     if (!esPreguntaDeConfirmacion(m.texto)) {
       // Otro mensaje del agente con texto: la pregunta siguiente ya no es repetida.
-      if (m.texto.trim() !== '') mostradas = [];
+      if (m.texto.trim() !== '') ultima = null;
       return true;
     }
     const texto = textoNormalizado(m.texto);
     const repetida =
-      mostradas.length > 0 &&
-      (esSoloLaPreguntaDeConfirmacion(m.texto) || mostradas.includes(texto));
+      ultima !== null && (esSoloLaPreguntaDeConfirmacion(m.texto) || ultima === texto);
     if (repetida) return false;
-    mostradas.push(texto);
+    ultima = texto;
     return true;
   });
 }
