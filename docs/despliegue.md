@@ -80,6 +80,7 @@ Llave secreta del widget de Turnstile (modo Managed) con que `POST /chat/convers
 
 - **Local:** en `apps/api/.dev.vars`, una llave de prueba de Cloudflare ([testing](https://developers.cloudflare.com/turnstile/troubleshooting/testing/)): `1x0000000000000000000000000000000AA` siempre pasa, `2x0000000000000000000000000000000AA` siempre falla y `3x0000000000000000000000000000000AA` responde "token ya usado". Solo aceptan el token falso que dan las llaves del sitio de prueba (`1x00000000000000000000AA` pasa, `2x00000000000000000000AB` falla, `3x00000000000000000000FF` pide la casilla); una llave real lo rechaza.
 - **Ambiente desplegado:** el PO crea el widget en Cloudflare (Turnstile → Add widget; hostname `serviceagent-web.pages.dev`, modo Managed) y carga la llave con `cd apps/api && pnpm exec wrangler secret put TURNSTILE_SECRET_KEY`. La llave del sitio va en la variable `VITE_TURNSTILE_SITE_KEY` de GitHub Actions **antes** de fusionar, porque la web se compila al fusionar.
+- **Diagnóstico:** con `pnpm exec wrangler tail` (en `apps/api`), un 503 `servicio_no_disponible` del chat deja `chat: Turnstile rechazó la verificación` con `errores` (`invalid-input-secret` o `missing-input-secret`: la llave está mal cargada, vuélvela a poner con `wrangler secret put`) o `chat: siteverify no respondió` con `falla` y `status` (Cloudflare o la red; la llave no tiene la culpa).
 
 ### Workers AI (binding `AI`)
 
