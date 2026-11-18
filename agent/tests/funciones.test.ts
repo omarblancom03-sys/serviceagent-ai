@@ -26,7 +26,7 @@ function leerJson(rutaRelativa: string): unknown {
 // Las unicas palabras de JSON Schema que usamos. Es estricto: una palabra
 // nueva (enum, minimum...) obliga a revisar este test antes de entrar.
 type Nodo = {
-  type: 'object' | 'array' | 'string' | 'number';
+  type: 'object' | 'array' | 'string' | 'number' | 'boolean';
   description?: string | undefined;
   properties?: Record<string, Nodo> | undefined;
   required?: string[] | undefined;
@@ -36,7 +36,7 @@ type Nodo = {
 
 const esquemaNodo: z.ZodType<Nodo> = z.lazy(() =>
   z.strictObject({
-    type: z.enum(['object', 'array', 'string', 'number']),
+    type: z.enum(['object', 'array', 'string', 'number', 'boolean']),
     description: z.string().trim().min(1).optional(),
     properties: z.record(z.string(), esquemaNodo).optional(),
     required: z.array(z.string()).optional(),
@@ -60,6 +60,7 @@ function elemento(nodo: Nodo): Nodo {
 function ejemplo(nodo: Nodo): unknown {
   if (nodo.type === 'string') return 'texto';
   if (nodo.type === 'number') return 1;
+  if (nodo.type === 'boolean') return true;
   if (nodo.type === 'array') return [ejemplo(elemento(nodo))];
   return Object.fromEntries(
     Object.entries(nodo.properties ?? {}).map(([llave, hija]) => [llave, ejemplo(hija)]),

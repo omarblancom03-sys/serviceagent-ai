@@ -33,6 +33,7 @@ export const TIPOS_ACLARACION = [
   'extra_no_permitido',
   'ingrediente_no_removible',
   'cantidad_invalida',
+  'extra_igual_a_variante',
 ] as const;
 
 // ─── Piezas reutilizables ───────────────────────────────────────────────────
@@ -89,6 +90,13 @@ export const ExtraPedidoSchema = z.strictObject({
    * → cantidad 2 del platillo, extra con cantidad 1 (cada T-Bone lleva las suyas).
    */
   cantidad: CantidadClienteSchema,
+  /**
+   * El cliente confirmó que quiere este extra como porción aparte aunque sea lo mismo que la
+   * variante de un platillo del pedido ("tiras de pollo con salsa BBQ" y además una BBQ). Sin esta
+   * marca, ese extra responde `extra_igual_a_variante` y no se cobra (D78). En un extra que no
+   * choca con ninguna variante no cambia nada.
+   */
+  porcionAparte: opcional(z.boolean()),
 });
 
 export const ProductoPedidoSchema = z.strictObject({
@@ -237,6 +245,10 @@ export const AclaracionSchema = z.object({
    * - `cantidad_invalida`: la regla, p. ej. "La cantidad debe ser de 1 a 20.". Si
    *   falló un extra del platillo, la regla lo nombra: 'La cantidad de "espuelas"
    *   debe ser de 1 a 20.'.
+   * - `extra_igual_a_variante`: la variante oficial del platillo que es lo mismo que
+   *   el extra ("Salsa BBQ" con el extra "BBQ"). Con `origen` `extraSuelto`, `producto`
+   *   es el extra; con `origen` `producto`, el platillo. Se pregunta si quiere una
+   *   porción extra además y, si sí, se vuelve a cotizar con `porcionAparte` (D78).
    */
   detalle: z.string().optional(),
   /**

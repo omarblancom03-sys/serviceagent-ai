@@ -159,13 +159,14 @@ describe('la variante mandada como extra suelto no se adivina (D67)', () => {
     },
   );
 
-  it('ya con la variante, la BBQ suelta se cobra como extra', () => {
+  // Antes se cobraba $201 en silencio; desde D78 se pregunta (cotizacionVarianteYExtra.test.ts).
+  it('ya con la variante Salsa BBQ, la BBQ suelta no se cobra sin preguntar (D78)', () => {
     expect(
-      resumen({
+      aclaraciones({
         productos: [{ producto: 'tiras de pollo', variante: 'Salsa BBQ', cantidad: 1 }],
         extrasSueltos: [{ extra: 'BBQ', cantidad: 1 }],
-      }),
-    ).toEqual({ renglones: ['Tiras de pollo (Salsa BBQ)', 'BBQ'], total: 18600 + 1500 });
+      }).map((a) => a.tipo),
+    ).toEqual(['extra_igual_a_variante']);
   });
 
   it("una variante que no es extra ('búfalo') mandada como extra suelto: falta la variante y el extra no existe", () => {
