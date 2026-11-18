@@ -16,10 +16,12 @@ import {
   type PasoChat,
 } from '../lib/chat';
 import { separarEnlaces } from '../lib/enlaces';
+import { useTurnstile } from '../lib/useTurnstile';
 
 /** Chat del cliente con el asistente de pedidos (US-09-P2). La lógica vive en `lib/chat.ts`. */
 export function PedirChat() {
   const [estado, despachar] = useReducer(reducirChat, undefined, estadoInicial);
+  const { contenedorRef, obtenerToken, renovar } = useTurnstile();
   const [borrador, setBorrador] = useState('');
   const [errorTexto, setErrorTexto] = useState<string | null>(null);
   const finLista = useRef<HTMLDivElement>(null);
@@ -39,16 +41,19 @@ export function PedirChat() {
     faseAnterior.current = estado.fase;
   }, [estado.fase]);
 
-  /** Crea la conversación si aún no existe y luego envía el texto. */
+  /** Crea la conversación si aún no existe (con un token de Turnstile) y luego envía el texto. */
   async function ejecutar(texto: string) {
     let paso: PasoChat = 'crear';
     let limite = estado.limiteMensajes;
     try {
       let id = estado.conversacionId;
       if (id === null) {
+        const tokenTurnstile = await obtenerToken();
+        // El token sirve una sola vez: pase lo que pase, el widget trae otro (D77).
         const abierta = await pedirApi('/chat/conversaciones', RespuestaIniciarConversacionSchema, {
           metodo: 'POST',
-        });
+          cuerpo: { tokenTurnstile },
+        }).finally(renovar);
         despachar({ tipo: 'conversacionCreada', ...abierta });
         id = abierta.conversacionId;
         limite = abierta.limiteMensajes;
@@ -87,6 +92,7 @@ export function PedirChat() {
   function iniciarOtra() {
     setBorrador('');
     setErrorTexto(null);
+    renovar();
     despachar({ tipo: 'iniciarOtra' });
   }
 
@@ -146,6 +152,8 @@ export function PedirChat() {
       </div>
 
       <div className="border-t border-orange-200 bg-white px-4 py-3">
+        {/* Turnstile (D68): invisible salvo que Managed pida la casilla. */}
+        <div ref={contenedorRef} />
         {botonesRapidosVisibles(estado) && (
           <div className="mb-2 flex flex-wrap gap-2">
             {BOTONES_RAPIDOS.map((texto) => (

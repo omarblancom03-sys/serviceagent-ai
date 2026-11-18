@@ -94,6 +94,7 @@ export interface ConfigChat {
   llave: string | null;
   agentId: string | null;
   topeDiario: number;
+  secretoTurnstile: string | null;
 }
 
 /** Lee la configuración del chat. Una variable vacía o solo con espacios cuenta como faltante. */
@@ -101,11 +102,13 @@ export function leerConfigChat(env: {
   RETELL_API_KEY?: string;
   RETELL_AGENT_ID?: string;
   CHAT_TOPE_DIARIO?: string;
+  TURNSTILE_SECRET_KEY?: string;
 }): ConfigChat {
   return {
     llave: valorLimpio(env.RETELL_API_KEY),
     agentId: valorLimpio(env.RETELL_AGENT_ID),
     topeDiario: leerTopeDiario(env.CHAT_TOPE_DIARIO),
+    secretoTurnstile: valorLimpio(env.TURNSTILE_SECRET_KEY),
   };
 }
 

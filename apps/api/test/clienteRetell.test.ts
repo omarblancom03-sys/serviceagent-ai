@@ -230,15 +230,22 @@ describe('Configuración del chat', () => {
     expect(leerTopeDiario(valor)).toBe(esperado);
   });
 
-  it('una llave o un agente vacíos o solo con espacios cuentan como faltantes', () => {
-    expect(leerConfigChat({ RETELL_API_KEY: '  ', RETELL_AGENT_ID: '' })).toEqual({
+  it('una llave, un agente o la llave de Turnstile vacíos o con espacios cuentan como faltantes', () => {
+    expect(
+      leerConfigChat({ RETELL_API_KEY: '  ', RETELL_AGENT_ID: '', TURNSTILE_SECRET_KEY: ' ' }),
+    ).toEqual({
       llave: null,
       agentId: null,
       topeDiario: 3,
+      secretoTurnstile: null,
     });
-    expect(leerConfigChat({ RETELL_API_KEY: ' k ', RETELL_AGENT_ID: 'a' })).toMatchObject({
+    expect(leerConfigChat({})).toMatchObject({ secretoTurnstile: null });
+    expect(
+      leerConfigChat({ RETELL_API_KEY: ' k ', RETELL_AGENT_ID: 'a', TURNSTILE_SECRET_KEY: ' t ' }),
+    ).toMatchObject({
       llave: 'k',
       agentId: 'a',
+      secretoTurnstile: 't',
     });
   });
 });
