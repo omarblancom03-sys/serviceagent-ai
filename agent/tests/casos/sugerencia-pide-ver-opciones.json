@@ -1,0 +1,28 @@
+{
+  "id": "sugerencia-pide-ver-opciones",
+  "historia": "US-15",
+  "criterios": ["C1"],
+  "categoria": "pedido",
+  "titulo": "Si pregunta qué otros hay, nombra las opciones sin elegir",
+  "mensajes": ["Quiero unos tacos", "¿Qué otros tienes?"],
+  "argsEsperados": [
+    {
+      "productos": [
+        {
+          "producto": "tacos",
+          "cantidad": 1
+        }
+      ]
+    }
+  ],
+  "debe": [
+    "Primero pregunta si se refiere a los Tacos de Arrachera.",
+    "Con \"¿Qué otros tienes?\" nombra las opciones que vinieron en el ambiguo, tal cual, y pregunta cuál quiere."
+  ],
+  "noDebe": [
+    "Elegir una opción por el cliente.",
+    "Nombrar platillos que no vengan en la respuesta de cotizar_pedido.",
+    "Decir un precio o un total antes de una cotización con ok en verdadero.",
+    "Decir que es lo más pedido, lo más común, lo que más se vende o la favorita."
+  ]
+}

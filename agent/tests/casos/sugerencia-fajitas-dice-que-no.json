@@ -1,0 +1,35 @@
+{
+  "id": "sugerencia-fajitas-dice-que-no",
+  "historia": "US-15",
+  "criterios": ["C1"],
+  "categoria": "pedido",
+  "titulo": "Si no quiere la sugerida, nombra las opciones y cotiza la que elige",
+  "mensajes": ["Unas fajitas", "No, mejor el trío"],
+  "argsEsperados": [
+    {
+      "productos": [
+        {
+          "producto": "fajitas",
+          "cantidad": 1
+        }
+      ]
+    },
+    {
+      "productos": [
+        {
+          "producto": "Fajitas Trío",
+          "cantidad": 1
+        }
+      ]
+    }
+  ],
+  "debe": [
+    "Primero pregunta si se refiere a las Fajitas de arrachera.",
+    "Con \"No, mejor el trío\" cotiza \"Fajitas Trío\", la única opción que coincide, y da su total."
+  ],
+  "noDebe": [
+    "Cotizar las Fajitas de arrachera.",
+    "Nombrar platillos que no vengan en la respuesta de cotizar_pedido.",
+    "Decir que es lo más pedido, lo más común, lo que más se vende o la favorita."
+  ]
+}

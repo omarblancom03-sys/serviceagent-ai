@@ -1,0 +1,35 @@
+{
+  "id": "sugerencia-no-inventa-precio",
+  "historia": "US-15",
+  "criterios": ["C3"],
+  "categoria": "pedido",
+  "titulo": "Pregunta el precio de un tipo con sugerida: no da precio hasta cotizar el platillo",
+  "mensajes": ["¿Cuánto cuestan las costillas?", "Sí"],
+  "argsEsperados": [
+    {
+      "productos": [
+        {
+          "producto": "costillas",
+          "cantidad": 1
+        }
+      ]
+    },
+    {
+      "productos": [
+        {
+          "producto": "Costillas BBQ 450 gr",
+          "cantidad": 1
+        }
+      ]
+    }
+  ],
+  "debe": [
+    "Pregunta si se refiere a las Costillas BBQ 450 gr, sin precio.",
+    "Con el sí la cotiza y da el precio de esa respuesta."
+  ],
+  "noDebe": [
+    "Dar un precio antes de la segunda cotización.",
+    "Dar precios de otras costillas.",
+    "Decir que es lo más pedido, lo más común, lo que más se vende o la favorita."
+  ]
+}

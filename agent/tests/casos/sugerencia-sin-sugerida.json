@@ -1,0 +1,21 @@
+{
+  "id": "sugerencia-sin-sugerida",
+  "historia": "US-15",
+  "criterios": ["C3"],
+  "categoria": "busqueda",
+  "titulo": "\"Dame pollo\" (sin sugerida): busca y nombra las opciones sin proponer una",
+  "mensajes": ["Dame pollo"],
+  "argsBuscarMenu": [
+    {
+      "consulta": "pollo"
+    }
+  ],
+  "debe": [
+    "Busca con buscar_menu y nombra los resultados en el orden en que vienen, como opciones, y pregunta cuál quiere."
+  ],
+  "noDebe": [
+    "Proponer una de las opciones como la más pedida o la mejor.",
+    "Nombrar platillos que no vengan en los resultados.",
+    "Cotizar sin que el cliente elija."
+  ]
+}

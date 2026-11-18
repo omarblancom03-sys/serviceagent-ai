@@ -1,0 +1,35 @@
+{
+  "id": "sugerencia-caldo",
+  "historia": "US-15",
+  "criterios": ["C1"],
+  "categoria": "pedido",
+  "titulo": "\"Un caldo\": pregunta por el Caldo Granero (ajuste del PO al seed)",
+  "mensajes": ["Un caldo", "Sí"],
+  "argsEsperados": [
+    {
+      "productos": [
+        {
+          "producto": "caldo",
+          "cantidad": 1
+        }
+      ]
+    },
+    {
+      "productos": [
+        {
+          "producto": "Caldo Granero",
+          "cantidad": 1
+        }
+      ]
+    }
+  ],
+  "debe": [
+    "Pregunta solo si se refiere al Caldo Granero, sin nombrar los demás caldos.",
+    "Con el \"Sí\" vuelve a cotizar con \"Caldo Granero\" y da el total de esa respuesta."
+  ],
+  "noDebe": [
+    "Cotizar el Caldo Granero antes del \"Sí\".",
+    "Decir que es lo más pedido, lo más común, lo que más se vende o la favorita.",
+    "Decir un precio o un total antes de una cotización con ok en verdadero."
+  ]
+}

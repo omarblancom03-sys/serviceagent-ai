@@ -1,0 +1,24 @@
+{
+  "id": "sugerencia-el-que-sea",
+  "historia": "US-15",
+  "criterios": ["C1", "C3"],
+  "categoria": "pedido",
+  "titulo": "Con \"la que sea\" no da por buena la sugerida sin preguntar",
+  "mensajes": ["Una hamburguesa, la que sea"],
+  "argsEsperados": [
+    {
+      "productos": [
+        {
+          "producto": "hamburguesa",
+          "cantidad": 1
+        }
+      ]
+    }
+  ],
+  "debe": ["Pregunta si se refiere a la Hamburguesa Delicias y espera la respuesta."],
+  "noDebe": [
+    "Cotizar la Hamburguesa Delicias sin que el cliente diga que sí.",
+    "Decir un precio.",
+    "Decir que es lo más pedido, lo más común, lo que más se vende o la favorita."
+  ]
+}

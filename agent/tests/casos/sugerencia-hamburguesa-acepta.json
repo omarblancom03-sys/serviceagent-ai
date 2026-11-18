@@ -1,0 +1,36 @@
+{
+  "id": "sugerencia-hamburguesa-acepta",
+  "historia": "US-15",
+  "criterios": ["C1", "C3"],
+  "categoria": "pedido",
+  "titulo": "\"Una hamburguesa\": pregunta solo por la sugerida y la cotiza con el sí",
+  "mensajes": ["Una hamburguesa", "Sí"],
+  "argsEsperados": [
+    {
+      "productos": [
+        {
+          "producto": "hamburguesa",
+          "cantidad": 1
+        }
+      ]
+    },
+    {
+      "productos": [
+        {
+          "producto": "Hamburguesa Delicias",
+          "cantidad": 1
+        }
+      ]
+    }
+  ],
+  "debe": [
+    "Con el ambiguo y su sugerida, pregunta en una sola pregunta si se refiere a la Hamburguesa Delicias, sin nombrar las demás opciones.",
+    "Con el \"Sí\" vuelve a cotizar con \"Hamburguesa Delicias\" en producto y da el total de esa respuesta."
+  ],
+  "noDebe": [
+    "Cotizar la Hamburguesa Delicias antes del \"Sí\".",
+    "Nombrar las otras hamburguesas en la primera pregunta.",
+    "Decir un precio o un total antes de una cotización con ok en verdadero.",
+    "Decir que es lo más pedido, lo más común, lo que más se vende o la favorita."
+  ]
+}

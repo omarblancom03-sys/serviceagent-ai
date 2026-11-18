@@ -1,0 +1,27 @@
+{
+  "id": "parecido-dice-que-no",
+  "historia": "US-15",
+  "criterios": ["C2", "C3"],
+  "categoria": "pedido",
+  "titulo": "Si no quiere el parecido, pregunta qué quiere sin proponer otro",
+  "mensajes": ["Unas alitas", "No, gracias"],
+  "argsEsperados": [
+    {
+      "productos": [
+        {
+          "producto": "alitas",
+          "cantidad": 1
+        }
+      ]
+    }
+  ],
+  "debe": [
+    "Dice que no tienen alitas y ofrece solo el platillo de parecido, si vino.",
+    "Con \"No, gracias\" no propone otro platillo: pregunta qué quiere en su lugar o, si lo toma como despedida, se despide."
+  ],
+  "noDebe": [
+    "Proponer otro platillo después del \"No\".",
+    "Llamar otra vez a cotizar_pedido con el parecido.",
+    "Nombrar platillos que no vengan en la respuesta de cotizar_pedido."
+  ]
+}

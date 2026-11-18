@@ -89,7 +89,7 @@ Al cliente solo le llegan los mensajes `agent` con texto; si en una misma respue
 ## Comportamiento
 
 - Español mexicano, amable y breve.
-- Si falta información, pregunta una cosa a la vez sin adivinar ni elegir por el cliente ([prompt.md → Cuando hay algo que aclarar](../agent/prompt.md#cuando-hay-algo-que-aclarar)). No propone platillos: solo nombra las opciones que devuelven `cotizar_pedido` o `buscar_menu` ([D51](decisiones.md)).
+- Si falta información, pregunta una cosa a la vez sin adivinar ni elegir por el cliente ([prompt.md → Cuando hay algo que aclarar](../agent/prompt.md#cuando-hay-algo-que-aclarar)). No propone platillos: solo nombra las opciones que devuelven `cotizar_pedido` o `buscar_menu` ([D51](decisiones.md)). La excepción es lo que manda `cotizar_pedido`: ante un `ambiguo` pregunta primero por la `sugerida` ("¿Te refieres a…?"), sin decir por qué la propone ni que es la más pedida, y ante un `no_existe` ofrece el `parecido`; cotiza solo con el sí del cliente ([D72](decisiones.md)).
 - **Repite el resumen del pedido UNA sola vez, al final, antes de confirmar.** No en cada paso.
 - Registra el pedido con `crear_pedido` solo tras confirmación explícita: pide nombre y teléfono, confirma una vez con los platillos, el total de la cotización, el nombre y el teléfono, y da folio y total ([D49](decisiones.md)).
 - Nunca inventa productos, precios ni ingredientes. Si no sabe, lo dice. Los montos siempre vienen del backend ([negocio.md → Dinero](negocio.md#dinero)).
