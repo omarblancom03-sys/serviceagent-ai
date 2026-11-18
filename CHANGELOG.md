@@ -60,6 +60,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). *
 
 ### Corregido
 
+- US-09-T1: confirmado por API que el saludo del agente es fijo (`begin_message`, desde el #21), así que ya no lo redacta el modelo, que era cuando salía duplicado. `agent/retell.json` fija la zona horaria en `America/Chihuahua`, y `agent/retell.md` explica cómo leer y cambiar por API el borrador sin tocar la versión publicada.
 - US-08-P2-T3: el detector de confirmación es más estricto en casos raros: "mi pedido listo" sin signos no confirma, sin "¿" cuenta solo si la última oración es la frase sola y no viene justo después de otra pregunta ("Tu pedido: 1 Totopos. Confirmo tu pedido?" ahora sí cuenta; "¿Algo más? Confirmo tu pedido?", no) y un mensaje ilegible justo después de la pregunta no cuenta como respuesta (D48).
 - US-08-P2-T1: `POST /pedidos` lee la conversación de `chat`, que es donde la manda Retell en un agente de chat (comprobado en un chat real); antes solo leía `call` y ningún pedido de chat se habría podido crear. `call` ya no se lee: voz queda pendiente para el Sprint 10 (D48).
 - US-10-T1: si `VITE_SUPABASE_URL` no tiene forma de URL, `/cocina` y `/caja` ya no se quedan en blanco: funcionan con el refresco de 30 s. Los docs aclaran que la llave pública puede ser la anon o la publishable, nunca la secreta.
