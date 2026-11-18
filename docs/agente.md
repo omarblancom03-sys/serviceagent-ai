@@ -6,17 +6,17 @@ El agente atiende al cliente por chat (voz en Sprint 10). Su prompt, sus custom 
 
 Retell llama a nuestra API. **Toda petición de Retell se verifica con la firma `X-Retell-Signature`**; si no es válida, se rechaza.
 
-| Función                 | Endpoint                        | Para qué                                                                                          |
-| ----------------------- | ------------------------------- | ------------------------------------------------------------------------------------------------- |
-| `buscar_menu`           | `POST /agente/buscar-menu`      | RAG: hasta 5 productos relevantes (0 si nada se parece) con precio y disponibilidad en vivo (D50) |
-| `info_restaurante`      | `POST /agente/info-restaurante` | Hasta 3 textos aprobados (horario, ubicación, pagos, alérgenos, FAQs) o 0 (D62)                   |
-| `cotizar_pedido`        | `POST /pedidos/cotizar`         | Valida productos y calcula total (sin guardar); sin platillos responde `pedidoVacio` (D67)        |
-| `crear_pedido`          | `POST /pedidos`                 | Crea el pedido tras confirmación explícita (D48, D55)                                             |
-| `modificar_pedido`      | `PATCH /pedidos/:folio`         | Cambios antes de preparación                                                                      |
-| `cancelar_pedido`       | `POST /pedidos/cancelar`        | Folio y teléfono que coincidan, antes de `preparando`, sin pagos y tras el sí (D71, D73, D74)     |
-| `estado_pedido`         | `POST /agente/estado`           | Requiere folio **y** teléfono que coincidan                                                       |
-| `tiempo_estimado`       | `GET /tiempo-estimado`          | Antes de confirmar                                                                                |
-| `transferir_a_empleado` | `POST /agente/escalar`          | Crea alerta en caja/admin, una pendiente por conversación; sin `chat.chat_id` no la crea (D59)    |
+| Función                 | Endpoint                        | Para qué                                                                                                                                           |
+| ----------------------- | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `buscar_menu`           | `POST /agente/buscar-menu`      | RAG: hasta 5 productos relevantes (0 si nada se parece) con precio y disponibilidad en vivo (D50)                                                  |
+| `info_restaurante`      | `POST /agente/info-restaurante` | Hasta 3 textos aprobados (horario, ubicación, pagos, alérgenos, FAQs) o 0 (D62)                                                                    |
+| `cotizar_pedido`        | `POST /pedidos/cotizar`         | Valida productos y calcula total (sin guardar); sin platillos responde `pedidoVacio` (D67)                                                         |
+| `crear_pedido`          | `POST /pedidos`                 | Crea el pedido tras confirmación explícita (D48, D55)                                                                                              |
+| `modificar_pedido`      | `PATCH /pedidos/:folio`         | Cambios antes de preparación                                                                                                                       |
+| `cancelar_pedido`       | `POST /pedidos/cancelar`        | Folio y teléfono que coincidan, antes de `preparando`, sin pagos y tras el sí; hasta 3 folios no encontrados por conversación (D71, D73, D74, D79) |
+| `estado_pedido`         | `POST /agente/estado`           | Requiere folio **y** teléfono que coincidan                                                                                                        |
+| `tiempo_estimado`       | `GET /tiempo-estimado`          | Antes de confirmar                                                                                                                                 |
+| `transferir_a_empleado` | `POST /agente/escalar`          | Crea alerta en caja/admin, una pendiente por conversación; sin `chat.chat_id` no la crea (D59)                                                     |
 
 Los nombres exactos de rutas pueden ajustarse en su historia; si cambian, se actualiza esta tabla en el mismo PR.
 
