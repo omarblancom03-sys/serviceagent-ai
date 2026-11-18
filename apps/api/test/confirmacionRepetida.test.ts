@@ -192,6 +192,93 @@ describe('sinConfirmacionRepetida (D69)', () => {
   });
 });
 
+describe('sinConfirmacionRepetida: la pregunta de cancelar (D80)', () => {
+  const CANCELO = '¿Cancelo tu pedido #1001?';
+  const CON_DATOS =
+    'Tu pedido #1001, al 614 123 4567, porque ya no puede pasar. ¿Cancelo tu pedido #1001?';
+  const FALTA_SI = resultado('{"ok":false,"rechazo":null,"faltaConfirmacion":true}');
+
+  it('pregunta, cancelar_pedido sin el "sí" y la pregunta otra vez: el cliente la ve una sola vez', () => {
+    expect(
+      textos([agente(CANCELO), llamada('cancelar_pedido'), FALTA_SI, agente(CANCELO)]),
+    ).toEqual([CANCELO]);
+  });
+
+  it('también si repite el mismo texto con los datos, o solo la pregunta después de los datos', () => {
+    expect(textos([agente(CON_DATOS), llamada('cancelar_pedido'), agente(CON_DATOS)])).toEqual([
+      CON_DATOS,
+    ]);
+    expect(textos([agente(CON_DATOS), llamada('cancelar_pedido'), agente(CANCELO)])).toEqual([
+      CON_DATOS,
+    ]);
+  });
+
+  it('con otro número pasan las dos: el "sí" es para la última que vio el cliente (D74)', () => {
+    const otro = '¿Cancelo tu pedido #1002?';
+    expect(textos([agente(CANCELO), llamada('cancelar_pedido'), agente(otro)])).toEqual([
+      CANCELO,
+      otro,
+    ]);
+  });
+
+  it('sin número no se esconde: esa pregunta no sirve para cancelar', () => {
+    const sinNumero = '¿Cancelo tu pedido?';
+    expect(textos([agente(sinNumero), llamada('cancelar_pedido'), agente(sinNumero)])).toEqual([
+      sinNumero,
+      sinNumero,
+    ]);
+  });
+
+  it('si trae otro contenido con el mismo número, pasan las dos', () => {
+    const corregida = 'Perdón, el teléfono es 614 765 4321. ¿Cancelo tu pedido #1001?';
+    expect(textos([agente(CANCELO), llamada('cancelar_pedido'), agente(corregida)])).toEqual([
+      CANCELO,
+      corregida,
+    ]);
+  });
+
+  it('cotizar_pedido o una llamada sin nombre en medio: pasan las dos, como en D69', () => {
+    expect(textos([agente(CANCELO), llamada('cotizar_pedido'), agente(CANCELO)])).toEqual([
+      CANCELO,
+      CANCELO,
+    ]);
+    const sinNombre: MensajeRetell = {
+      rol: 'tool_call_invocation',
+      id: null,
+      texto: null,
+      creadoEnMs: null,
+    };
+    expect(textos([agente(CANCELO), sinNombre, agente(CANCELO)])).toEqual([CANCELO, CANCELO]);
+  });
+
+  it('otro mensaje del agente en medio: pasan las dos', () => {
+    const aviso = 'No encontré un pedido con ese número y ese teléfono.';
+    expect(textos([agente(CANCELO), agente(aviso), agente(CANCELO)])).toEqual([
+      CANCELO,
+      aviso,
+      CANCELO,
+    ]);
+  });
+
+  it('la de confirmar y la de cancelar no se mezclan', () => {
+    expect(textos([agente(CANCELO), agente(SOLO_PREGUNTA), agente(CANCELO)])).toEqual([
+      CANCELO,
+      SOLO_PREGUNTA,
+      CANCELO,
+    ]);
+    expect(textos([agente(RESUMEN), agente(CANCELO), agente(SOLO_PREGUNTA)])).toEqual([
+      RESUMEN,
+      CANCELO,
+      SOLO_PREGUNTA,
+    ]);
+  });
+
+  it('cada respuesta se revisa por separado: la pregunta del turno siguiente no se quita', () => {
+    expect(textos([agente(CANCELO)])).toEqual([CANCELO]);
+    expect(textos([agente(CANCELO)])).toEqual([CANCELO]);
+  });
+});
+
 describe('POST /chat/conversaciones/{id}/mensajes: pregunta de confirmación repetida (D69)', () => {
   const env = { RETELL_API_KEY: 'llave', RETELL_AGENT_ID: 'agent_1' } as Bindings;
 

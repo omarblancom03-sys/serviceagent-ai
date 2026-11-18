@@ -6,7 +6,9 @@ import {
 } from '@serviceagent/shared';
 import {
   esPreguntaDeConfirmacion,
+  esSoloLaPreguntaDeCancelacion,
   esSoloLaPreguntaDeConfirmacion,
+  folioDeLaPreguntaDeCancelacion,
   textoNormalizado,
 } from './confirmacion';
 
@@ -145,28 +147,57 @@ function valorLimpio(valor: string | undefined): string | null {
  * que sigue se muestra, para que lo último que vea el cliente sea la pregunta. El texto se compara
  * solo con la última pregunta mostrada: volver a una anterior ("Ana López" → "Ana Pérez" → "Ana
  * López") se muestra, porque es distinta de la que el cliente acaba de ver.
- * Solo se quitan preguntas de confirmación (`esPreguntaDeConfirmacion`); cualquier otro mensaje
- * del agente pasa. En Retell la conversación sigue completa: el "sí" del cliente llega después de
- * la última pregunta y `crear_pedido` lo acepta igual.
+ * Solo se quitan preguntas de confirmación (`esPreguntaDeConfirmacion`) y de cancelación (abajo);
+ * cualquier otro mensaje del agente pasa. En Retell la conversación sigue completa: el "sí" del
+ * cliente llega después de la última pregunta y `crear_pedido` lo acepta igual.
+ *
+ * Lo mismo con "¿Cancelo tu pedido #N?" (US-14-T1, D80): el modelo pregunta, llama a
+ * `cancelar_pedido` en el mismo turno, el backend no cancela (`faltaConfirmacion`, D73) y vuelve a
+ * preguntar. Se esconde si nombra el mismo número que la última pregunta de cancelación mostrada y
+ * es la pregunta sola o el mismo texto. Con otro número, o sin número, se muestra: el "sí" se liga
+ * al número de la última pregunta (D74). La llamada a `cancelar_pedido` no reinicia esa última
+ * pregunta, porque la repetida llega justo después de ella; `cotizar_pedido`, una llamada sin nombre
+ * u otro mensaje del agente con texto, sí (ante la duda, se muestra). Cada pregunta lleva su propia
+ * "última": una de confirmar no esconde una de cancelar ni al revés.
  */
 export function sinConfirmacionRepetida(mensajes: MensajeRetell[]): MensajeRetell[] {
   // Última pregunta mostrada desde la última (posible) cotización, normalizada. Solo se compara
   // con esa: si el agente vuelve a una pregunta anterior, dice algo distinto de lo último que vio
   // el cliente y D48 tomaría el "sí" para ella.
   let ultima: string | null = null;
+  // Lo mismo para "¿Cancelo tu pedido #N?" (D80): el número y el texto normalizado.
+  let ultimaCancelacion: { folio: number; texto: string } | null = null;
   return mensajes.filter((m) => {
     if (
       m.rol === 'tool_call_invocation' &&
       (m.nombre === undefined || m.nombre === 'cotizar_pedido')
     ) {
       ultima = null;
+      ultimaCancelacion = null;
     }
     if (m.rol !== 'agent' || m.texto === null) return true;
-    if (!esPreguntaDeConfirmacion(m.texto)) {
-      // Otro mensaje del agente con texto: la pregunta siguiente ya no es repetida.
-      if (m.texto.trim() !== '') ultima = null;
+    const folio = folioDeLaPreguntaDeCancelacion(m.texto);
+    if (folio !== null) {
+      // Una pregunta de cancelar no es la de confirmar: la que siga de confirmar se muestra.
+      ultima = null;
+      const texto = textoNormalizado(m.texto);
+      const repetida =
+        ultimaCancelacion !== null &&
+        ultimaCancelacion.folio === folio &&
+        (esSoloLaPreguntaDeCancelacion(m.texto) || ultimaCancelacion.texto === texto);
+      if (repetida) return false;
+      ultimaCancelacion = { folio, texto };
       return true;
     }
+    if (!esPreguntaDeConfirmacion(m.texto)) {
+      // Otro mensaje del agente con texto: la pregunta siguiente ya no es repetida.
+      if (m.texto.trim() !== '') {
+        ultima = null;
+        ultimaCancelacion = null;
+      }
+      return true;
+    }
+    ultimaCancelacion = null;
     const texto = textoNormalizado(m.texto);
     const repetida =
       ultima !== null && (esSoloLaPreguntaDeConfirmacion(m.texto) || ultima === texto);
