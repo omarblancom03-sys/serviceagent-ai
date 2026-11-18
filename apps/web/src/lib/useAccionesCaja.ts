@@ -10,12 +10,10 @@ import {
   cancelarPaso,
   cerrarError,
   crearCandadoCaja,
-  empezarGuardado,
   estadoAccionesCajaInicial,
-  mensajeErrorAccionCaja,
+  mandarAccionCaja,
   pedirEntrega,
   podarPasos,
-  terminarGuardado,
   type EstadoAccionesCaja,
 } from './accionesCaja';
 import type { pedirApi } from './api';
@@ -51,22 +49,8 @@ export function useAccionesCaja(
   const [candado] = useState(crearCandadoCaja);
 
   const mandar = useCallback(
-    async (folio: number, pedir: () => Promise<unknown>) => {
-      if (!candado.tomar(folio)) return;
-      setEstado((previo) => empezarGuardado(previo, folio));
-      let error: string | null = null;
-      try {
-        await pedir();
-      } catch (causa) {
-        error = mensajeErrorAccionCaja(causa);
-      }
-      try {
-        await recargar();
-      } finally {
-        candado.soltar(folio);
-        setEstado((previo) => terminarGuardado(previo, folio, error));
-      }
-    },
+    (folio: number, pedir: () => Promise<unknown>) =>
+      mandarAccionCaja(folio, pedir, recargar, candado, setEstado),
     [candado, recargar],
   );
 

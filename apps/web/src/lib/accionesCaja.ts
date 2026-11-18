@@ -218,6 +218,35 @@ export function crearEsperaDeLista(plazoMs = PLAZO_ESPERA_LISTA_MS) {
 }
 
 /**
+ * Manda un botón de caja (Cobrar o Entregado) y deja el estado al terminar. Lo usa
+ * `useAccionesCaja`; vive aquí para probarlo sin React. Después de la respuesta, también si falló
+ * (un 409, o un 2xx que no cumple el contrato y que SÍ se guardó), espera a que la lista se vuelva a
+ * pedir, para que el pedido salga como quedó en la base y no con los botones viejos.
+ */
+export async function mandarAccionCaja(
+  folio: number,
+  pedir: () => Promise<unknown>,
+  recargar: () => Promise<void>,
+  candado: ReturnType<typeof crearCandadoCaja>,
+  actualizar: (cambio: (previo: EstadoAccionesCaja) => EstadoAccionesCaja) => void,
+): Promise<void> {
+  if (!candado.tomar(folio)) return;
+  actualizar((previo) => empezarGuardado(previo, folio));
+  let error: string | null = null;
+  try {
+    await pedir();
+  } catch (causa) {
+    error = mensajeErrorAccionCaja(causa);
+  }
+  try {
+    await recargar();
+  } finally {
+    candado.soltar(folio);
+    actualizar((previo) => terminarGuardado(previo, folio, error));
+  }
+}
+
+/**
  * Candado para mandar una sola petición por pedido aunque el botón se toque dos veces antes de que
  * React actualice la pantalla. Se suelta al llegar la respuesta.
  */

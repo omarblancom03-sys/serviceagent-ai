@@ -1,4 +1,4 @@
-import type { EstadoPedido, PedidoCaja } from '@serviceagent/shared';
+import { RespuestaCobroCajaSchema, type EstadoPedido, type PedidoCaja } from '@serviceagent/shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   abrirCobro,
@@ -8,6 +8,7 @@ import {
   crearEsperaDeLista,
   empezarGuardado,
   estadoAccionesCajaInicial,
+  mandarAccionCaja,
   mensajeErrorAccionCaja,
   muestraEntregar,
   pasoVigente,
@@ -223,6 +224,52 @@ describe('revisión de Saúl al #68 (US-21-T1)', () => {
     expect(mensajeErrorAccionCaja(errorZod)).toBe(TEXTO_RESPUESTA_INESPERADA);
     expect(TEXTO_RESPUESTA_INESPERADA).toContain('Se guardó');
     expect(TEXTO_RESPUESTA_INESPERADA).not.toContain('conexión');
+  });
+
+  it('un error que llega después de cerrar el anterior sí se ve', () => {
+    let estado = terminarGuardado(
+      empezarGuardado(estadoAccionesCajaInicial(), 1001),
+      1001,
+      'Primer error',
+    );
+    estado = cerrarError(estado, 1001);
+    estado = terminarGuardado(empezarGuardado(estado, 1001), 1001, 'Segundo error');
+    expect(estado.errores.get(1001)).toBe('Segundo error');
+  });
+
+  it('una lista vieja no borra un paso recién abierto', () => {
+    // La lista se pidió antes de tocar Cobrar y trae el pedido igual: el paso sigue valiendo.
+    const estado = abrirCobro(estadoAccionesCajaInicial(), 1001);
+    const despues = podarPasos(estado, [pedido('listo', false)]);
+    expect(despues).toBe(estado);
+    expect(pasoVigente(pedido('listo', false), despues)).toEqual({ tipo: 'eligiendo_metodo' });
+  });
+
+  it('un 2xx que no cumple el contrato también recarga la lista, y avisa que sí se guardó', async () => {
+    let estado = abrirCobro(estadoAccionesCajaInicial(), 1001);
+    const actualizar = (cambio: (previo: typeof estado) => typeof estado) => {
+      estado = cambio(estado);
+    };
+    const orden: string[] = [];
+    const candado = crearCandadoCaja();
+    await mandarAccionCaja(
+      1001,
+      async () => {
+        orden.push('pedir');
+        // Lo que hace pedirApi con una respuesta 2xx de otra forma: el esquema la rechaza.
+        RespuestaCobroCajaSchema.parse({ ok: true });
+      },
+      async () => {
+        orden.push('recargar');
+        expect(estado.pasos.get(1001)).toEqual({ tipo: 'guardando' });
+      },
+      candado,
+      actualizar,
+    );
+    expect(orden).toEqual(['pedir', 'recargar']);
+    expect(estado.pasos.has(1001)).toBe(false);
+    expect(estado.errores.get(1001)).toBe(TEXTO_RESPUESTA_INESPERADA);
+    expect(candado.tomar(1001)).toBe(true);
   });
 });
 

@@ -137,14 +137,12 @@ export function AccionesCaja({
         </p>
       )}
       {error && (
-        <div
-          role="alert"
-          className="flex items-start justify-between gap-2 rounded-xl bg-red-50 p-3 font-semibold text-red-800"
-        >
-          <p>{error}</p>
+        <div className="flex items-start justify-between gap-2 rounded-xl bg-red-50 p-3 font-semibold text-red-800">
+          <p role="alert">{error}</p>
           <button
             type="button"
             onClick={alCerrarError}
+            aria-label={`Cerrar aviso del pedido ${pedido.folioTexto}`}
             className="flex min-h-10 shrink-0 items-center gap-1 rounded-lg px-2 text-red-800"
           >
             <X aria-hidden="true" className="size-4" />
