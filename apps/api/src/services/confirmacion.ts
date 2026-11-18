@@ -274,3 +274,14 @@ export function mensajesDeLaConversacion(conversacion: unknown): MensajeConversa
     return [leido.success ? leido.data : { role: ROL_ILEGIBLE }];
   });
 }
+
+/** Texto para comparar dos mensajes: sin mayúsculas, acentos ni signos. */
+export function textoNormalizado(texto: string): string {
+  return palabrasDe(texto).join(' ');
+}
+
+/** El mensaje es solo la pregunta fija, sin resumen ni nada más: "¿Confirmo tu pedido?" (D69). */
+export function esSoloLaPreguntaDeConfirmacion(texto: string): boolean {
+  // La misma regla con que D48 reconoce la pregunta exacta: así D48 y D69 no se separan.
+  return PREGUNTA_CONFIRMACION.exacta.test(textoNormalizado(texto));
+}
