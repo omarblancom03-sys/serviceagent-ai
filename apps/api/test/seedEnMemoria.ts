@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { FilasMenu, Sinonimo } from '../src/services/menu';
+import type { FilasMenu, Sinonimo, Sugerencia } from '../src/services/menu';
 
 /*
  * Menú real para los tests: lee supabase/seed/01_menu_el_granero.sql, 02_platillo_extra.sql y
@@ -114,4 +114,19 @@ export function leerSeedMenu(): { filas: FilasMenu; sinonimos: Sinonimo[] } {
     },
     sinonimos,
   };
+}
+
+/**
+ * Sugerencias de supabase/seed/06_sugerencias_ambiguo.sql (D72), con el id del platillo del menú
+ * de `leerSeedMenu`. Falla si el seed nombra un platillo que no existe.
+ */
+export function leerSeedSugerencias(filas: FilasMenu): Sugerencia[] {
+  return coincidencias(
+    leerSeed('06_sugerencias_ambiguo.sql'),
+    /^\s*\('([^']+)',\s*'([^']+)'\),?$/gm,
+  ).map(([frase = '', nombre = '']) => {
+    const platillo = filas.platillos.find((p) => p.nombre === nombre);
+    if (!platillo) throw new Error(`El seed 06 menciona un platillo que no existe: "${nombre}".`);
+    return { frase, idPlatillo: platillo.id, activo: true };
+  });
 }

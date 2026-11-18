@@ -10,7 +10,7 @@ Retell llama a nuestra API. **Toda petición de Retell se verifica con la firma 
 | ----------------------- | ------------------------------- | ------------------------------------------------------------------------------------------------- |
 | `buscar_menu`           | `POST /agente/buscar-menu`      | RAG: hasta 5 productos relevantes (0 si nada se parece) con precio y disponibilidad en vivo (D50) |
 | `info_restaurante`      | `POST /agente/info-restaurante` | Hasta 3 textos aprobados (horario, ubicación, pagos, alérgenos, FAQs) o 0 (D62)                   |
-| `cotizar_pedido`        | `POST /pedidos/cotizar`         | Valida productos y calcula total (sin guardar); `pedidoVacio` (D67); `metodosPago` (D76)          |
+| `cotizar_pedido`        | `POST /pedidos/cotizar`         | Total sin guardar; `pedidoVacio` (D67); `sugerida` y `parecido` (D72); `metodosPago` (D76)        |
 | `crear_pedido`          | `POST /pedidos`                 | Crea el pedido tras confirmación explícita (D48, D55); método y datos de transferencia (D76)      |
 | `pedir_datos_whatsapp`  | `POST /pedidos/datos-whatsapp`  | Anota que el cliente quiere los datos de pago por WhatsApp; envío en US-28 (D76)                  |
 | `modificar_pedido`      | `PATCH /pedidos/:folio`         | Cambios antes de preparación                                                                      |
