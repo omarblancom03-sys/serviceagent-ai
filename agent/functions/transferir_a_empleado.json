@@ -1,0 +1,25 @@
+{
+  "type": "object",
+  "description": "Aviso para que alguien del restaurante llame al cliente. Solo después de que el cliente pidió hablar con una persona o aceptó que le llamen, y con su teléfono.",
+  "additionalProperties": false,
+  "required": ["motivo"],
+  "properties": {
+    "telefono": {
+      "type": "string",
+      "description": "Teléfono del cliente tal como lo dijo, con sus espacios o guiones: \"614 123 4567\". Obligatorio para avisar. Si en esta conversación ya lo dio para crear_pedido, el mismo. No lo corrijas ni lo completes: el backend lo revisa."
+    },
+    "nombre": {
+      "type": "string",
+      "description": "Nombre del cliente tal como lo dijo: \"Ana López\". Se omite si no lo dio."
+    },
+    "folio": {
+      "type": "number",
+      "description": "Número del pedido del que se trata, solo si salió en esta conversación (lo devolvió crear_pedido o lo dijo el cliente). Solo el número, sin \"#\": 1024. Se omite si no hay."
+    },
+    "motivo": {
+      "type": "string",
+      "maxLength": 200,
+      "description": "Lo que necesita el cliente, escrito por ti en una o dos oraciones de máximo 200 caracteres, para que el empleado sepa de qué se trata: \"Quiere cancelar su pedido.\" Sin el teléfono, sin datos de otros clientes y sin copiar la conversación."
+    }
+  }
+}

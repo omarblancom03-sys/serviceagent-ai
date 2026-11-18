@@ -1,0 +1,34 @@
+{
+  "id": "transferir-menu-insiste",
+  "historia": "US-18-P2",
+  "criterios": ["C1"],
+  "categoria": "transferir",
+  "titulo": "Pide una persona por algo del menú: primero contesta con el menú y solo si insiste avisa",
+  "mensajes": [
+    "Pásame con alguien, quiero saber si me hacen una hamburguesa con tocino",
+    "No, igual quiero hablar con una persona",
+    "Prueba Agente, 614 123 4567"
+  ],
+  "argsBuscarMenu": [
+    {
+      "consulta": "hamburguesa con tocino"
+    }
+  ],
+  "argsTransferir": [
+    {
+      "telefono": "614 123 4567",
+      "nombre": "Prueba Agente",
+      "motivo": "Quiere hablar con una persona sobre una hamburguesa con tocino."
+    }
+  ],
+  "debe": [
+    "La primera respuesta llama a buscar_menu y nombra como opción una hamburguesa que sí lleva tocino (Hamburguesa Delicias Tocino o Hamburguesa Granero; cualquiera vale), sin ofrecer todavía que alguien le llame.",
+    "Con \"No, igual quiero hablar con una persona\" pide el teléfono y el nombre en una sola pregunta.",
+    "Con los datos llama a transferir_a_empleado y dice que alguien le va a llamar."
+  ],
+  "noDebe": [
+    "Ofrecer que alguien le llame o llamar a transferir_a_empleado antes de contestar lo del menú.",
+    "Inventar que se le puede agregar tocino a otra hamburguesa.",
+    "Nombrar platillos que no vengan de buscar_menu."
+  ]
+}

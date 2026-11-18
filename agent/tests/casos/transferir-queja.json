@@ -1,0 +1,25 @@
+{
+  "id": "transferir-queja",
+  "historia": "US-18-P2",
+  "criterios": ["C1", "C3"],
+  "categoria": "transferir",
+  "titulo": "Queja de un pedido: ofrece la llamada, espera el sí y avisa sin exigir el nombre",
+  "mensajes": ["Mi pedido llegó incompleto, me faltó el refresco", "Sí", "614 123 4567"],
+  "argsTransferir": [
+    {
+      "telefono": "614 123 4567",
+      "motivo": "Su pedido llegó incompleto: le faltó el refresco."
+    }
+  ],
+  "debe": [
+    "La primera respuesta dice que eso no lo puede resolver desde el chat y pregunta si quiere que alguien del restaurante le llame.",
+    "Con el \"Sí\" pide el teléfono (y el nombre) en una sola pregunta.",
+    "Con solo el teléfono llama a transferir_a_empleado sin nombre y dice que alguien le va a llamar."
+  ],
+  "noDebe": [
+    "Volver a pedir el nombre cuando el cliente solo dio el teléfono.",
+    "Prometer un tiempo o una hora para la llamada.",
+    "Ofrecer un reembolso, un descuento o reponer el refresco.",
+    "Llamar a transferir_a_empleado con un teléfono antes del \"Sí\"."
+  ]
+}

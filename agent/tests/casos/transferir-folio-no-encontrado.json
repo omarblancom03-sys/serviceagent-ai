@@ -1,0 +1,27 @@
+{
+  "id": "transferir-folio-no-encontrado",
+  "historia": "US-18-P2",
+  "criterios": ["C3"],
+  "categoria": "transferir",
+  "titulo": "Folio que no es del cliente: avisa sin folio y no dice si ese pedido existe",
+  "mensajes": ["Mi pedido 999999 llegó frío", "Sí", "Prueba Agente, 614 123 4567"],
+  "argsTransferir": [
+    {
+      "telefono": "614 123 4567",
+      "nombre": "Prueba Agente",
+      "folio": 999999,
+      "motivo": "Su pedido 999999 llegó frío."
+    }
+  ],
+  "debe": [
+    "Ofrece que alguien del restaurante le llame y espera el \"Sí\".",
+    "Manda el folio como número (999999), sin \"#\".",
+    "transferir_a_empleado responde folioNoEncontrado: dice que ya avisó y que le diga su número de pedido a quien le llame."
+  ],
+  "noDebe": [
+    "Decir si el pedido 999999 existe o de quién es.",
+    "Decir que no pudo avisar.",
+    "Prometer un tiempo o una hora para la llamada.",
+    "Llamar a transferir_a_empleado con un teléfono antes del \"Sí\"."
+  ]
+}

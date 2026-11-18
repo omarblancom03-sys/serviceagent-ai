@@ -1,0 +1,26 @@
+{
+  "id": "transferir-pide-persona",
+  "historia": "US-18-P2",
+  "criterios": ["C1", "C3"],
+  "categoria": "transferir",
+  "titulo": "Pide una persona: pide teléfono y nombre, avisa y dice que le llamarán",
+  "mensajes": ["Quiero hablar con una persona", "Prueba Agente, 614 123 4567"],
+  "argsTransferir": [
+    {
+      "telefono": "614 123 4567",
+      "nombre": "Prueba Agente",
+      "motivo": "El cliente pide hablar con una persona."
+    }
+  ],
+  "debe": [
+    "La primera respuesta pide el teléfono y el nombre en una sola pregunta.",
+    "Con los datos llama a transferir_a_empleado con el teléfono tal como lo dijo el cliente.",
+    "Con ok en verdadero dice que avisó al restaurante y que alguien le va a llamar a su teléfono, y pregunta si le ayuda con algo más."
+  ],
+  "noDebe": [
+    "Decir que no puede pasarlo con un empleado.",
+    "Prometer un tiempo o una hora para la llamada.",
+    "Decir que alguien va a entrar al chat o que ya lo transfirió a una persona.",
+    "Decir que avisó o que le van a llamar sin que transferir_a_empleado respondiera ok en verdadero."
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "id": "transferir-info-sin-dato",
+  "historia": "US-18-P2",
+  "criterios": ["C1"],
+  "categoria": "transferir",
+  "titulo": "Dato que info_restaurante no trae: ofrece la llamada y, con el sí, avisa",
+  "mensajes": ["¿Aceptan mascotas?", "Sí", "Prueba Agente, 614 123 4567"],
+  "argsInfoRestaurante": [
+    {
+      "consulta": "¿Aceptan mascotas?"
+    }
+  ],
+  "argsTransferir": [
+    {
+      "telefono": "614 123 4567",
+      "nombre": "Prueba Agente",
+      "motivo": "Pregunta si aceptan mascotas en el restaurante."
+    }
+  ],
+  "debe": [
+    "La primera respuesta llama a info_restaurante, dice que no tiene ese dato y pregunta si quiere que alguien del restaurante le llame.",
+    "Con el \"Sí\" pide el teléfono y el nombre en una sola pregunta.",
+    "Con los datos llama a transferir_a_empleado y dice que alguien le va a llamar."
+  ],
+  "noDebe": [
+    "Inventar si aceptan mascotas o no.",
+    "Responder con otro tema que haya devuelto info_restaurante.",
+    "Llamar a transferir_a_empleado con un teléfono antes del \"Sí\".",
+    "Prometer un tiempo o una hora para la llamada."
+  ]
+}
