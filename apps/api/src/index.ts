@@ -8,6 +8,7 @@ import { crearEmbedderWorkersAi } from './lib/embedderWorkersAi';
 import type { AppEnv } from './lib/env';
 import { crearRepoAlertas } from './lib/repoAlertas';
 import { crearRepoCaja } from './lib/repoCaja';
+import { crearRepoCancelaciones } from './lib/repoCancelaciones';
 import { crearRepoChat } from './lib/repoChat';
 import { crearRepoCocina } from './lib/repoCocina';
 import { crearRepoEmbeddings } from './lib/repoEmbeddings';
@@ -45,6 +46,7 @@ const dependenciasReales: Dependencias = {
   crearRepoEmpleados: (env) => crearRepoEmpleados(crearClienteSupabase(env)),
   crearRepoMenu: (env) => crearRepoMenu(crearClienteSupabase(env)),
   crearRepoPedidos: (env) => crearRepoPedidos(crearClienteSupabase(env)),
+  crearRepoCancelaciones: (env) => crearRepoCancelaciones(crearClienteSupabase(env)),
   crearRepoChat: (env) => crearRepoChat(crearClienteSupabase(env)),
   crearRepoCocina: (env) => crearRepoCocina(crearClienteSupabase(env)),
   crearRepoCaja: (env) => crearRepoCaja(crearClienteSupabase(env)),
@@ -88,8 +90,9 @@ export function crearApp(reemplazos: Partial<Dependencias> = {}) {
   registrarWebhooks(app);
   registrarBancoSimulado(app);
 
-  // Igual que el manejador por defecto de Hono, salvo una cosa: en /chat/*, /cocina/* y /caja/* el 400 de
-  // un cuerpo que no es JSON válido (Hono lo responde en texto) sale con el formato de su contrato.
+  // Igual que el manejador por defecto de Hono, salvo una cosa: en /chat/*, /cocina/*, /caja/*,
+  // /webhooks/banco y /banco-simulado/* el 400 de un cuerpo que no es JSON válido (Hono lo responde
+  // en texto) sale con el formato de su contrato.
   app.onError((error, c) => {
     if (error instanceof HTTPException && error.status === 400) {
       if (c.req.path.startsWith('/chat/')) return c.json(ERROR_PETICION_INVALIDA, 400);
