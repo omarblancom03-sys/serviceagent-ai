@@ -8,6 +8,8 @@ interface ImportMetaEnv {
   readonly VITE_SUPABASE_URL?: string;
   /** Llave pública de Supabase para la señal de Realtime; cuál va: docs/despliegue.md. */
   readonly VITE_SUPABASE_ANON_KEY?: string;
+  /** Llave del sitio del widget de Turnstile de `/pedir` (D68). Pública. */
+  readonly VITE_TURNSTILE_SITE_KEY?: string;
 }
 
 interface ImportMeta {

@@ -2,6 +2,7 @@ import { createRoute, type OpenAPIHono } from '@hono/zod-openapi';
 import {
   EnviarMensajePeticionSchema,
   ErrorChatSchema,
+  IniciarConversacionPeticionSchema,
   ParamsConversacionSchema,
   RespuestaEnviarMensajeSchema,
   RespuestaIniciarConversacionSchema,
@@ -9,6 +10,7 @@ import {
 } from '@serviceagent/shared';
 import type { z } from 'zod';
 import type { AppEnv, Bindings } from '../lib/env';
+import type { VerificadorTurnstile } from '../lib/turnstile';
 import {
   enviarMensaje,
   iniciarConversacion,
@@ -29,8 +31,9 @@ const error503 = {
 const error503Iniciar = {
   content: json(ErrorChatSchema),
   description:
-    '`servicio_no_disponible`: Retell caído, sin saldo o sin configuración, o tope diario de conversaciones nuevas alcanzado. ' +
-    'El texto del error puede variar según la causa; el código no. Sin detalles técnicos.',
+    '`servicio_no_disponible`: Retell caído, sin saldo o sin configuración, tope diario de conversaciones nuevas ' +
+    'alcanzado o Turnstile no se pudo validar de nuestro lado. `verificacion_fallida`: Turnstile rechazó el token ' +
+    'o no llegó; con uno nuevo se puede reintentar (D77). El texto del error puede variar según la causa. Sin detalles técnicos.',
 };
 
 export const iniciarConversacionRoute = createRoute({
@@ -39,10 +42,18 @@ export const iniciarConversacionRoute = createRoute({
   tags,
   summary: 'Inicia una conversación con el agente',
   description:
-    'Pública. La API abre el chat con el agente de Retell (la llave vive solo en el servidor, D21). ' +
+    'Pública. Primero valida el token de Turnstile (D68): si no pasa, no abre la conversación ni gasta tope. ' +
+    'Luego abre el chat con el agente de Retell (la llave vive solo en el servidor, D21). ' +
     '`mensajes` trae lo que el agente escribió al abrir y puede venir vacío; `mensajesUsados` empieza en 0.',
+  request: {
+    body: { content: json(IniciarConversacionPeticionSchema), required: true },
+  },
   responses: {
     201: { content: json(RespuestaIniciarConversacionSchema), description: 'Conversación creada' },
+    400: {
+      content: json(ErrorChatSchema),
+      description: '`peticion_invalida`: el cuerpo no es JSON válido',
+    },
     503: error503Iniciar,
   },
 });
@@ -87,6 +98,7 @@ export const enviarMensajeRoute = createRoute({
 export interface DependenciasChat {
   crearRepoChat: (env: Bindings) => ChatRepo;
   crearClienteRetell: (llave: string) => ClienteRetell;
+  crearVerificadorTurnstile: (secreto: string) => VerificadorTurnstile;
 }
 
 // Textos para el cliente: en español y sin detalles técnicos ni mensajes de Retell.
@@ -100,9 +112,15 @@ const ERROR_NO_DISPONIBLE: ErrorChat = {
 };
 // Tope diario (D38), texto del PO (US-19). La web reconoce el tope por este texto
 // (`MENSAJE_TOPE_DIARIO` en apps/web/src/lib/chat.ts): si cambia aquí, cambia allá.
+// También sale cuando Turnstile no se puede validar de nuestro lado (D68): reintentar no ayuda.
 const ERROR_TOPE_DIARIO: ErrorChat = {
   error: 'Servicio no disponible por el momento.',
   codigo: 'servicio_no_disponible',
+};
+// Turnstile rechazó el token o no llegó (D77): mismo texto, pero la web pide un token nuevo.
+const ERROR_VERIFICACION: ErrorChat = {
+  error: 'Servicio no disponible por el momento.',
+  codigo: 'verificacion_fallida',
 };
 const ERROR_NO_ENCONTRADA: ErrorChat = {
   error: 'No encontramos esta conversación. Inicia una nueva.',
@@ -118,28 +136,49 @@ const ERROR_LIMITE: ErrorChat = {
 };
 
 export function registrarChat(app: OpenAPIHono<AppEnv>, deps: DependenciasChat) {
-  app.openapi(iniciarConversacionRoute, async (c) => {
-    // La configuración se revisa antes de abrir la conversación: si falta, no se gasta tope.
-    const { llave, agentId, topeDiario } = leerConfigChat(c.env);
-    if (!llave || !agentId) {
-      console.warn('POST /chat/conversaciones: falta RETELL_API_KEY o RETELL_AGENT_ID');
-      return c.json(ERROR_NO_DISPONIBLE, 503);
-    }
-    try {
-      const resultado = await iniciarConversacion(
-        { repo: deps.crearRepoChat(c.env), retell: deps.crearClienteRetell(llave) },
-        { agentId, topeDiario },
-      );
-      if (resultado.tipo === 'ok') return c.json(resultado.respuesta, 201);
-      return c.json(
-        resultado.tipo === 'tope_alcanzado' ? ERROR_TOPE_DIARIO : ERROR_NO_DISPONIBLE,
-        503,
-      );
-    } catch (error) {
-      console.error('POST /chat/conversaciones', error instanceof Error ? error.message : '');
-      return c.json(ERROR_NO_DISPONIBLE, 503);
-    }
-  });
+  app.openapi(
+    iniciarConversacionRoute,
+    async (c) => {
+      // Configuración y Turnstile se revisan antes de abrir la conversación: no gastan tope (D68).
+      const { tokenTurnstile } = c.req.valid('json');
+      const { llave, agentId, topeDiario, secretoTurnstile } = leerConfigChat(c.env);
+      if (!llave || !agentId) {
+        console.warn('POST /chat/conversaciones: falta RETELL_API_KEY o RETELL_AGENT_ID');
+        return c.json(ERROR_NO_DISPONIBLE, 503);
+      }
+      if (!secretoTurnstile) {
+        console.warn('POST /chat/conversaciones: falta TURNSTILE_SECRET_KEY');
+        return c.json(ERROR_TOPE_DIARIO, 503);
+      }
+      try {
+        // La IP solo se manda a Cloudflare para validar mejor; no se guarda (D77).
+        const ip = c.req.header('CF-Connecting-IP') ?? null;
+        const verificacion = await deps
+          .crearVerificadorTurnstile(secretoTurnstile)
+          .verificar(tokenTurnstile, ip);
+        if (verificacion === 'token_rechazado') return c.json(ERROR_VERIFICACION, 503);
+        if (verificacion === 'no_disponible') return c.json(ERROR_TOPE_DIARIO, 503);
+
+        const resultado = await iniciarConversacion(
+          { repo: deps.crearRepoChat(c.env), retell: deps.crearClienteRetell(llave) },
+          { agentId, topeDiario },
+        );
+        if (resultado.tipo === 'ok') return c.json(resultado.respuesta, 201);
+        return c.json(
+          resultado.tipo === 'tope_alcanzado' ? ERROR_TOPE_DIARIO : ERROR_NO_DISPONIBLE,
+          503,
+        );
+      } catch (error) {
+        console.error('POST /chat/conversaciones', error instanceof Error ? error.message : '');
+        return c.json(ERROR_NO_DISPONIBLE, 503);
+      }
+    },
+    // Sin cuerpo (una web anterior a Turnstile), sin token o con otra forma: es un token que no
+    // pasó (D77). El JSON mal formado lo rechaza Hono antes; lo traduce el `onError` de index.ts.
+    (resultado, c) => {
+      if (!resultado.success) return c.json(ERROR_VERIFICACION, 503);
+    },
+  );
 
   app.openapi(
     enviarMensajeRoute,
