@@ -15,6 +15,11 @@ export interface Bindings {
   CHAT_TOPE_DIARIO?: string;
   /** Duración del token: `8h`, `30m`, `900s`. Por defecto `8h`. */
   JWT_EXPIRES_IN?: string;
+  /**
+   * Secreto compartido con el banco simulado: firma y verifica `X-Banco-Firma` (D70). Sin él,
+   * `POST /webhooks/banco` responde 500 y `POST /banco-simulado/transferencias`, 503.
+   */
+  BANCO_WEBHOOK_SECRET?: string;
   /** Orígenes permitidos para CORS, separados por coma. */
   CORS_ORIGINS?: string;
   /**
