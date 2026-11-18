@@ -84,7 +84,13 @@ describe('Cliente de Retell: peticiones', () => {
       ok: true,
       datos: {
         mensajes: [
-          { rol: 'tool_call_invocation', id: 'm1', texto: null, creadoEnMs: null },
+          {
+            rol: 'tool_call_invocation',
+            id: 'm1',
+            texto: null,
+            creadoEnMs: null,
+            nombre: 'cotizar_pedido',
+          },
           { rol: 'agent', id: 'm2', texto: 'Listo', creadoEnMs: 1_791_000_000_000 },
           { rol: 'agent', id: null, texto: 'Sin id ni hora', creadoEnMs: null },
         ],

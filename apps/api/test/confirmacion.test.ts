@@ -205,6 +205,52 @@ describe('clienteConfirmo (D48)', () => {
   });
 });
 
+describe('clienteConfirmo con la pregunta repetida en un turno (D69)', () => {
+  // La secuencia que esconde el proxy del chat web: el modelo pregunta y, en el mismo turno, llama
+  // a crear_pedido; el backend responde faltaConfirmacion y el modelo vuelve a preguntar. El cliente
+  // ve una sola pregunta y dice "sí": D48 lo toma para la última y el pedido se crea.
+  const llamoACrear = {
+    role: 'tool_call_invocation',
+    tool_call_id: 'call_1',
+    name: 'crear_pedido',
+    arguments: '{"productos":[{"producto":"hamburguesa Granero","cantidad":1}]}',
+  };
+  const faltaConfirmacion = {
+    role: 'tool_call_result',
+    tool_call_id: 'call_1',
+    content: '{"ok":false,"faltaConfirmacion":true,"aclaraciones":[],"datosCliente":[]}',
+  };
+  const soloLaPregunta = { role: 'agent', content: '¿Confirmo tu pedido?' };
+
+  it('en la primera llamada, en el mismo turno de la pregunta, todavía no hay confirmación', () => {
+    expect(clienteConfirmo([PREGUNTA, llamoACrear])).toBe(false);
+  });
+
+  it('pregunta → crear_pedido → faltaConfirmacion → pregunta → "sí": hay confirmación', () => {
+    expect(
+      clienteConfirmo([PREGUNTA, llamoACrear, faltaConfirmacion, soloLaPregunta, cliente('Sí')]),
+    ).toBe(true);
+  });
+
+  it('también si la segunda vez repite el resumen completo', () => {
+    expect(
+      clienteConfirmo([PREGUNTA, llamoACrear, faltaConfirmacion, PREGUNTA, cliente('Sí')]),
+    ).toBe(true);
+  });
+
+  it('si el cliente dice que no a esa pregunta, no hay confirmación', () => {
+    expect(
+      clienteConfirmo([
+        PREGUNTA,
+        llamoACrear,
+        faltaConfirmacion,
+        soloLaPregunta,
+        cliente('No, espera'),
+      ]),
+    ).toBe(false);
+  });
+});
+
 describe('mensajesDeLaConversacion', () => {
   it('lee los mensajes de la conversación (message_with_tool_calls)', () => {
     expect(
