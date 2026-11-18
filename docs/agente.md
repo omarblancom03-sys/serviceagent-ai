@@ -95,7 +95,7 @@ Al cliente solo le llegan los mensajes `agent` con texto; si en una misma respue
 - Nunca inventa productos, precios ni ingredientes. Si no sabe, lo dice. Los montos siempre vienen del backend ([negocio.md → Dinero](negocio.md#dinero)).
 - Si el cliente pide una persona, cambiar o cancelar un pedido registrado o saber cómo va, avisa con `transferir_a_empleado`: directo si ya tiene su teléfono, o preguntando antes; si lo ofrece el agente (quejas, pagos, alergias, datos que no tiene), pregunta y solo avisa con el "sí". Nunca dice que avisó sin `ok: true` ni promete un tiempo. Las dudas del menú no se transfieren: lo que no está en la ficha no lo tienen, y si pide una persona por el menú, primero contesta con el menú ([D81](decisiones.md)).
 - Lo que se pregunta del restaurante (horario, ubicación, pagos, alergias…) lo responde con `info_restaurante` y solo con su texto; sin el dato, lo dice ([D65](decisiones.md)).
-- El menú completo **no** va en el prompt: se consulta con `buscar_menu` (ahorro de tokens). Cuándo busca, cómo presenta los resultados y qué no hace: [D51](decisiones.md); cómo busca la API: [D50](decisiones.md).
+- El menú completo **no** va en el prompt: se consulta con `buscar_menu` (ahorro de tokens). También busca cuando el cliente pregunta si tienen un platillo o una bebida concreta, nunca con `info_restaurante` ni `cotizar_pedido`. Cuándo busca, cómo presenta los resultados y qué no hace: [D51](decisiones.md); cómo busca la API: [D50](decisiones.md).
 
 ## Modelo y costo en Retell
 
