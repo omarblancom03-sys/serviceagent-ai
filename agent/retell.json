@@ -2,7 +2,7 @@
   "chat_agent": {
     "agent_name": "El Granero - chat",
     "language": "es-419",
-    "timezone": null,
+    "timezone": "America/Chihuahua",
     "end_chat_after_silence_ms": 360000,
     "auto_close_message": null,
     "webhook_url": null,
